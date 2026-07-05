@@ -1,0 +1,47 @@
+<%- include('partials/header') %>
+<section class="page-hero compact with-action">
+  <div>
+    <span class="eyebrow">User dashboard</span>
+    <h1>My Products</h1>
+    <p>Submit products for Admin review. Approved products will appear publicly.</p>
+  </div>
+  <a class="button" href="/dashboard/products/new">Publish Product</a>
+</section>
+
+<section class="section">
+  <% if (products.length) { %>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Product</th><th>Status</th><th>Category</th><th>Created</th><th>Actions</th></tr></thead>
+        <tbody>
+        <% products.forEach(product => { %>
+          <tr>
+            <td>
+              <div class="row-product">
+                <% if (product.image) { %><img src="<%= product.image %>" alt=""><% } %>
+                <div><strong><%= product.title %></strong><small><%= shortText(product.summary || product.description, 90) %></small></div>
+              </div>
+              <% if (product.rejection_reason) { %><small class="danger-text">Reason: <%= product.rejection_reason %></small><% } %>
+            </td>
+            <td><span class="status <%= product.status %>"><%= product.status %></span></td>
+            <td><%= product.category_name || '-' %></td>
+            <td><%= formatDate(product.created_at) %></td>
+            <td class="actions">
+              <a class="button tiny" href="/dashboard/products/<%= product.id %>/edit">Edit</a>
+              <% if (product.status === 'approved') { %><a class="button tiny ghost" href="/products/<%= product.slug %>">View</a><% } %>
+              <form method="post" action="/dashboard/products/<%= product.id %>/archive" onsubmit="return confirm('Archive this product?')"><button class="button tiny danger" type="submit">Archive</button></form>
+            </td>
+          </tr>
+        <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } else { %>
+    <div class="empty-state">
+      <h3>No products yet.</h3>
+      <p>Start by publishing your first product.</p>
+      <a class="button" href="/dashboard/products/new">Publish Product</a>
+    </div>
+  <% } %>
+</section>
+<%- include('partials/footer') %>

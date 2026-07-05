@@ -1,0 +1,13 @@
+<%- include('partials/header') %>
+<section class="auth-card">
+  <span class="eyebrow">Publish products</span>
+  <h1>Create account</h1>
+  <form method="post" action="/register" class="stack-form">
+    <label>Name<input name="name" required autofocus></label>
+    <label>Email<input type="email" name="email" required></label>
+    <label>Password<input type="password" name="password" required minlength="8"></label>
+    <button class="button" type="submit">Create account</button>
+  </form>
+  <p class="muted">Already registered? <a href="/login">Log in</a>.</p>
+</section>
+<%- include('partials/footer') %>

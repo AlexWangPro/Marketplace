@@ -1,0 +1,14 @@
+</main>
+<footer class="site-footer">
+  <div>
+    <strong>WallPrinter.org Product Directory</strong>
+    <p>Built for verified product publishing, admin review, and lead collection.</p>
+  </div>
+  <div class="footer-links">
+    <a href="/products">Browse products</a>
+    <% if (user) { %><a href="/dashboard/products/new">Publish</a><% } else { %><a href="/register">Join</a><% } %>
+  </div>
+</footer>
+<script src="/js/app.js"></script>
+</body>
+</html>

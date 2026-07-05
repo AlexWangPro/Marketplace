@@ -1,0 +1,35 @@
+<%- include('partials/header') %>
+<%- include('partials/admin-nav') %>
+<section class="page-hero compact">
+  <span class="eyebrow">Admin</span>
+  <h1>Users</h1>
+</section>
+<section class="section">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>User</th><th>Role</th><th>Status</th><th>Products</th><th>Joined</th><th>Actions</th></tr></thead>
+      <tbody>
+        <% users.forEach(row => { %>
+          <tr>
+            <td><strong><%= row.name %></strong><small><%= row.email %></small></td>
+            <td><span class="status <%= row.role %>"><%= row.role %></span></td>
+            <td><span class="status <%= row.status %>"><%= row.status %></span></td>
+            <td><%= row.product_count %></td>
+            <td><%= formatDate(row.created_at) %></td>
+            <td class="actions">
+              <form method="post" action="/admin/users/<%= row.id %>/role">
+                <input type="hidden" name="role" value="<%= row.role === 'admin' ? 'user' : 'admin' %>">
+                <button class="button tiny ghost" type="submit"><%= row.role === 'admin' ? 'Make user' : 'Make admin' %></button>
+              </form>
+              <form method="post" action="/admin/users/<%= row.id %>/status">
+                <input type="hidden" name="status" value="<%= row.status === 'active' ? 'disabled' : 'active' %>">
+                <button class="button tiny danger" type="submit"><%= row.status === 'active' ? 'Disable' : 'Enable' %></button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</section>
+<%- include('partials/footer') %>

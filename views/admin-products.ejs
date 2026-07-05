@@ -1,0 +1,43 @@
+<%- include('partials/header') %>
+<%- include('partials/admin-nav') %>
+<section class="page-hero compact with-action">
+  <div>
+    <span class="eyebrow">Admin</span>
+    <h1>Manage Products</h1>
+    <p>Approve, reject, archive, or delete user submissions.</p>
+  </div>
+  <div class="tabs">
+    <a class="<%= !status ? 'active' : '' %>" href="/admin/products">All</a>
+    <a class="<%= status === 'pending' ? 'active' : '' %>" href="/admin/products?status=pending">Pending</a>
+    <a class="<%= status === 'approved' ? 'active' : '' %>" href="/admin/products?status=approved">Approved</a>
+    <a class="<%= status === 'rejected' ? 'active' : '' %>" href="/admin/products?status=rejected">Rejected</a>
+  </div>
+</section>
+<section class="section">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Product</th><th>Seller</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
+      <tbody>
+        <% products.forEach(product => { %>
+          <tr>
+            <td>
+              <div class="row-product">
+                <% if (product.image) { %><img src="<%= product.image %>" alt=""><% } %>
+                <div><a href="/admin/products/<%= product.id %>"><strong><%= product.title %></strong></a><small><%= product.category_name || '-' %></small></div>
+              </div>
+            </td>
+            <td><%= product.seller_name %><small><%= product.seller_email %></small></td>
+            <td><span class="status <%= product.status %>"><%= product.status %></span></td>
+            <td><%= formatDate(product.created_at) %></td>
+            <td class="actions">
+              <a class="button tiny ghost" href="/admin/products/<%= product.id %>">Review</a>
+              <% if (product.status !== 'approved') { %><form method="post" action="/admin/products/<%= product.id %>/approve"><button class="button tiny" type="submit">Approve</button></form><% } %>
+              <form method="post" action="/admin/products/<%= product.id %>/archive"><button class="button tiny ghost" type="submit">Archive</button></form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</section>
+<%- include('partials/footer') %>

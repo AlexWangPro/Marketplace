@@ -1,0 +1,31 @@
+<%- include('partials/header') %>
+<%- include('partials/admin-nav') %>
+<section class="page-hero compact">
+  <span class="eyebrow">Admin</span>
+  <h1>Categories</h1>
+</section>
+<section class="section two-col">
+  <form class="rich-card stack-form" method="post" action="/admin/categories">
+    <h2>Add category</h2>
+    <label>Name<input name="name" required></label>
+    <button class="button" type="submit">Create</button>
+  </form>
+  <div class="rich-card">
+    <h2>Current categories</h2>
+    <div class="table-wrap flat">
+      <table>
+        <thead><tr><th>Name</th><th>Products</th><th></th></tr></thead>
+        <tbody>
+          <% categories.forEach(c => { %>
+            <tr>
+              <td><strong><%= c.name %></strong><small><%= c.slug %></small></td>
+              <td><%= c.product_count %></td>
+              <td><form method="post" action="/admin/categories/<%= c.id %>/delete" onsubmit="return confirm('Delete category? Products will stay but become uncategorized.')"><button class="button tiny danger" type="submit">Delete</button></form></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+<%- include('partials/footer') %>

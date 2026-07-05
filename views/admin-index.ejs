@@ -1,0 +1,35 @@
+<%- include('partials/header') %>
+<%- include('partials/admin-nav') %>
+<section class="page-hero compact">
+  <span class="eyebrow">Admin</span>
+  <h1>Dashboard</h1>
+  <p>Review products, manage users, categories, inquiries, and logs.</p>
+</section>
+<section class="section">
+  <div class="stats-grid">
+    <div class="stat-card"><strong><%= stats.users %></strong><span>Users</span></div>
+    <div class="stat-card"><strong><%= stats.pending %></strong><span>Pending products</span></div>
+    <div class="stat-card"><strong><%= stats.approved %></strong><span>Approved products</span></div>
+    <div class="stat-card"><strong><%= stats.inquiries %></strong><span>Inquiries</span></div>
+  </div>
+</section>
+<section class="section">
+  <div class="section-heading"><h2>Recent submissions</h2><a href="/admin/products">Manage all →</a></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Title</th><th>Seller</th><th>Status</th><th>Category</th><th>Created</th></tr></thead>
+      <tbody>
+        <% recentProducts.forEach(product => { %>
+          <tr>
+            <td><a href="/admin/products/<%= product.id %>"><strong><%= product.title %></strong></a></td>
+            <td><%= product.seller_name %></td>
+            <td><span class="status <%= product.status %>"><%= product.status %></span></td>
+            <td><%= product.category_name || '-' %></td>
+            <td><%= formatDate(product.created_at) %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</section>
+<%- include('partials/footer') %>

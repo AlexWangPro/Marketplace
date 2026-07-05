@@ -1,0 +1,43 @@
+<%- include('partials/header') %>
+<section class="page-hero compact">
+  <span class="eyebrow">Directory</span>
+  <h1>Products</h1>
+  <p>Browse approved products submitted by users and reviewed by Admin.</p>
+</section>
+
+<section class="section">
+  <form class="filter-bar" method="get" action="/products">
+    <input type="search" name="search" placeholder="Search products, companies, features..." value="<%= search %>">
+    <select name="category">
+      <option value="">All categories</option>
+      <% categories.forEach(c => { %>
+        <option value="<%= c.slug %>" <%= c.slug === category ? 'selected' : '' %>><%= c.name %></option>
+      <% }) %>
+    </select>
+    <button class="button" type="submit">Search</button>
+  </form>
+
+  <% if (products.length) { %>
+    <div class="product-grid">
+      <% products.forEach(product => { %>
+        <article class="product-card">
+          <a href="/products/<%= product.slug %>" class="product-image">
+            <% if (product.image) { %><img src="<%= product.image %>" alt="<%= product.title %>"><% } else { %><span>No image</span><% } %>
+          </a>
+          <div class="product-body">
+            <span class="pill"><%= product.category_name || 'Uncategorized' %></span>
+            <h3><a href="/products/<%= product.slug %>"><%= product.title %></a></h3>
+            <p><%= shortText(product.summary || product.description, 130) %></p>
+            <div class="product-meta"><%= money(product.price, product.currency) %> · <%= product.location || 'Global' %></div>
+          </div>
+        </article>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <div class="empty-state">
+      <h3>No products found.</h3>
+      <p>Try another keyword or category.</p>
+    </div>
+  <% } %>
+</section>
+<%- include('partials/footer') %>

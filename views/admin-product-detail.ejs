@@ -1,0 +1,36 @@
+<%- include('partials/header') %>
+<%- include('partials/admin-nav') %>
+<section class="product-detail admin-review">
+  <div class="gallery">
+    <% if (product.images.length) { %>
+      <img class="main-photo" src="<%= product.images[0].image_data_url %>" alt="<%= product.title %>">
+      <div class="thumbs"><% product.images.forEach(img => { %><img src="<%= img.image_data_url %>" alt=""><% }) %></div>
+    <% } else { %><div class="main-photo placeholder">No image</div><% } %>
+  </div>
+  <div class="detail-copy">
+    <span class="status <%= product.status %>"><%= product.status %></span>
+    <h1><%= product.title %></h1>
+    <p class="lead"><%= product.summary || shortText(product.description, 220) %></p>
+    <div class="spec-list">
+      <div><span>Seller</span><strong><%= product.seller_name %></strong></div>
+      <div><span>Email</span><strong><%= product.seller_email %></strong></div>
+      <div><span>Category</span><strong><%= product.category_name || '-' %></strong></div>
+      <div><span>Created</span><strong><%= formatDate(product.created_at) %></strong></div>
+    </div>
+    <div class="admin-actions">
+      <form method="post" action="/admin/products/<%= product.id %>/approve"><button class="button" type="submit">Approve</button></form>
+      <form method="post" action="/admin/products/<%= product.id %>/reject" class="reject-form">
+        <input name="reason" placeholder="Reject reason">
+        <button class="button danger" type="submit">Reject</button>
+      </form>
+      <form method="post" action="/admin/products/<%= product.id %>/delete" onsubmit="return confirm('Delete this product permanently?')"><button class="button ghost danger" type="submit">Delete</button></form>
+    </div>
+  </div>
+</section>
+<section class="section narrow">
+  <article class="rich-card">
+    <h2>Description</h2>
+    <div class="prose"><%= product.description %></div>
+  </article>
+</section>
+<%- include('partials/footer') %>

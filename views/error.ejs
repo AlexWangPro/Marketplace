@@ -1,0 +1,8 @@
+<%- include('partials/header') %>
+<section class="empty-state big">
+  <h1>Server error</h1>
+  <p><%= message %></p>
+  <% if (detail) { %><pre class="error-detail"><%= detail %></pre><% } %>
+  <a class="button" href="/">Back home</a>
+</section>
+<%- include('partials/footer') %>

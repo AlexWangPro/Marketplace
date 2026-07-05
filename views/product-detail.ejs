@@ -1,0 +1,48 @@
+<%- include('partials/header') %>
+<section class="product-detail">
+  <div class="gallery">
+    <% if (product.images.length) { %>
+      <img class="main-photo" src="<%= product.images[0].image_data_url %>" alt="<%= product.title %>">
+      <% if (product.images.length > 1) { %>
+        <div class="thumbs">
+          <% product.images.forEach(img => { %><img src="<%= img.image_data_url %>" alt="<%= product.title %>"><% }) %>
+        </div>
+      <% } %>
+    <% } else { %>
+      <div class="main-photo placeholder">No image</div>
+    <% } %>
+  </div>
+  <div class="detail-copy">
+    <span class="pill"><%= product.category_name || 'Uncategorized' %></span>
+    <h1><%= product.title %></h1>
+    <p class="lead"><%= product.summary || shortText(product.description, 220) %></p>
+    <div class="spec-list">
+      <div><span>Price</span><strong><%= money(product.price, product.currency) %></strong></div>
+      <div><span>Location</span><strong><%= product.location || 'Global' %></strong></div>
+      <div><span>Company</span><strong><%= product.company || product.seller_name %></strong></div>
+      <div><span>Views</span><strong><%= product.views + 1 %></strong></div>
+    </div>
+    <div class="contact-actions">
+      <% if (product.website) { %><a class="button" href="<%= product.website %>" target="_blank" rel="noopener">Visit Website</a><% } %>
+      <% if (product.whatsapp) { %><a class="button ghost" href="https://wa.me/<%= product.whatsapp.replace(/[^0-9]/g, '') %>" target="_blank" rel="noopener">WhatsApp</a><% } %>
+    </div>
+  </div>
+</section>
+
+<section class="section two-col">
+  <article class="rich-card">
+    <h2>Description</h2>
+    <div class="prose"><%= product.description %></div>
+  </article>
+  <aside class="rich-card" id="inquiry">
+    <h2>Send Inquiry</h2>
+    <p>Submit a message about this product. Admin can view all inquiries in the dashboard.</p>
+    <form method="post" action="/products/<%= product.id %>/inquiry" class="stack-form">
+      <label>Name<input name="name" required></label>
+      <label>Email<input name="email" type="email" required></label>
+      <label>Message<textarea name="message" rows="5" required>I am interested in <%= product.title %>. Please send me more details.</textarea></label>
+      <button class="button" type="submit">Submit Inquiry</button>
+    </form>
+  </aside>
+</section>
+<%- include('partials/footer') %>

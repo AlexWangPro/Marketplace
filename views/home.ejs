@@ -1,0 +1,68 @@
+<%- include('partials/header') %>
+<section class="hero">
+  <div class="hero-copy">
+    <span class="eyebrow">Wall printer industry marketplace</span>
+    <h1>Publish, review, and showcase wall printing products.</h1>
+    <p>Launch a focused product directory for wall printers, floor printers, UV printers, accessories, materials, and related services.</p>
+    <div class="hero-actions">
+      <a class="button" href="/products">Browse Products</a>
+      <% if (user) { %>
+        <a class="button ghost" href="/dashboard/products/new">Publish Product</a>
+      <% } else { %>
+        <a class="button ghost" href="/register">Create Account</a>
+      <% } %>
+    </div>
+  </div>
+  <div class="hero-card">
+    <div class="metric"><strong><%= counts.approved || 0 %></strong><span>Approved products</span></div>
+    <div class="metric"><strong><%= counts.pending || 0 %></strong><span>Pending review</span></div>
+    <div class="metric"><strong><%= counts.total || 0 %></strong><span>Total submissions</span></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-heading">
+    <div>
+      <span class="eyebrow">Categories</span>
+      <h2>Explore industry categories</h2>
+    </div>
+    <a href="/products">View all →</a>
+  </div>
+  <div class="category-grid">
+    <% categories.forEach(category => { %>
+      <a class="category-card" href="/products?category=<%= category.slug %>"><%= category.name %></a>
+    <% }) %>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-heading">
+    <div>
+      <span class="eyebrow">Latest</span>
+      <h2>Recently approved products</h2>
+    </div>
+  </div>
+  <% if (featured.length) { %>
+    <div class="product-grid">
+      <% featured.forEach(product => { %>
+        <article class="product-card">
+          <a href="/products/<%= product.slug %>" class="product-image">
+            <% if (product.image) { %><img src="<%= product.image %>" alt="<%= product.title %>"><% } else { %><span>No image</span><% } %>
+          </a>
+          <div class="product-body">
+            <span class="pill"><%= product.category_name || 'Uncategorized' %></span>
+            <h3><a href="/products/<%= product.slug %>"><%= product.title %></a></h3>
+            <p><%= shortText(product.summary || product.description, 120) %></p>
+            <div class="product-meta"><%= money(product.price, product.currency) %> · <%= product.location || 'Global' %></div>
+          </div>
+        </article>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <div class="empty-state">
+      <h3>No approved products yet.</h3>
+      <p>Publish the first product from your dashboard, then approve it in Admin.</p>
+    </div>
+  <% } %>
+</section>
+<%- include('partials/footer') %>

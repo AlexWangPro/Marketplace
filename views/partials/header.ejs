@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title ? `${title} | WallPrinter Products` : 'WallPrinter Products' %></title>
+  <meta name="description" content="A product publishing platform for wall printer, floor printer, UV printer and printing industry products.">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<header class="site-header">
+  <a class="brand" href="/">
+    <span class="brand-mark">WP</span>
+    <span>
+      <strong>WallPrinter.org</strong>
+      <small>Product Directory</small>
+    </span>
+  </a>
+  <button class="nav-toggle" data-nav-toggle aria-label="Toggle navigation">☰</button>
+  <nav class="site-nav" data-nav>
+    <a href="/products" class="<%= path.startsWith('/products') ? 'active' : '' %>">Products</a>
+    <% if (user) { %>
+      <a href="/dashboard" class="<%= path.startsWith('/dashboard') ? 'active' : '' %>">My Dashboard</a>
+      <% if (user.role === 'admin') { %>
+        <a href="/admin" class="<%= path.startsWith('/admin') ? 'active' : '' %>">Admin</a>
+      <% } %>
+      <form action="/logout" method="post" class="inline-form">
+        <button class="link-button" type="submit">Logout</button>
+      </form>
+    <% } else { %>
+      <a href="/login" class="<%= path === '/login' ? 'active' : '' %>">Login</a>
+      <a class="button small" href="/register">Publish Product</a>
+    <% } %>
+  </nav>
+</header>
+
+<main>
+  <% if (flash && flash.length) { %>
+    <section class="flash-wrap">
+      <% flash.forEach(item => { %>
+        <div class="flash <%= item.type %>"><%= item.message %></div>
+      <% }) %>
+    </section>
+  <% } %>

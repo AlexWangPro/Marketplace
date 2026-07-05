@@ -1,0 +1,20 @@
+<%- include('partials/header') %>
+<%- include('partials/admin-nav') %>
+<section class="page-hero compact">
+  <span class="eyebrow">Admin</span>
+  <h1>Inquiries</h1>
+</section>
+<section class="section">
+  <% if (inquiries.length) { %>
+    <div class="inquiry-list">
+      <% inquiries.forEach(item => { %>
+        <article class="rich-card">
+          <div class="section-heading"><h3><a href="/products/<%= item.product_slug %>"><%= item.product_title %></a></h3><span><%= formatDate(item.created_at) %></span></div>
+          <p><strong><%= item.name %></strong> · <a href="mailto:<%= item.email %>"><%= item.email %></a></p>
+          <p><%= item.message %></p>
+        </article>
+      <% }) %>
+    </div>
+  <% } else { %><div class="empty-state"><h3>No inquiries yet.</h3></div><% } %>
+</section>
+<%- include('partials/footer') %>
