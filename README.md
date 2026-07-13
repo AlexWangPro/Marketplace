@@ -222,3 +222,12 @@ Or:
 npm install
 npm start
 ```
+
+
+## Railway build troubleshooting
+
+This v2.2 package intentionally does not include `package-lock.json`. The previous generated lockfile could contain environment-specific registry URLs that may slow or block Railway image builds. Railway/Nixpacks will install production dependencies from `package.json` using the public npm registry.
+
+When uploading to GitHub, make sure `package.json`, `server.js`, `railway.json`, and `nixpacks.toml` are in the repository root. Do not upload the parent folder as an extra nested directory.
+
+If Railway stays on **Building the image** for too long, use **Deployments → View Logs** and confirm it reaches `npm install --omit=dev`. If it cannot fetch packages, clear the Railway build cache and redeploy.
