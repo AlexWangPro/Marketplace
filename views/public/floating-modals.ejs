@@ -1,0 +1,154 @@
+<div class="floating-actions" aria-label="Quick actions">
+  <button class="float-btn primary" type="button" data-open-modal="list-machine">List your machine</button>
+  <button class="float-btn" type="button" data-open-modal="buying-request">Buying Request</button>
+</div>
+
+<div class="modal-overlay" data-modal="list-machine" aria-hidden="true">
+  <div class="modal-panel wide" role="dialog" aria-modal="true" aria-labelledby="listMachineTitle">
+    <button class="modal-close" type="button" data-close-modal aria-label="Close">×</button>
+    <div class="modal-header">
+      <p class="eyebrow">Seller submission</p>
+      <h2 id="listMachineTitle">List your used wall printer</h2>
+      <p>Review the terms first. After confirmation, you can submit machine information for admin review.</p>
+    </div>
+
+    <form method="post" action="/submit-machine" enctype="multipart/form-data" data-seller-modal-form>
+      <section class="modal-step active" data-step="terms">
+        <div class="terms-scroll">
+          <h3>Used Wall Printer Listing Terms</h3>
+          <p>Wall Printer Exchange is a used wall printer listing and introduction platform. We are not the seller, buyer, manufacturer, inspection provider, escrow provider, payment processor, shipping company, customs broker, installer, or warranty provider for any used machine listed on this website.</p>
+          <p>By submitting a machine, you confirm that all information you provide is accurate, complete, current, and not misleading to the best of your knowledge. This includes machine brand, model, year, printhead configuration, working condition, usage history, known defects, included accessories, asking price, location, images, videos, and other relevant details.</p>
+          <p>You confirm that you are the lawful owner of the machine, or authorized by the lawful owner to submit the machine for sale. You also confirm that the machine is not subject to any undisclosed ownership dispute, lien, financing restriction, legal restriction, or third-party claim that would prevent its sale or transfer.</p>
+          <p>Your phone number, email address, WhatsApp number, exact address, and other direct contact information will not be publicly displayed. However, you authorize Wall Printer Exchange to share your contact information with qualified buyers who have expressed serious interest and have been reviewed by the administrator.</p>
+          <p>Buyers are responsible for their own due diligence. Wall Printer Exchange does not independently verify every technical detail and does not guarantee machine condition, print quality, remaining service life, accessories, software, ownership, shipping condition, customs clearance, installation, training, or after-sales support.</p>
+          <p>Wall Printer Exchange does not collect payment on behalf of buyers or sellers unless separately agreed in writing. Payment, refund, shipping, tax, import duty, customs, inspection, installation, training, and after-sale terms must be agreed directly between buyer and seller.</p>
+          <p>Wall Printer Exchange may charge a listing fee, introduction fee, referral fee, success fee, commission, or other service fee when applicable. Any such fee should be confirmed separately in writing.</p>
+        </div>
+        <label class="check-row"><input type="checkbox" name="declaration_accepted" data-terms-confirm> I have read, understood, and agree to these listing terms.</label>
+        <div class="modal-actions">
+          <button class="btn primary" type="button" data-next-seller-step>Continue to machine information</button>
+          <a class="btn secondary" href="/submit-machine">Open full page instead</a>
+        </div>
+      </section>
+
+      <section class="modal-step" data-step="form">
+        <div class="modal-form-grid">
+          <div class="form-card compact-card">
+            <h3>Seller contact</h3>
+            <div class="form-grid two">
+              <label>Seller name *<input name="seller_name" required></label>
+              <label>Company<input name="seller_company"></label>
+              <label>Email *<input type="email" name="seller_email" required></label>
+              <label>Phone<input name="seller_phone"></label>
+              <label>WhatsApp<input name="seller_whatsapp"></label>
+              <label>Preferred contact<input name="seller_preferred_contact" placeholder="Email / WhatsApp / Phone"></label>
+            </div>
+            <label class="check-row"><input type="checkbox" name="seller_contact_release_consent" required> I agree that Wall Printer Exchange may share my contact information with qualified buyers after admin review.</label>
+          </div>
+
+          <div class="form-card compact-card">
+            <h3>Machine basics</h3>
+            <div class="form-grid two">
+              <label>Listing title *<input name="title" required placeholder="Used DXonJet wall printer, 4 Ricoh heads"></label>
+              <label>Brand<input name="brand" placeholder="DXonJet / WallPen / other"></label>
+              <label>Model<input name="model"></label>
+              <label>Production year<input name="production_year"></label>
+              <label>Purchase year<input name="purchase_year"></label>
+              <label>Printhead type<input name="printhead_type" placeholder="Ricoh GH2220 / Epson / other"></label>
+              <label>Number of printheads<input type="number" min="0" name="printhead_count"></label>
+              <label>Working status<input name="working_status" placeholder="Working / needs repair / unknown"></label>
+              <label>Asking price<input type="number" step="0.01" min="0" name="asking_price"></label>
+              <label>Currency<input name="currency" value="USD"></label>
+            </div>
+            <label class="check-row"><input type="checkbox" name="price_negotiable"> Price is negotiable</label>
+          </div>
+
+          <div class="form-card compact-card">
+            <h3>Location</h3>
+            <p class="muted small">Region, country, and city may be shown publicly. Exact address stays private.</p>
+            <div class="form-grid two">
+              <label>Region *
+                <select name="region" required>
+                  <option value="">Select region</option>
+                  <% regions.forEach(r => { %><option value="<%= r %>"><%= r %></option><% }) %>
+                </select>
+              </label>
+              <label>Country *<input name="country" required></label>
+              <label>City *<input name="city" required></label>
+              <label>Exact address<input name="exact_address" placeholder="Private, not publicly displayed"></label>
+            </div>
+          </div>
+
+          <div class="form-card compact-card">
+            <h3>Condition, details, and media</h3>
+            <label>Condition summary<textarea name="condition_summary" rows="3" placeholder="Short public condition summary"></textarea></label>
+            <label>Usage history<textarea name="usage_history" rows="3"></textarea></label>
+            <label>Known defects or problems<textarea name="known_defects" rows="3"></textarea></label>
+            <label>Included accessories<textarea name="accessories" rows="3" placeholder="rails, computer, software, ink, spare parts, tools..."></textarea></label>
+            <label>Full details<textarea name="details" rows="4"></textarea></label>
+            <label>Video URL<input name="video_url" placeholder="YouTube / Google Drive / Dropbox link"></label>
+            <label>Images<input type="file" name="images" accept="image/*" multiple></label>
+            <p class="muted small">Up to 8 images. Each image maximum 2MB.</p>
+          </div>
+        </div>
+        <div class="modal-actions sticky-actions">
+          <button class="btn secondary" type="button" data-prev-seller-step>Back to Terms</button>
+          <button class="btn primary" type="submit">Submit Machine for Review</button>
+        </div>
+      </section>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" data-modal="buying-request" aria-hidden="true">
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="buyingRequestTitle">
+    <button class="modal-close" type="button" data-close-modal aria-label="Close">×</button>
+    <div class="modal-header">
+      <p class="eyebrow">Buyer request</p>
+      <h2 id="buyingRequestTitle">Tell us what used wall printer you need</h2>
+      <p>Submit your requirements. Admin can match you with available listings or sellers.</p>
+    </div>
+    <form method="post" action="/buying-request">
+      <section class="form-card compact-card">
+        <h3>Buyer contact</h3>
+        <div class="form-grid two">
+          <label>Your name *<input name="buyer_name" required></label>
+          <label>Company<input name="buyer_company"></label>
+          <label>Email *<input type="email" name="buyer_email" required></label>
+          <label>Phone<input name="buyer_phone"></label>
+          <label>WhatsApp<input name="buyer_whatsapp"></label>
+          <label>Your country *<input name="buyer_country" required></label>
+        </div>
+      </section>
+
+      <section class="form-card compact-card">
+        <h3>Machine requirement</h3>
+        <div class="form-grid two">
+          <label>Target region
+            <select name="target_region">
+              <option value="">Any region</option>
+              <% regions.forEach(r => { %><option value="<%= r %>"><%= r %></option><% }) %>
+            </select>
+          </label>
+          <label>Budget range<input name="budget" placeholder="e.g. USD 10,000 - 25,000"></label>
+          <label>Preferred brand<input name="preferred_brand"></label>
+          <label>Preferred printheads<input name="preferred_printheads" placeholder="Ricoh GH2220, 4 heads, etc."></label>
+          <label>Purchase timeline<input name="timeline" placeholder="Immediately / 1-3 months / later"></label>
+          <label>Need shipping support?<input name="shipping_help" placeholder="Yes / No / Not sure"></label>
+        </div>
+        <label>Inspection plan<textarea name="inspection_plan" rows="3" placeholder="In-person inspection, local representative, or live video demo?"></textarea></label>
+        <label>Additional requirements<textarea name="message" rows="4"></textarea></label>
+      </section>
+
+      <section class="declaration-box compact compact-card">
+        <h3>Buyer acknowledgement</h3>
+        <p>I understand that Wall Printer Exchange does not inspect, guarantee, sell, warrant, collect payment, ship, install, or provide after-sales service for any listed machine. I am responsible for verifying the machine, seller, ownership, payment terms, shipping, customs, and all transaction details before purchase.</p>
+        <label class="check-row"><input type="checkbox" name="verification_ack" required> I understand and accept buyer verification responsibility.</label>
+      </section>
+      <div class="modal-actions sticky-actions">
+        <button class="btn primary" type="submit">Submit Buying Request</button>
+        <a class="btn secondary" href="/buying-request">Open full page instead</a>
+      </div>
+    </form>
+  </div>
+</div>

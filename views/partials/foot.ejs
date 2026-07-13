@@ -5,11 +5,20 @@
     <p>A listing and introduction platform. Buyers must independently verify machines, sellers, payment, shipping, and customs details.</p>
   </div>
   <div class="footer-links">
-    <a href="/submit-machine">Submit Machine</a>
-    <a href="/buying-request">Buying Request</a>
+    <% if (!currentPath.startsWith('/admin')) { %>
+      <a href="/submit-machine" data-open-modal="list-machine">Submit Machine</a>
+      <a href="/buying-request" data-open-modal="buying-request">Buying Request</a>
+    <% } else { %>
+      <a href="/submit-machine">Submit Machine</a>
+      <a href="/buying-request">Buying Request</a>
+    <% } %>
     <a href="/inspection-checklist">Checklist</a>
     <% if (!admin) { %><a href="/admin/login">Admin Login</a><% } %>
   </div>
 </footer>
+<% if (!currentPath.startsWith('/admin')) { %>
+  <%- include('../public/floating-modals') %>
+  <script src="/app.js" defer></script>
+<% } %>
 </body>
 </html>

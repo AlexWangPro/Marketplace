@@ -26,9 +26,11 @@ The platform is designed as a listing and introduction service, not a transactio
 - Machine detail pages
 - Seller contact details hidden from public pages
 - Buyer verification checklist
+- Floating action buttons for seller machine submission and buyer request
+- Seller machine submission modal with mandatory terms review before the form appears
 - Seller machine submission form with declaration acknowledgement
 - Buyer contact request form for a specific machine
-- General buying request form
+- General buying request modal and fallback page
 
 ### Admin
 
@@ -41,6 +43,7 @@ The platform is designed as a listing and introduction service, not a transactio
 - View private seller contact details and exact address
 - Review buyer requests and contact requests
 - Mark requests as New / Reviewed / Contact Shared / Matched / Closed / Spam / Archived
+- When a machine contact request is changed to Contact Shared, send the buyer seller contact details and the verification checklist by email if SMTP is configured
 - Admin logs
 
 ## Tech stack
@@ -92,7 +95,7 @@ DATABASE_URL=${{PostgreSQL.DATABASE_URL}}
 
 If Railway names it something else, use that exact service name.
 
-Optional:
+Optional database SSL:
 
 ```text
 PGSSL=false
@@ -103,6 +106,29 @@ Railway internal PostgreSQL usually does not require SSL. If you use an external
 ```text
 PGSSL=true
 ```
+
+### Optional email delivery
+
+To email buyers when Admin approves seller contact release, add SMTP variables to the **Web Service**:
+
+```text
+SMTP_HOST=smtp.your-provider.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-smtp-username
+SMTP_PASS=your-smtp-password
+MAIL_FROM=Wall Printer Exchange <noreply@wallprinter.org>
+```
+
+When Admin opens a buyer contact request and changes status to `Contact Shared`, the app sends the buyer an email containing:
+
+- Machine title and listing link
+- Seller name, email, phone, WhatsApp, preferred contact, location, and exact address if available
+- A clear disclaimer that Wall Printer Exchange does not inspect, guarantee, collect payment, ship, install, or provide after-sales service
+- The buyer verification checklist and a link to `/inspection-checklist`
+
+If SMTP is not configured, the request status is still updated, but the app records that the email was not sent. You can then manually copy seller contact details from Admin.
+
 
 ### 5. Deploy
 
@@ -159,6 +185,14 @@ Default limits:
 - 2MB maximum per image
 
 For serious production usage, move images to Cloudflare R2, S3, Cloudinary, or Supabase Storage.
+
+## Interaction changes in v2.1
+
+- `List Your Machine` and `Buying Request` are now opened from right-bottom floating buttons.
+- Header and footer links also open the same modals on public pages.
+- Seller submission starts with Terms. The machine form is hidden until the seller checks the confirmation box and clicks Continue.
+- The original `/submit-machine` and `/buying-request` pages remain as fallback direct pages.
+- Admin approval of seller contact release can trigger the buyer email with the verification checklist.
 
 ## Business-role disclaimer
 

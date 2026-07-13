@@ -17,6 +17,12 @@
       </dl>
       <h3>Inspection plan</h3><p><%= request.inspection_plan || '—' %></p>
       <h3>Message</h3><p><%= request.message || '—' %></p>
+      <h3>Contact release email</h3>
+      <p class="muted small">
+        Shared at: <%= request.contact_shared_at ? formatDate(request.contact_shared_at) : '—' %><br>
+        Email sent at: <%= request.contact_email_sent_at ? formatDate(request.contact_email_sent_at) : '—' %><br>
+        Email error: <%= request.contact_email_error || '—' %>
+      </p>
       <% if (request.request_type === 'buying') { %>
         <h3>Buying requirement</h3>
         <dl class="spec-list two-col">
@@ -31,7 +37,7 @@
     <% if (request.machine_title) { %>
       <section class="content-card private-card">
         <h2>Private seller contact for requested listing</h2>
-        <p class="muted">Share this information only after you decide the buyer is qualified and the seller has consented under the listing declaration.</p>
+        <p class="muted">Share this information only after you decide the buyer is qualified and the seller has consented under the listing declaration. When this request is changed to <strong>Contact Shared</strong>, the buyer will receive an email with the seller contact details and the verification checklist if SMTP is configured.</p>
         <dl class="spec-list two-col">
           <dt>Machine</dt><dd><a href="/admin/machines/<%= request.machine_id %>/edit"><%= request.machine_title %></a></dd>
           <dt>Public location</dt><dd><%= [request.machine_region, request.machine_country, request.machine_city].filter(Boolean).join(' · ') || '—' %></dd>
@@ -60,8 +66,11 @@ Machine: <%= request.machine_title %>
       </label>
       <label>Admin notes<textarea name="admin_notes" rows="8"><%= request.admin_notes || '' %></textarea></label>
       <button class="btn primary" type="submit">Update Request</button>
+      <% if (request.request_type === 'contact' && request.machine_title) { %>
+        <p class="muted small">Tip: choose “Contact Shared” to approve the buyer and send seller contact details + checklist by email. SMTP status: <strong><%= mailConfigured ? 'configured' : 'not configured' %></strong>.</p>
+      <% } %>
     </form>
-    <p class="muted small">Use “Contact Shared” after you manually introduce buyer and seller or decide to release seller contact details.</p>
+    <p class="muted small">Use “Contact Shared” only after admin review. For buying requests without a specific machine, the system will not send seller contact details automatically.</p>
   </aside>
 </section>
 <%- include('../partials/foot') %>

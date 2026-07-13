@@ -175,3 +175,37 @@ code { background: #f2eee7; border-radius: 8px; padding: 3px 6px; }
   .spec-list, .spec-list.two-col { grid-template-columns: 1fr; }
   .site-footer { flex-direction: column; }
 }
+
+/* Floating marketplace actions and modal forms */
+.nav button, .nav a[data-open-modal], .footer-links a[data-open-modal] { font: inherit; }
+.floating-actions { position: fixed; right: 22px; bottom: 22px; display: grid; gap: 10px; z-index: 80; }
+.float-btn { border: 1px solid rgba(255,255,255,.28); background: rgba(255,255,255,.94); color: var(--ink); box-shadow: 0 16px 42px rgba(0,0,0,.18); border-radius: 999px; padding: 13px 18px; font-weight: 850; cursor: pointer; backdrop-filter: blur(14px); }
+.float-btn.primary { background: var(--ink); color: #fff; }
+.float-btn:hover { transform: translateY(-1px); }
+body.modal-open { overflow: hidden; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(18, 17, 15, .54); backdrop-filter: blur(8px); display: none; place-items: center; padding: 22px; z-index: 100; }
+.modal-overlay.active { display: grid; }
+.modal-panel { width: min(760px, 100%); max-height: min(90vh, 920px); overflow: auto; background: var(--bg); border: 1px solid rgba(255,255,255,.4); border-radius: 30px; box-shadow: 0 30px 100px rgba(0,0,0,.36); position: relative; }
+.modal-panel.wide { width: min(1020px, 100%); }
+.modal-close { position: sticky; top: 14px; margin-left: auto; margin-right: 14px; margin-top: 14px; z-index: 2; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); background: #fff; font-size: 26px; line-height: 1; cursor: pointer; }
+.modal-header { padding: 0 28px 18px; }
+.modal-header p:not(.eyebrow) { color: var(--muted); margin-bottom: 0; }
+.modal-step { display: none; padding: 0 28px 28px; }
+.modal-step.active { display: block; }
+.terms-scroll { max-height: 430px; overflow: auto; background: #fffaf4; border: 1px solid var(--line); border-radius: 22px; padding: 22px; }
+.terms-scroll p { color: #4f4a42; }
+.modal-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 18px; }
+.sticky-actions { position: sticky; bottom: 0; margin: 18px -28px -28px; padding: 16px 28px; background: rgba(246,243,238,.92); border-top: 1px solid var(--line); backdrop-filter: blur(12px); }
+.modal-form-grid { display: grid; gap: 16px; }
+.compact-card { padding: 22px; margin-bottom: 0; }
+.compact-card h3 { margin-bottom: 14px; }
+.needs-attention { color: var(--red); }
+.needs-attention input { outline: 2px solid var(--red); }
+@media (max-width: 680px) {
+  .floating-actions { right: 12px; left: 12px; bottom: 12px; grid-template-columns: 1fr 1fr; }
+  .float-btn { padding: 12px 10px; font-size: 13px; }
+  .modal-overlay { padding: 12px; }
+  .modal-panel { border-radius: 22px; }
+  .modal-header, .modal-step { padding-left: 18px; padding-right: 18px; }
+  .sticky-actions { margin-left: -18px; margin-right: -18px; padding-left: 18px; padding-right: 18px; }
+}
