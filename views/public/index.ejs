@@ -1,22 +1,13 @@
 <%- include('../partials/head') %>
-<section class="hero">
-  <div class="hero-copy">
-    <p class="eyebrow">Used Wall Printer Listings & Buyer Requests</p>
-    <h1>Buy and sell used wall printers worldwide.</h1>
-    <p class="hero-text">Reviewed listings, regional search, seller introductions, and buyer-led machine verification. We do not inspect, warrant, or collect payment for listed machines.</p>
-    <div class="hero-actions">
-      <a class="btn primary" href="/submit-machine" data-open-modal="list-machine">List Your Machine</a>
-      <a class="btn secondary" href="/buying-request" data-open-modal="buying-request">Submit Buying Request</a>
-    </div>
-  </div>
-  <div class="hero-panel">
-    <span class="panel-label">Platform role</span>
-    <h3>Introduction only</h3>
-    <p>Seller contact details are hidden publicly and may be shared only after admin review. Buyers are responsible for verification, payment, shipping, customs, and after-sale terms.</p>
+<section class="hero catalog-hero">
+  <div class="hero-copy catalog-hero-copy">
+    <p class="eyebrow">Used Wall Printer Exchange</p>
+    <h1>Available used wall printers, reviewed before listing.</h1>
+    <p class="hero-text">Browse used wall printer machines by region, status, brand, model, and location. Seller contact details stay private until an interested buyer request is reviewed by Admin.</p>
   </div>
 </section>
 
-<section class="filter-section">
+<section class="filter-section catalog-filter">
   <form class="filters" method="get" action="/">
     <input type="search" name="q" placeholder="Search brand, model, country..." value="<%= filters.q || '' %>">
     <select name="region">
@@ -33,32 +24,31 @@
     </select>
     <button class="btn dark" type="submit">Search</button>
   </form>
-  <div class="region-pills">
-    <a class="pill" href="/">All</a>
+  <div class="region-pills compact-region-pills">
+    <a class="pill <%= !filters.region ? 'active' : '' %>" href="/">All</a>
     <% regions.forEach(r => { const stat = stats.find(s => s.region === r); %>
       <a class="pill <%= filters.region === r ? 'active' : '' %>" href="/?region=<%= encodeURIComponent(r) %>"><%= r %><span><%= stat ? stat.count : 0 %></span></a>
     <% }) %>
   </div>
 </section>
 
-<section class="listings-head">
+<section class="listings-head catalog-listings-head">
   <div>
-    <p class="eyebrow">Current listings</p>
-    <h2>Machines available, reserved, or recently sold</h2>
+    <p class="eyebrow">Machine listings</p>
+    <h2>Used wall printers for sale</h2>
   </div>
-  <a class="text-link" href="/inspection-checklist">Read buyer verification checklist →</a>
+  <p class="muted listing-note">Available, reserved, and sold machines remain visible for market reference.</p>
 </section>
 
 <% if (!machines.length) { %>
-  <section class="empty-state">
-    <h3>No listings match this filter yet.</h3>
-    <p>Submit a buying request and we can match you when a suitable used wall printer becomes available.</p>
-    <a class="btn primary" href="/buying-request">Submit Buying Request</a>
+  <section class="empty-state compact-empty-state">
+    <h3>No machines match this filter yet.</h3>
+    <p>Use the floating Buying Request button to submit your requirement.</p>
   </section>
 <% } else { %>
-  <section class="machine-grid">
+  <section class="machine-grid catalog-machine-grid">
     <% machines.forEach(machine => { %>
-      <article class="machine-card <%= machine.status === 'sold' ? 'is-sold' : '' %>">
+      <article class="machine-card catalog-machine-card <%= machine.status === 'sold' ? 'is-sold' : '' %>">
         <a href="/machine/<%= machine.slug %>" class="card-image">
           <% if (machine.primary_image_id) { %>
             <img src="/images/<%= machine.primary_image_id %>" alt="<%= machine.title %>">
@@ -72,16 +62,15 @@
           <h3><a href="/machine/<%= machine.slug %>"><%= machine.title %></a></h3>
           <p class="specs"><%= [machine.brand, machine.model, machine.printhead_type, machine.printhead_count ? machine.printhead_count + ' heads' : null].filter(Boolean).join(' · ') %></p>
           <p class="price"><%= machine.status === 'sold' ? 'Sold' : money(machine.asking_price, machine.currency) %><% if (machine.price_negotiable && machine.status !== 'sold') { %> <span>Negotiable</span><% } %></p>
-          <p class="summary"><%= truncate(machine.condition_summary || machine.details || 'Seller submitted used wall printer listing pending buyer verification.', 110) %></p>
-          <a class="card-link" href="/machine/<%= machine.slug %>"><%= machine.status === 'sold' ? 'Request similar machine' : 'View details' %></a>
+          <a class="card-link" href="/machine/<%= machine.slug %>"><%= machine.status === 'sold' ? 'View sold listing' : 'View machine' %></a>
         </div>
       </article>
     <% }) %>
   </section>
 <% } %>
 
-<section class="notice-band">
-  <h2>Buyer responsibility notice</h2>
-  <p>WallPrinter.org does not inspect, certify, guarantee, sell, collect payment, ship, install, or warrant any listed used wall printer. Buyers must independently verify seller identity, machine ownership, condition, included accessories, payment terms, shipping, customs, and after-sale responsibilities before any purchase.</p>
+<section class="notice-band compact-notice-band">
+  <h2>Buyer verification is required.</h2>
+  <p>Wall Printer Exchange does not inspect, certify, guarantee, sell, collect payment, ship, install, or warrant any listed used wall printer. Buyers must independently verify machine condition, seller identity, ownership, payment terms, shipping, customs, and after-sale responsibilities.</p>
 </section>
 <%- include('../partials/foot') %>

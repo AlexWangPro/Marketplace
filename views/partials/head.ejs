@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-<header class="site-header">
+<header class="site-header minimal-header">
   <a class="brand" href="/">
     <span class="brand-mark">WPE</span>
     <span>
@@ -16,18 +16,12 @@
       <small>Used wall printer listings</small>
     </span>
   </a>
-  <nav class="nav">
-    <a href="/">Machines</a>
-    <% if (!currentPath.startsWith('/admin')) { %>
-      <a href="/submit-machine" data-open-modal="list-machine">List Your Machine</a>
-      <a href="/buying-request" data-open-modal="buying-request">Buying Request</a>
-    <% } else { %>
-      <a href="/submit-machine">List Your Machine</a>
-      <a href="/buying-request">Buying Request</a>
-    <% } %>
-    <a href="/inspection-checklist">Verification Checklist</a>
-    <% if (admin) { %><a class="admin-link" href="/admin">Admin</a><% } %>
-  </nav>
+  <% if (admin) { %>
+    <div class="admin-mini-nav">
+      <a class="admin-link" href="/admin">Admin</a>
+      <form method="post" action="/admin/logout"><button class="btn tiny secondary" type="submit">Logout</button></form>
+    </div>
+  <% } %>
 </header>
 <% if (flash) { %>
   <div class="flash <%= flash.type %>"><%= flash.message %></div>

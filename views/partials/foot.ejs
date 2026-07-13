@@ -1,18 +1,11 @@
 </main>
-<footer class="site-footer">
+<footer class="site-footer clean-footer">
   <div>
     <strong>Wall Printer Exchange</strong>
-    <p>A listing and introduction platform. Buyers must independently verify machines, sellers, payment, shipping, and customs details.</p>
+    <p>A listing and introduction platform for used wall printers. Buyers must independently verify machine condition, seller identity, payment, shipping, customs, and after-sale terms.</p>
   </div>
-  <div class="footer-links">
-    <% if (!currentPath.startsWith('/admin')) { %>
-      <a href="/submit-machine" data-open-modal="list-machine">Submit Machine</a>
-      <a href="/buying-request" data-open-modal="buying-request">Buying Request</a>
-    <% } else { %>
-      <a href="/submit-machine">Submit Machine</a>
-      <a href="/buying-request">Buying Request</a>
-    <% } %>
-    <a href="/inspection-checklist">Checklist</a>
+  <div class="footer-links footer-quiet-links">
+    <a href="/inspection-checklist">Verification Checklist</a>
     <% if (!admin) { %><a href="/admin/login">Admin Login</a><% } %>
   </div>
 </footer>

@@ -186,12 +186,12 @@ Default limits:
 
 For serious production usage, move images to Cloudflare R2, S3, Cloudinary, or Supabase Storage.
 
-## Interaction changes in v2.1
+## Interaction changes
 
-- `List Your Machine` and `Buying Request` are now opened from right-bottom floating buttons.
-- Header and footer links also open the same modals on public pages.
+- Public top navigation has been removed. The homepage focuses on machine browsing and filtering.
+- `List Your Machine` and `Buying Request` are only exposed as right-bottom floating buttons on public pages.
 - Seller submission starts with Terms. The machine form is hidden until the seller checks the confirmation box and clicks Continue.
-- The original `/submit-machine` and `/buying-request` pages remain as fallback direct pages.
+- The original `/submit-machine` and `/buying-request` routes remain as fallback direct pages but are not linked from the public header or footer.
 - Admin approval of seller contact release can trigger the buyer email with the verification checklist.
 
 ## Business-role disclaimer
@@ -226,7 +226,7 @@ npm start
 
 ## Railway build troubleshooting
 
-This v2.2 package intentionally does not include `package-lock.json`. The previous generated lockfile could contain environment-specific registry URLs that may slow or block Railway image builds. Railway/Nixpacks will install production dependencies from `package.json` using the public npm registry.
+This package includes a public-registry `package-lock.json`, `.npmrc`, and `nixpacks.toml`. Railway/Nixpacks should install production dependencies from `https://registry.npmjs.org/`.
 
 When uploading to GitHub, make sure `package.json`, `server.js`, `railway.json`, and `nixpacks.toml` are in the repository root. Do not upload the parent folder as an extra nested directory.
 

@@ -11,7 +11,7 @@
   </div>
   <div class="detail-actions">
     <% if (machine.status === 'sold') { %>
-      <a class="btn primary" href="/buying-request" data-open-modal="buying-request">Request Similar Machine</a>
+      <span class="muted detail-action-note">Sold listing. Use the floating Buying Request button to request a similar machine.</span>
     <% } else { %>
       <a class="btn primary" href="/machine/<%= machine.slug %>/request-contact">Request Seller Contact</a>
     <% } %>
