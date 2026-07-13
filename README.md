@@ -231,3 +231,10 @@ This v2.2 package intentionally does not include `package-lock.json`. The previo
 When uploading to GitHub, make sure `package.json`, `server.js`, `railway.json`, and `nixpacks.toml` are in the repository root. Do not upload the parent folder as an extra nested directory.
 
 If Railway stays on **Building the image** for too long, use **Deployments → View Logs** and confirm it reaches `npm install --omit=dev`. If it cannot fetch packages, clear the Railway build cache and redeploy.
+
+
+## Railway npm registry fix
+
+This package includes a public-registry `package-lock.json`, `.npmrc`, and `nixpacks.toml` so Railway should install dependencies from `https://registry.npmjs.org/`, not from any local/internal registry. If your previous GitHub repository still contains an old `package-lock.json`, replace it with this one or delete all files in the repository before uploading this version.
+
+If Railway still tries to download from an internal OpenAI/Caas registry, clear the build cache and redeploy without cache.
