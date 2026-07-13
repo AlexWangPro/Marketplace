@@ -1,0 +1,73 @@
+<%- include('../partials/head') %>
+<section class="detail-hero">
+  <div>
+    <p class="eyebrow"><%= machine.region || 'Region TBC' %> · <%= machine.country || 'Country TBC' %><%= machine.city ? ' · ' + machine.city : '' %></p>
+    <h1><%= machine.title %></h1>
+    <div class="detail-meta">
+      <span class="status-badge <%= machine.status %>"><%= statusLabel(machine.status) %></span>
+      <span><%= machine.status === 'sold' ? 'Sold listing remains visible for reference.' : money(machine.asking_price, machine.currency) %></span>
+      <% if (machine.price_negotiable && machine.status !== 'sold') { %><span>Negotiable</span><% } %>
+    </div>
+  </div>
+  <div class="detail-actions">
+    <% if (machine.status === 'sold') { %>
+      <a class="btn primary" href="/buying-request">Request Similar Machine</a>
+    <% } else { %>
+      <a class="btn primary" href="/machine/<%= machine.slug %>/request-contact">Request Seller Contact</a>
+    <% } %>
+    <a class="btn secondary" href="/inspection-checklist">Verification Checklist</a>
+  </div>
+</section>
+
+<section class="detail-layout">
+  <div>
+    <div class="gallery">
+      <% if (images.length) { %>
+        <% images.forEach((img, idx) => { %>
+          <img class="<%= idx === 0 ? 'main-photo' : '' %>" src="/images/<%= img.id %>" alt="<%= machine.title %> photo <%= idx + 1 %>">
+        <% }) %>
+      <% } else { %>
+        <div class="placeholder-image large">No images uploaded</div>
+      <% } %>
+    </div>
+
+    <section class="content-card">
+      <h2>Machine details</h2>
+      <p><%= machine.details || 'No additional description has been published yet.' %></p>
+      <% if (machine.video_url) { %>
+        <p><a class="text-link" href="<%= machine.video_url %>" target="_blank" rel="noopener">Open seller video →</a></p>
+      <% } %>
+    </section>
+
+    <section class="content-card warning-card">
+      <h2>Verification required before purchase</h2>
+      <p>Wall Printer Exchange does not inspect or guarantee this used machine. Request recent photos, live videos, nozzle tests, ownership documents, included accessory lists, and written transaction terms before making any payment.</p>
+      <a class="text-link" href="/inspection-checklist">View full verification checklist →</a>
+    </section>
+  </div>
+
+  <aside class="sidebar-card">
+    <h2>Key information</h2>
+    <dl class="spec-list">
+      <dt>Brand</dt><dd><%= machine.brand || 'Not specified' %></dd>
+      <dt>Model</dt><dd><%= machine.model || 'Not specified' %></dd>
+      <dt>Production year</dt><dd><%= machine.production_year || 'Not specified' %></dd>
+      <dt>Purchase year</dt><dd><%= machine.purchase_year || 'Not specified' %></dd>
+      <dt>Printhead</dt><dd><%= machine.printhead_type || 'Not specified' %></dd>
+      <dt>Head count</dt><dd><%= machine.printhead_count || 'Not specified' %></dd>
+      <dt>Working status</dt><dd><%= machine.working_status || 'Not specified' %></dd>
+      <dt>Location</dt><dd><%= [machine.region, machine.country, machine.city].filter(Boolean).join(' · ') || 'Not specified' %></dd>
+      <dt>Exact address</dt><dd>Hidden. Available only through seller after introduction / inspection arrangement.</dd>
+      <dt>Seller contact</dt><dd>Hidden publicly. Request introduction for admin review.</dd>
+    </dl>
+    <% if (machine.accessories) { %>
+      <h3>Included accessories</h3>
+      <p><%= machine.accessories %></p>
+    <% } %>
+    <% if (machine.known_defects) { %>
+      <h3>Known defects</h3>
+      <p><%= machine.known_defects %></p>
+    <% } %>
+  </aside>
+</section>
+<%- include('../partials/foot') %>

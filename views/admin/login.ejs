@@ -1,0 +1,12 @@
+<%- include('../partials/head') %>
+<section class="auth-card">
+  <h1>Admin Login</h1>
+  <p>Admin pages are hidden from public users and require administrator authentication.</p>
+  <% if (error) { %><div class="form-errors"><p><%= error %></p></div><% } %>
+  <form method="post" action="/admin/login">
+    <label>Email<input type="email" name="email" required></label>
+    <label>Password<input type="password" name="password" required></label>
+    <button class="btn primary large" type="submit">Login</button>
+  </form>
+</section>
+<%- include('../partials/foot') %>

@@ -1,0 +1,40 @@
+<%- include('../partials/head') %>
+<section class="page-hero narrow">
+  <p class="eyebrow">Request introduction</p>
+  <h1>Request seller contact for <%= machine.title %>.</h1>
+  <p>Seller contact details are not public. Admin reviews serious buyer requests before sharing seller information.</p>
+</section>
+
+<% if (errors && errors.length) { %><div class="form-errors"><% errors.forEach(e => { %><p><%= e %></p><% }) %></div><% } %>
+
+<section class="content-card mini-listing">
+  <h2><%= machine.title %></h2>
+  <p><%= [machine.region, machine.country, machine.city].filter(Boolean).join(' · ') %> · <%= money(machine.asking_price, machine.currency) %></p>
+</section>
+
+<form class="form-shell" method="post" action="/machine/<%= machine.slug %>/request-contact">
+  <section class="form-card">
+    <h2>Buyer contact</h2>
+    <div class="form-grid two">
+      <label>Your name *<input name="buyer_name" value="<%= form.buyer_name || '' %>" required></label>
+      <label>Company<input name="buyer_company" value="<%= form.buyer_company || '' %>"></label>
+      <label>Email *<input type="email" name="buyer_email" value="<%= form.buyer_email || '' %>" required></label>
+      <label>Phone<input name="buyer_phone" value="<%= form.buyer_phone || '' %>"></label>
+      <label>WhatsApp<input name="buyer_whatsapp" value="<%= form.buyer_whatsapp || '' %>"></label>
+      <label>Your country *<input name="buyer_country" value="<%= form.buyer_country || '' %>" required></label>
+      <label>Purchase timeline<input name="timeline" value="<%= form.timeline || '' %>" placeholder="Immediately / 1-3 months / later"></label>
+      <label>Need shipping support?<input name="shipping_help" value="<%= form.shipping_help || '' %>"></label>
+    </div>
+    <label>Inspection plan<textarea name="inspection_plan" rows="3" placeholder="How do you plan to verify the machine before payment?"><%= form.inspection_plan || '' %></textarea></label>
+    <label>Message to admin / seller<textarea name="message" rows="5"><%= form.message || '' %></textarea></label>
+  </section>
+
+  <section class="declaration-box compact">
+    <h2>Buyer acknowledgement</h2>
+    <p>I understand that Wall Printer Exchange does not inspect, guarantee, sell, warrant, collect payment, ship, install, or provide after-sales service for this machine. I am responsible for verifying the machine, seller, ownership, payment terms, shipping, customs, and all transaction details before purchase.</p>
+    <label class="check-row"><input type="checkbox" name="verification_ack" <%= form.verification_ack ? 'checked' : '' %>> I understand and accept buyer verification responsibility.</label>
+  </section>
+
+  <button class="btn primary large" type="submit">Request Seller Contact</button>
+</form>
+<%- include('../partials/foot') %>

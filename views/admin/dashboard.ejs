@@ -1,0 +1,39 @@
+<%- include('../partials/head') %>
+<section class="admin-top">
+  <div>
+    <p class="eyebrow">Admin</p>
+    <h1>Dashboard</h1>
+  </div>
+  <form method="post" action="/admin/logout"><button class="btn secondary" type="submit">Logout</button></form>
+</section>
+<nav class="admin-nav">
+  <a href="/admin">Dashboard</a>
+  <a href="/admin/machines">Machines</a>
+  <a href="/admin/requests">Buyer Requests</a>
+  <a href="/admin/logs">Logs</a>
+</nav>
+<section class="stats-grid">
+  <% machineCounts.forEach(row => { %><a class="stat-card" href="/admin/machines?status=<%= row.status %>"><span><%= row.count %></span><%= statusLabel(row.status) %> machines</a><% }) %>
+  <% requestCounts.forEach(row => { %><a class="stat-card" href="/admin/requests?status=<%= row.status %>"><span><%= row.count %></span><%= statusLabel(row.status) %> requests</a><% }) %>
+</section>
+<section class="admin-two-col">
+  <div class="content-card">
+    <h2>Recent machines</h2>
+    <table class="admin-table">
+      <thead><tr><th>Title</th><th>Status</th><th>Location</th><th>Date</th></tr></thead>
+      <tbody>
+        <% recentMachines.forEach(m => { %><tr><td><a href="/admin/machines/<%= m.id %>/edit"><%= m.title %></a></td><td><%= statusLabel(m.status) %></td><td><%= [m.region,m.country,m.city].filter(Boolean).join(' · ') %></td><td><%= formatDate(m.created_at) %></td></tr><% }) %>
+      </tbody>
+    </table>
+  </div>
+  <div class="content-card">
+    <h2>Recent requests</h2>
+    <table class="admin-table">
+      <thead><tr><th>Buyer</th><th>Type</th><th>Status</th><th>Date</th></tr></thead>
+      <tbody>
+        <% recentRequests.forEach(r => { %><tr><td><a href="/admin/requests/<%= r.id %>"><%= r.buyer_name %></a></td><td><%= r.request_type %></td><td><%= statusLabel(r.status) %></td><td><%= formatDate(r.created_at) %></td></tr><% }) %>
+      </tbody>
+    </table>
+  </div>
+</section>
+<%- include('../partials/foot') %>

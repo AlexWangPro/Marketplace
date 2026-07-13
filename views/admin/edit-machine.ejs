@@ -1,0 +1,77 @@
+<%- include('../partials/head') %>
+<section class="admin-top"><div><p class="eyebrow">Admin</p><h1>Edit Machine</h1></div><a class="btn secondary" href="/admin/machines">Back to Machines</a></section>
+<nav class="admin-nav"><a href="/admin">Dashboard</a><a href="/admin/machines">Machines</a><a href="/admin/requests">Buyer Requests</a><a href="/admin/logs">Logs</a></nav>
+<% if (errors && errors.length) { %><div class="form-errors"><% errors.forEach(e => { %><p><%= e %></p><% }) %></div><% } %>
+<form class="form-shell" method="post" action="/admin/machines/<%= machine.id %>/edit" enctype="multipart/form-data">
+  <section class="form-card">
+    <h2>Publication status</h2>
+    <div class="form-grid three">
+      <label>Status<select name="status"><% machineStatuses.forEach(s => { %><option value="<%= s %>" <%= machine.status === s ? 'selected' : '' %>><%= statusLabel(s) %></option><% }) %></select></label>
+      <label>Featured<select name="featured"><option value="">No</option><option value="on" <%= machine.featured ? 'selected' : '' %>>Yes</option></select></label>
+      <label>Current public URL<input value="/machine/<%= machine.slug %>" disabled></label>
+    </div>
+    <label>Admin notes<textarea name="admin_notes" rows="4"><%= machine.admin_notes || '' %></textarea></label>
+  </section>
+
+  <section class="form-card private-card">
+    <h2>Private seller contact</h2>
+    <p class="muted">This section is never displayed publicly. Use it for admin review and approved buyer introductions.</p>
+    <div class="form-grid two">
+      <label>Seller name<input name="seller_name" value="<%= machine.seller_name || '' %>"></label>
+      <label>Company<input name="seller_company" value="<%= machine.seller_company || '' %>"></label>
+      <label>Email<input name="seller_email" value="<%= machine.seller_email || '' %>"></label>
+      <label>Phone<input name="seller_phone" value="<%= machine.seller_phone || '' %>"></label>
+      <label>WhatsApp<input name="seller_whatsapp" value="<%= machine.seller_whatsapp || '' %>"></label>
+      <label>Preferred contact<input name="seller_preferred_contact" value="<%= machine.seller_preferred_contact || '' %>"></label>
+      <label>Exact address<input name="exact_address" value="<%= machine.exact_address || '' %>"></label>
+    </div>
+  </section>
+
+  <section class="form-card">
+    <h2>Public listing</h2>
+    <div class="form-grid two">
+      <label>Title<input name="title" value="<%= machine.title || '' %>" required></label>
+      <label>Brand<input name="brand" value="<%= machine.brand || '' %>"></label>
+      <label>Model<input name="model" value="<%= machine.model || '' %>"></label>
+      <label>Production year<input name="production_year" value="<%= machine.production_year || '' %>"></label>
+      <label>Purchase year<input name="purchase_year" value="<%= machine.purchase_year || '' %>"></label>
+      <label>Printhead type<input name="printhead_type" value="<%= machine.printhead_type || '' %>"></label>
+      <label>Printhead count<input type="number" name="printhead_count" value="<%= machine.printhead_count || '' %>"></label>
+      <label>Working status<input name="working_status" value="<%= machine.working_status || '' %>"></label>
+      <label>Asking price<input type="number" step="0.01" name="asking_price" value="<%= machine.asking_price || '' %>"></label>
+      <label>Currency<input name="currency" value="<%= machine.currency || 'USD' %>"></label>
+    </div>
+    <label class="check-row"><input type="checkbox" name="price_negotiable" <%= machine.price_negotiable ? 'checked' : '' %>> Price negotiable</label>
+    <label>Condition summary<textarea name="condition_summary" rows="3"><%= machine.condition_summary || '' %></textarea></label>
+    <label>Usage history<textarea name="usage_history" rows="3"><%= machine.usage_history || '' %></textarea></label>
+    <label>Known defects<textarea name="known_defects" rows="3"><%= machine.known_defects || '' %></textarea></label>
+    <label>Accessories<textarea name="accessories" rows="3"><%= machine.accessories || '' %></textarea></label>
+    <label>Details<textarea name="details" rows="6"><%= machine.details || '' %></textarea></label>
+    <label>Video URL<input name="video_url" value="<%= machine.video_url || '' %>"></label>
+  </section>
+
+  <section class="form-card">
+    <h2>Public location</h2>
+    <div class="form-grid three">
+      <label>Region<select name="region"><option value="">Select region</option><% regions.forEach(r => { %><option value="<%= r %>" <%= machine.region === r ? 'selected' : '' %>><%= r %></option><% }) %></select></label>
+      <label>Country<input name="country" value="<%= machine.country || '' %>"></label>
+      <label>City<input name="city" value="<%= machine.city || '' %>"></label>
+    </div>
+  </section>
+
+  <section class="form-card">
+    <h2>Images</h2>
+    <div class="admin-image-grid">
+      <% images.forEach(img => { %>
+        <div class="admin-image">
+          <img src="/images/<%= img.id %>" alt="">
+          <small><%= img.is_primary ? 'Primary' : 'Image' %> · <%= img.file_name || '' %></small>
+        </div>
+      <% }) %>
+    </div>
+    <label>Add new images<input type="file" name="new_images" accept="image/*" multiple></label>
+  </section>
+
+  <button class="btn primary large" type="submit">Save Changes</button>
+</form>
+<%- include('../partials/foot') %>

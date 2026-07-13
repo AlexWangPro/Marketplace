@@ -1,0 +1,27 @@
+<%- include('../partials/head') %>
+<section class="admin-top"><div><p class="eyebrow">Admin</p><h1>Buyer Requests</h1></div><a class="btn secondary" href="/admin">Dashboard</a></section>
+<nav class="admin-nav"><a href="/admin">Dashboard</a><a href="/admin/machines">Machines</a><a href="/admin/requests">Buyer Requests</a><a href="/admin/logs">Logs</a></nav>
+<form class="filters admin-filters" method="get" action="/admin/requests">
+  <input type="search" name="q" placeholder="Search buyer, email, listing..." value="<%= filters.q || '' %>">
+  <select name="type"><option value="">All types</option><option value="contact" <%= filters.type === 'contact' ? 'selected' : '' %>>Contact request</option><option value="buying" <%= filters.type === 'buying' ? 'selected' : '' %>>Buying request</option></select>
+  <select name="status"><option value="">All statuses</option><% requestStatuses.forEach(s => { %><option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= statusLabel(s) %></option><% }) %></select>
+  <button class="btn dark" type="submit">Filter</button>
+</form>
+<section class="content-card">
+<table class="admin-table rich">
+  <thead><tr><th>Buyer</th><th>Type</th><th>Machine / target</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
+  <tbody>
+    <% requests.forEach(r => { %>
+      <tr>
+        <td><strong><%= r.buyer_name %></strong><br><small><%= r.buyer_email %></small></td>
+        <td><%= r.request_type === 'contact' ? 'Seller contact' : 'Buying request' %></td>
+        <td><%= r.machine_title || r.target_region || 'Any suitable machine' %><br><small><%= [r.machine_region, r.machine_country].filter(Boolean).join(' · ') %></small></td>
+        <td><span class="status-badge <%= r.status %>"><%= statusLabel(r.status) %></span></td>
+        <td><%= formatDate(r.created_at) %></td>
+        <td><a class="btn tiny" href="/admin/requests/<%= r.id %>">Review</a></td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>
+</section>
+<%- include('../partials/foot') %>

@@ -1,0 +1,67 @@
+<%- include('../partials/head') %>
+<section class="admin-top"><div><p class="eyebrow">Admin</p><h1>Buyer Request Detail</h1></div><a class="btn secondary" href="/admin/requests">Back to Requests</a></section>
+<nav class="admin-nav"><a href="/admin">Dashboard</a><a href="/admin/machines">Machines</a><a href="/admin/requests">Buyer Requests</a><a href="/admin/logs">Logs</a></nav>
+<section class="detail-layout admin-detail-layout">
+  <div>
+    <section class="content-card">
+      <h2>Buyer</h2>
+      <dl class="spec-list two-col">
+        <dt>Name</dt><dd><%= request.buyer_name %></dd>
+        <dt>Company</dt><dd><%= request.buyer_company || '—' %></dd>
+        <dt>Email</dt><dd><%= request.buyer_email %></dd>
+        <dt>Phone</dt><dd><%= request.buyer_phone || '—' %></dd>
+        <dt>WhatsApp</dt><dd><%= request.buyer_whatsapp || '—' %></dd>
+        <dt>Country</dt><dd><%= request.buyer_country || '—' %></dd>
+        <dt>Timeline</dt><dd><%= request.timeline || '—' %></dd>
+        <dt>Shipping help</dt><dd><%= request.shipping_help || '—' %></dd>
+      </dl>
+      <h3>Inspection plan</h3><p><%= request.inspection_plan || '—' %></p>
+      <h3>Message</h3><p><%= request.message || '—' %></p>
+      <% if (request.request_type === 'buying') { %>
+        <h3>Buying requirement</h3>
+        <dl class="spec-list two-col">
+          <dt>Target region</dt><dd><%= request.target_region || 'Any' %></dd>
+          <dt>Budget</dt><dd><%= request.budget || '—' %></dd>
+          <dt>Preferred brand</dt><dd><%= request.preferred_brand || '—' %></dd>
+          <dt>Preferred printheads</dt><dd><%= request.preferred_printheads || '—' %></dd>
+        </dl>
+      <% } %>
+    </section>
+
+    <% if (request.machine_title) { %>
+      <section class="content-card private-card">
+        <h2>Private seller contact for requested listing</h2>
+        <p class="muted">Share this information only after you decide the buyer is qualified and the seller has consented under the listing declaration.</p>
+        <dl class="spec-list two-col">
+          <dt>Machine</dt><dd><a href="/admin/machines/<%= request.machine_id %>/edit"><%= request.machine_title %></a></dd>
+          <dt>Public location</dt><dd><%= [request.machine_region, request.machine_country, request.machine_city].filter(Boolean).join(' · ') || '—' %></dd>
+          <dt>Seller name</dt><dd><%= request.seller_name || '—' %></dd>
+          <dt>Company</dt><dd><%= request.seller_company || '—' %></dd>
+          <dt>Email</dt><dd><%= request.seller_email || '—' %></dd>
+          <dt>Phone</dt><dd><%= request.seller_phone || '—' %></dd>
+          <dt>WhatsApp</dt><dd><%= request.seller_whatsapp || '—' %></dd>
+          <dt>Preferred contact</dt><dd><%= request.seller_preferred_contact || '—' %></dd>
+          <dt>Exact address</dt><dd><%= request.exact_address || '—' %></dd>
+        </dl>
+        <div class="copy-box">
+Buyer: <%= request.buyer_name %> / <%= request.buyer_email %> / <%= request.buyer_whatsapp || request.buyer_phone || 'No phone provided' %>
+Seller: <%= request.seller_name || '' %> / <%= request.seller_email || '' %> / <%= request.seller_whatsapp || request.seller_phone || '' %>
+Machine: <%= request.machine_title %>
+        </div>
+      </section>
+    <% } %>
+  </div>
+
+  <aside class="sidebar-card">
+    <h2>Admin review</h2>
+    <form method="post" action="/admin/requests/<%= request.id %>/update">
+      <label>Status
+        <select name="status"><% requestStatuses.forEach(s => { %><option value="<%= s %>" <%= request.status === s ? 'selected' : '' %>><%= statusLabel(s) %></option><% }) %></select>
+      </label>
+      <label>Admin notes<textarea name="admin_notes" rows="8"><%= request.admin_notes || '' %></textarea></label>
+      <button class="btn primary" type="submit">Update Request</button>
+    </form>
+    <p class="muted small">Use “Contact Shared” after you manually introduce buyer and seller or decide to release seller contact details.</p>
+  </aside>
+</section>
+<%- include('../partials/foot') %>

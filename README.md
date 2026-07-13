@@ -1,21 +1,47 @@
-# WallPrinter.org Product Directory MVP
+# Wall Printer Exchange
 
-A lightweight product publishing platform for wallprinter.org.
+A lightweight Railway-ready MVP for **Wall Printer Exchange**, a used wall printer listing and buyer-request platform.
 
-It includes:
+The platform is designed as a listing and introduction service, not a transaction, escrow, inspection, shipping, or warranty provider.
 
-- Public product directory
-- Product detail pages
-- User registration and login
-- User dashboard
-- Product submission with up to 5 images
-- Admin dashboard
-- Admin product approval / rejection / archive / delete
-- Admin user management
-- Admin category management
-- Inquiry collection
-- Admin activity logs
-- PostgreSQL database auto-initialization
+## Core features
+
+### Public website
+
+- High-end, minimal B2B design
+- Public used wall printer listings
+- Regional filtering:
+  - Europe
+  - North America
+  - South America
+  - Asia
+  - Middle East
+  - Africa
+  - Oceania
+- Machine status shown publicly:
+  - Available
+  - Reserved
+  - Sold
+- Sold machines remain visible for reference and lead capture
+- Machine detail pages
+- Seller contact details hidden from public pages
+- Buyer verification checklist
+- Seller machine submission form with declaration acknowledgement
+- Buyer contact request form for a specific machine
+- General buying request form
+
+### Admin
+
+- Admin login
+- Admin-only dashboard
+- Review pending seller submissions
+- Approve listings by setting status to Available
+- Mark machines Reserved / Sold / Archived / Rejected
+- Edit listing information
+- View private seller contact details and exact address
+- Review buyer requests and contact requests
+- Mark requests as New / Reviewed / Contact Shared / Matched / Closed / Spam / Archived
+- Admin logs
 
 ## Tech stack
 
@@ -23,143 +49,142 @@ It includes:
 - Express
 - EJS templates
 - PostgreSQL
-- Railway-ready deployment
-
-This is intentionally simpler than a Next.js marketplace so it is easier to deploy, debug, and maintain during MVP stage.
-
-## Important MVP note about images
-
-Product images are stored as database data URLs for simplicity.
-
-Limit:
-
-- 5 images per product
-- 2MB per image
-
-This is good for an MVP and demo launch. For serious production traffic, move images to Cloudinary, S3, R2, or Supabase Storage.
-
-## Local setup
-
-1. Install dependencies:
-
-```bash
-npm install
-```
-
-2. Create `.env` from `.env.example`:
-
-```bash
-cp .env.example .env
-```
-
-3. Set your local PostgreSQL `DATABASE_URL` in `.env`.
-
-4. Start the app:
-
-```bash
-npm run dev
-```
-
-5. Open:
-
-```text
-http://localhost:3000
-```
+- Railway compatible
 
 ## Railway deployment
 
-1. Create a GitHub repository.
-2. Upload all files from this project to the repository root.
-3. In Railway, create a new project from your GitHub repository.
-4. Add a PostgreSQL database service in the same Railway project.
-5. Make sure the web service has access to `DATABASE_URL`.
-6. Add these variables to your web service:
+### 1. Upload to GitHub
+
+Unzip this project and upload the contents to a GitHub repository.
+
+### 2. Create Railway project
+
+Create a Railway project from the GitHub repository.
+
+### 3. Add PostgreSQL
+
+In the same Railway project:
 
 ```text
-SESSION_SECRET=use-a-long-random-secret
-ADMIN_EMAIL=your-admin-email@domain.com
++ New → Database → PostgreSQL
+```
+
+### 4. Add variables to the Web Service
+
+Important: add these variables to the **Web Service**, not only the PostgreSQL service.
+
+Required:
+
+```text
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+SESSION_SECRET=replace-with-a-long-random-string
+ADMIN_EMAIL=your-admin-email@example.com
 ADMIN_PASSWORD=your-strong-admin-password
 APP_URL=https://wallprinter.org
 NODE_ENV=production
 ```
 
-7. Deploy.
+If Railway names your database service `PostgreSQL`, use:
 
-The app creates database tables automatically on startup.
+```text
+DATABASE_URL=${{PostgreSQL.DATABASE_URL}}
+```
 
-## First admin login
+If Railway names it something else, use that exact service name.
 
-The system seeds one admin user when no admin user exists.
+Optional:
 
-Default values are:
+```text
+PGSSL=false
+```
+
+Railway internal PostgreSQL usually does not require SSL. If you use an external PostgreSQL provider that requires SSL, set:
+
+```text
+PGSSL=true
+```
+
+### 5. Deploy
+
+Railway should run:
+
+```text
+npm start
+```
+
+The app automatically creates the database tables and the first admin account from `ADMIN_EMAIL` and `ADMIN_PASSWORD`.
+
+## Admin login
+
+Visit:
+
+```text
+/admin/login
+```
+
+Use the email and password configured in Railway variables.
+
+If you do not set `ADMIN_EMAIL` and `ADMIN_PASSWORD`, the app creates this fallback admin account:
 
 ```text
 Email: admin@wallprinter.org
 Password: ChangeMe123!
 ```
 
-Before public launch, change these in Railway variables:
+Do not use the fallback password in production.
 
-```text
-ADMIN_EMAIL=
-ADMIN_PASSWORD=
-```
-
-Then redeploy before real users register.
-
-## Domain setup for wallprinter.org
+## Custom domain: wallprinter.org
 
 In Railway:
 
-1. Open your web service.
-2. Go to Settings.
-3. Find Public Networking.
-4. Add Custom Domain.
-5. Enter `wallprinter.org` or `www.wallprinter.org`.
-6. Railway will show the required DNS record.
-7. Add the DNS record at your domain/DNS provider.
-
-Recommended setup:
-
 ```text
-wallprinter.org     -> Railway app
-www.wallprinter.org -> Railway app or redirect to root domain
+Web Service → Settings → Networking → Custom Domain
 ```
 
-If you still use SiteGround for other sites, only point this specific domain or subdomain to Railway. Do not change unrelated domains.
-
-## Admin URLs
+Add:
 
 ```text
-/admin
-/admin/products
-/admin/users
-/admin/categories
-/admin/inquiries
-/admin/logs
+wallprinter.org
 ```
 
-## User URLs
+Railway will show the DNS records you need to add at your domain DNS provider.
+
+## Image storage note
+
+For MVP simplicity, uploaded images are stored in PostgreSQL as `BYTEA`.
+
+Default limits:
+
+- Up to 8 images per submission
+- 2MB maximum per image
+
+For serious production usage, move images to Cloudflare R2, S3, Cloudinary, or Supabase Storage.
+
+## Business-role disclaimer
+
+The website copy and forms are written around this positioning:
+
+- Wall Printer Exchange is a listing and introduction platform
+- Seller contact information is hidden publicly
+- Admin may share seller contact only with reviewed buyers
+- Buyers must independently verify the machine and seller
+- The platform does not inspect machines
+- The platform does not guarantee machine condition
+- The platform does not collect payment
+- The platform may charge an introduction fee, referral fee, success fee, listing fee, or commission when separately agreed in writing
+
+## Local development
+
+Create a PostgreSQL database and set `.env` values locally, then run:
 
 ```text
-/register
-/login
-/dashboard
-/dashboard/products/new
+npm install
+npm run dev
 ```
 
-## Production improvement checklist
+Or:
 
-After the MVP is working, the next best improvements are:
-
-1. Move product images from PostgreSQL to Cloudinary / S3 / R2 / Supabase Storage.
-2. Add email notification when a product is approved or rejected.
-3. Add inquiry email forwarding to admin.
-4. Add SEO fields for product pages.
-5. Add pagination for products and admin tables.
-6. Add product verification badges.
-7. Add anti-spam checks for registration and inquiries.
-8. Add password reset.
-9. Add admin product editing.
-10. Add multilingual pages if targeting global suppliers and buyers.
-
+```text
+npm install
+npm start
+```

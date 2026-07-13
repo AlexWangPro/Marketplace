@@ -1,0 +1,85 @@
+<%- include('../partials/head') %>
+<section class="page-hero narrow">
+  <p class="eyebrow">Seller submission</p>
+  <h1>Submit your used wall printer for review.</h1>
+  <p>Your listing will not be published automatically. Admin reviews the information first. Seller contact details and exact address are stored privately and are not shown publicly.</p>
+</section>
+
+<% if (errors && errors.length) { %>
+  <div class="form-errors"><% errors.forEach(e => { %><p><%= e %></p><% }) %></div>
+<% } %>
+
+<form class="form-shell" method="post" action="/submit-machine" enctype="multipart/form-data">
+  <section class="declaration-box">
+    <h2>Used Wall Printer Listing Declaration</h2>
+    <p>WallPrinter.org / Wall Printer Exchange is a used wall printer listing and introduction platform. It is not the seller, buyer, manufacturer, inspection provider, escrow provider, payment processor, shipping company, customs broker, installer, or warranty provider for any used machine listed on the website.</p>
+    <p>By submitting a machine, you confirm that all information you provide is accurate, complete, current, and not misleading to the best of your knowledge. This includes the machine brand, model, year, printhead configuration, working condition, usage history, known defects, included accessories, asking price, location, images, videos, and other relevant details.</p>
+    <p>You confirm that you are the lawful owner of the machine, or authorized by the lawful owner to submit the machine for sale. You also confirm that the machine is not subject to any undisclosed ownership dispute, lien, financing restriction, legal restriction, or third-party claim that would prevent its sale or transfer.</p>
+    <p>Your phone number, email address, WhatsApp number, exact address, and other direct contact information will not be publicly displayed. However, you authorize Wall Printer Exchange to share your contact information with qualified buyers who have expressed serious interest and have been reviewed by the administrator.</p>
+    <p>Buyers are responsible for their own due diligence. Wall Printer Exchange does not independently verify every technical detail and does not guarantee machine condition, print quality, remaining service life, accessories, software, ownership, shipping condition, customs clearance, installation, training, or after-sales support.</p>
+    <p>Wall Printer Exchange does not collect payment on behalf of buyers or sellers unless separately agreed in writing. Payment, refund, shipping, tax, import duty, customs, inspection, installation, training, and after-sale terms must be agreed directly between buyer and seller.</p>
+    <p>Wall Printer Exchange may charge a listing fee, introduction fee, referral fee, success fee, commission, or other service fee when applicable. Any such fee should be confirmed separately in writing.</p>
+    <label class="check-row"><input type="checkbox" name="declaration_accepted" <%= form.declaration_accepted ? 'checked' : '' %>> I have read, understood, and agree to this declaration.</label>
+    <label class="check-row"><input type="checkbox" name="seller_contact_release_consent" <%= form.seller_contact_release_consent ? 'checked' : '' %>> I agree that Wall Printer Exchange may share my contact information with qualified buyers after admin review.</label>
+  </section>
+
+  <section class="form-card">
+    <h2>Seller contact information</h2>
+    <div class="form-grid two">
+      <label>Seller name *<input name="seller_name" value="<%= form.seller_name || '' %>" required></label>
+      <label>Company<input name="seller_company" value="<%= form.seller_company || '' %>"></label>
+      <label>Email *<input type="email" name="seller_email" value="<%= form.seller_email || '' %>" required></label>
+      <label>Phone<input name="seller_phone" value="<%= form.seller_phone || '' %>"></label>
+      <label>WhatsApp<input name="seller_whatsapp" value="<%= form.seller_whatsapp || '' %>"></label>
+      <label>Preferred contact method<input name="seller_preferred_contact" value="<%= form.seller_preferred_contact || '' %>" placeholder="Email / WhatsApp / Phone"></label>
+    </div>
+  </section>
+
+  <section class="form-card">
+    <h2>Machine listing information</h2>
+    <div class="form-grid two">
+      <label>Listing title *<input name="title" value="<%= form.title || '' %>" required placeholder="Used DXonJet wall printer, 4 Ricoh heads"></label>
+      <label>Brand<input name="brand" value="<%= form.brand || '' %>" placeholder="DXonJet / WallPen / other"></label>
+      <label>Model<input name="model" value="<%= form.model || '' %>"></label>
+      <label>Production year<input name="production_year" value="<%= form.production_year || '' %>"></label>
+      <label>Purchase year<input name="purchase_year" value="<%= form.purchase_year || '' %>"></label>
+      <label>Printhead type<input name="printhead_type" value="<%= form.printhead_type || '' %>" placeholder="Ricoh GH2220 / Epson / other"></label>
+      <label>Number of printheads<input type="number" min="0" name="printhead_count" value="<%= form.printhead_count || '' %>"></label>
+      <label>Current working status<input name="working_status" value="<%= form.working_status || '' %>" placeholder="Working / needs repair / unknown"></label>
+      <label>Asking price<input type="number" step="0.01" min="0" name="asking_price" value="<%= form.asking_price || '' %>"></label>
+      <label>Currency<input name="currency" value="<%= form.currency || 'USD' %>"></label>
+    </div>
+    <label class="check-row"><input type="checkbox" name="price_negotiable" <%= form.price_negotiable ? 'checked' : '' %>> Price is negotiable</label>
+    <label>Condition summary<textarea name="condition_summary" rows="3" placeholder="Short public condition summary"><%= form.condition_summary || '' %></textarea></label>
+    <label>Usage history<textarea name="usage_history" rows="3"><%= form.usage_history || '' %></textarea></label>
+    <label>Known defects or problems<textarea name="known_defects" rows="3"><%= form.known_defects || '' %></textarea></label>
+    <label>Included accessories<textarea name="accessories" rows="3" placeholder="rails, computer, software, ink, spare parts, tools..."><%= form.accessories || '' %></textarea></label>
+    <label>Full details<textarea name="details" rows="5"><%= form.details || '' %></textarea></label>
+    <label>Video URL<input name="video_url" value="<%= form.video_url || '' %>" placeholder="YouTube / Google Drive / Dropbox link"></label>
+  </section>
+
+  <section class="form-card">
+    <h2>Location</h2>
+    <p class="muted">Region, country, and city may be shown publicly. Exact address is stored privately and is not displayed publicly.</p>
+    <div class="form-grid two">
+      <label>Region *
+        <select name="region" required>
+          <option value="">Select region</option>
+          <% regions.forEach(r => { %><option value="<%= r %>" <%= form.region === r ? 'selected' : '' %>><%= r %></option><% }) %>
+        </select>
+      </label>
+      <label>Country *<input name="country" value="<%= form.country || '' %>" required></label>
+      <label>City *<input name="city" value="<%= form.city || '' %>" required></label>
+      <label>Exact address<input name="exact_address" value="<%= form.exact_address || '' %>" placeholder="Private, not publicly displayed"></label>
+    </div>
+  </section>
+
+  <section class="form-card">
+    <h2>Images</h2>
+    <p class="muted">Upload up to 8 images. Each image maximum 2MB. The first image will be used as the primary listing image.</p>
+    <input type="file" name="images" accept="image/*" multiple>
+  </section>
+
+  <button class="btn primary large" type="submit">Submit Machine for Review</button>
+</form>
+<%- include('../partials/foot') %>

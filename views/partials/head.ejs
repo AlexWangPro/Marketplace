@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title ? title + ' · ' : '' %>Wall Printer Exchange</title>
+  <meta name="description" content="Reviewed used wall printer listings, seller introductions, and buyer-led machine verification.">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header class="site-header">
+  <a class="brand" href="/">
+    <span class="brand-mark">WPE</span>
+    <span>
+      <strong>Wall Printer Exchange</strong>
+      <small>Used wall printer listings</small>
+    </span>
+  </a>
+  <nav class="nav">
+    <a href="/">Machines</a>
+    <a href="/submit-machine">List Your Machine</a>
+    <a href="/buying-request">Buying Request</a>
+    <a href="/inspection-checklist">Verification Checklist</a>
+    <% if (admin) { %><a class="admin-link" href="/admin">Admin</a><% } %>
+  </nav>
+</header>
+<% if (flash) { %>
+  <div class="flash <%= flash.type %>"><%= flash.message %></div>
+<% } %>
+<main>

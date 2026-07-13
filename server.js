@@ -1,839 +1,742 @@
-require('dotenv').config();
-
 const express = require('express');
-const path = require('path');
 const session = require('express-session');
-const PgSession = require('connect-pg-simple')(session);
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
-const slugify = require('slugify');
-const crypto = require('crypto');
+const path = require('path');
 const { Pool } = require('pg');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const isProduction = process.env.NODE_ENV === 'production';
-const DATABASE_URL = process.env.DATABASE_URL;
-const SESSION_SECRET = process.env.SESSION_SECRET || 'dev-secret-change-me';
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@wallprinter.org';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'ChangeMe123!';
-const APP_URL = process.env.APP_URL || `http://localhost:${PORT}`;
 
-if (!DATABASE_URL) {
-  console.error('Missing DATABASE_URL. Add a PostgreSQL database and set DATABASE_URL.');
+const REGIONS = ['Europe', 'North America', 'South America', 'Asia', 'Middle East', 'Africa', 'Oceania'];
+const MACHINE_STATUSES = ['pending_review', 'available', 'reserved', 'sold', 'archived', 'rejected'];
+const REQUEST_STATUSES = ['new', 'reviewed', 'contact_shared', 'matched', 'closed', 'spam', 'archived'];
+
+if (!process.env.DATABASE_URL) {
+  console.error('\nMissing DATABASE_URL. Add a PostgreSQL database and set DATABASE_URL.');
+  console.error('Railway: Web Service → Variables → add DATABASE_URL=${{Postgres.DATABASE_URL}}\n');
   process.exit(1);
 }
 
 const pool = new Pool({
-  connectionString: DATABASE_URL,
-  ssl: isProduction ? { rejectUnauthorized: false } : false,
+  connectionString: process.env.DATABASE_URL,
+  ssl: String(process.env.PGSSL).toLowerCase() === 'true' ? { rejectUnauthorized: false } : false
 });
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 2 * 1024 * 1024, files: 5 },
+  limits: { fileSize: 2 * 1024 * 1024, files: 8 },
   fileFilter: (req, file, cb) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    if (!allowed.includes(file.mimetype)) {
-      return cb(new Error('Only JPG, PNG, WEBP, or GIF images are allowed.'));
-    }
+    if (!file.mimetype.startsWith('image/')) return cb(new Error('Only image uploads are allowed.'));
     cb(null, true);
-  },
+  }
 });
 
-function imageToDataUrl(file) {
-  return `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
-}
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+app.set('trust proxy', 1);
 
-function safeTrim(value) {
-  return typeof value === 'string' ? value.trim() : '';
-}
-
-function makeSlug(input) {
-  const base = slugify(safeTrim(input), { lower: true, strict: true });
-  return base || crypto.randomBytes(5).toString('hex');
-}
-
-async function uniqueProductSlug(title, existingId = null) {
-  const base = makeSlug(title);
-  let slug = base;
-  let counter = 2;
-  while (true) {
-    const params = existingId ? [slug, existingId] : [slug];
-    const sql = existingId
-      ? 'SELECT id FROM products WHERE slug = $1 AND id <> $2 LIMIT 1'
-      : 'SELECT id FROM products WHERE slug = $1 LIMIT 1';
-    const found = await pool.query(sql, params);
-    if (found.rowCount === 0) return slug;
-    slug = `${base}-${counter++}`;
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '1mb' }));
+app.use(session({
+  name: 'wpe.sid',
+  secret: process.env.SESSION_SECRET || 'dev-only-change-me',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 1000 * 60 * 60 * 8
   }
+}));
+
+app.use((req, res, next) => {
+  res.locals.currentPath = req.path;
+  res.locals.admin = req.session.admin || null;
+  res.locals.regions = REGIONS;
+  res.locals.machineStatuses = MACHINE_STATUSES;
+  res.locals.requestStatuses = REQUEST_STATUSES;
+  res.locals.flash = req.session.flash || null;
+  delete req.session.flash;
+  res.locals.statusLabel = statusLabel;
+  res.locals.formatDate = formatDate;
+  res.locals.money = money;
+  res.locals.truncate = truncate;
+  next();
+});
+
+function flash(req, type, message) {
+  req.session.flash = { type, message };
 }
 
-function formatDate(date) {
-  if (!date) return '';
-  return new Intl.DateTimeFormat('en', { year: 'numeric', month: 'short', day: '2-digit' }).format(new Date(date));
+function requireAdmin(req, res, next) {
+  if (!req.session.admin) return res.redirect('/admin/login');
+  next();
 }
 
-function shortText(text, max = 140) {
-  const value = safeTrim(text);
-  if (value.length <= max) return value;
-  return `${value.slice(0, max - 1)}…`;
+function statusLabel(status) {
+  const labels = {
+    pending_review: 'Pending Review',
+    available: 'Available',
+    reserved: 'Reserved',
+    sold: 'Sold',
+    archived: 'Archived',
+    rejected: 'Rejected',
+    new: 'New',
+    reviewed: 'Reviewed',
+    contact_shared: 'Contact Shared',
+    matched: 'Matched',
+    closed: 'Closed',
+    spam: 'Spam'
+  };
+  return labels[status] || status;
 }
 
-function money(value, currency = 'USD') {
+function formatDate(value) {
+  if (!value) return '';
+  return new Date(value).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function money(value, currency) {
   if (value === null || value === undefined || value === '') return 'Price on request';
   const number = Number(value);
   if (Number.isNaN(number)) return 'Price on request';
   return `${currency || 'USD'} ${number.toLocaleString()}`;
 }
 
-function requireAuth(req, res, next) {
-  if (!req.session.user) {
-    req.flash('error', 'Please log in first.');
-    return res.redirect('/login');
+function truncate(text, length = 140) {
+  if (!text) return '';
+  return text.length > length ? `${text.slice(0, length).trim()}…` : text;
+}
+
+function slugify(input) {
+  return String(input || 'machine')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80) || 'machine';
+}
+
+async function uniqueSlug(title) {
+  const base = slugify(title);
+  let slug = base;
+  let i = 2;
+  while (true) {
+    const { rows } = await pool.query('SELECT id FROM machines WHERE slug=$1 LIMIT 1', [slug]);
+    if (!rows.length) return slug;
+    slug = `${base}-${i++}`;
   }
-  next();
 }
 
-function requireAdmin(req, res, next) {
-  if (!req.session.user || req.session.user.role !== 'admin') {
-    req.flash('error', 'Admin access required.');
-    return res.redirect('/login');
+function bool(value) {
+  return value === 'on' || value === 'true' || value === true;
+}
+
+function numberOrNull(value) {
+  if (value === undefined || value === null || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+async function logAdmin(req, action, entityType, entityId, details = {}) {
+  try {
+    const adminId = req.session.admin ? req.session.admin.id : null;
+    await pool.query(
+      'INSERT INTO admin_logs (admin_id, action, entity_type, entity_id, details) VALUES ($1,$2,$3,$4,$5)',
+      [adminId, action, entityType, entityId, details]
+    );
+  } catch (err) {
+    console.error('Failed to write admin log:', err.message);
   }
-  next();
-}
-
-function ensureActive(req, res, next) {
-  if (req.session.user && req.session.user.status === 'disabled') {
-    req.session.destroy(() => res.redirect('/login'));
-    return;
-  }
-  next();
-}
-
-async function getCurrentUser(userId) {
-  if (!userId) return null;
-  const result = await pool.query('SELECT id, name, email, role, status, created_at FROM users WHERE id = $1', [userId]);
-  return result.rows[0] || null;
-}
-
-async function logAdmin(adminId, action, targetType, targetId, details = {}) {
-  await pool.query(
-    'INSERT INTO admin_logs (admin_user_id, action, target_type, target_id, details) VALUES ($1, $2, $3, $4, $5)',
-    [adminId, action, targetType, targetId, JSON.stringify(details)]
-  );
 }
 
 async function initDb() {
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS users (
+    CREATE TABLE IF NOT EXISTS admin_users (
       id SERIAL PRIMARY KEY,
-      name TEXT NOT NULL,
       email TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
-      role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
-      status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'disabled')),
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    );
-
-    CREATE TABLE IF NOT EXISTS categories (
-      id SERIAL PRIMARY KEY,
-      name TEXT UNIQUE NOT NULL,
-      slug TEXT UNIQUE NOT NULL,
+      role TEXT NOT NULL DEFAULT 'admin',
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
-    CREATE TABLE IF NOT EXISTS products (
+    CREATE TABLE IF NOT EXISTS machines (
       id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
+      slug TEXT UNIQUE NOT NULL,
       title TEXT NOT NULL,
-      slug TEXT UNIQUE NOT NULL,
-      summary TEXT,
-      description TEXT NOT NULL,
-      price NUMERIC(12,2),
+      brand TEXT,
+      model TEXT,
+      production_year TEXT,
+      purchase_year TEXT,
+      printhead_type TEXT,
+      printhead_count INTEGER,
+      working_status TEXT,
+      condition_summary TEXT,
+      usage_history TEXT,
+      known_defects TEXT,
+      accessories TEXT,
+      asking_price NUMERIC(12,2),
       currency TEXT DEFAULT 'USD',
-      location TEXT,
-      company TEXT,
-      contact_email TEXT,
-      whatsapp TEXT,
-      website TEXT,
-      status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'archived')),
-      rejection_reason TEXT,
-      views INTEGER NOT NULL DEFAULT 0,
-      published_at TIMESTAMPTZ,
+      price_negotiable BOOLEAN DEFAULT false,
+      video_url TEXT,
+      details TEXT,
+      region TEXT,
+      country TEXT,
+      city TEXT,
+      exact_address TEXT,
+      seller_name TEXT NOT NULL,
+      seller_company TEXT,
+      seller_email TEXT NOT NULL,
+      seller_phone TEXT,
+      seller_whatsapp TEXT,
+      seller_preferred_contact TEXT,
+      seller_contact_release_consent BOOLEAN DEFAULT false,
+      declaration_accepted BOOLEAN DEFAULT false,
+      status TEXT NOT NULL DEFAULT 'pending_review',
+      featured BOOLEAN DEFAULT false,
+      admin_notes TEXT,
+      approved_at TIMESTAMPTZ,
+      sold_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
-    CREATE TABLE IF NOT EXISTS product_images (
+    CREATE INDEX IF NOT EXISTS idx_machines_status ON machines(status);
+    CREATE INDEX IF NOT EXISTS idx_machines_region ON machines(region);
+    CREATE INDEX IF NOT EXISTS idx_machines_country ON machines(country);
+    CREATE INDEX IF NOT EXISTS idx_machines_featured ON machines(featured);
+
+    CREATE TABLE IF NOT EXISTS machine_images (
       id SERIAL PRIMARY KEY,
-      product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-      image_data_url TEXT NOT NULL,
-      alt_text TEXT,
-      sort_order INTEGER NOT NULL DEFAULT 0,
+      machine_id INTEGER NOT NULL REFERENCES machines(id) ON DELETE CASCADE,
+      image BYTEA NOT NULL,
+      mime_type TEXT NOT NULL,
+      file_name TEXT,
+      is_primary BOOLEAN DEFAULT false,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
-    CREATE TABLE IF NOT EXISTS inquiries (
+    CREATE INDEX IF NOT EXISTS idx_machine_images_machine ON machine_images(machine_id);
+
+    CREATE TABLE IF NOT EXISTS buyer_requests (
       id SERIAL PRIMARY KEY,
-      product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-      name TEXT NOT NULL,
-      email TEXT NOT NULL,
-      message TEXT NOT NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      request_type TEXT NOT NULL DEFAULT 'buying',
+      machine_id INTEGER REFERENCES machines(id) ON DELETE SET NULL,
+      buyer_name TEXT NOT NULL,
+      buyer_company TEXT,
+      buyer_email TEXT NOT NULL,
+      buyer_phone TEXT,
+      buyer_whatsapp TEXT,
+      buyer_country TEXT,
+      target_region TEXT,
+      budget TEXT,
+      preferred_brand TEXT,
+      preferred_printheads TEXT,
+      timeline TEXT,
+      inspection_plan TEXT,
+      shipping_help TEXT,
+      message TEXT,
+      verification_ack BOOLEAN DEFAULT false,
+      status TEXT NOT NULL DEFAULT 'new',
+      admin_notes TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+
+    CREATE INDEX IF NOT EXISTS idx_buyer_requests_status ON buyer_requests(status);
+    CREATE INDEX IF NOT EXISTS idx_buyer_requests_type ON buyer_requests(request_type);
+    CREATE INDEX IF NOT EXISTS idx_buyer_requests_machine ON buyer_requests(machine_id);
 
     CREATE TABLE IF NOT EXISTS admin_logs (
       id SERIAL PRIMARY KEY,
-      admin_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      admin_id INTEGER REFERENCES admin_users(id) ON DELETE SET NULL,
       action TEXT NOT NULL,
-      target_type TEXT NOT NULL,
-      target_id INTEGER,
+      entity_type TEXT,
+      entity_id INTEGER,
       details JSONB DEFAULT '{}'::jsonb,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-
-    CREATE INDEX IF NOT EXISTS idx_products_status_created ON products(status, created_at DESC);
-    CREATE INDEX IF NOT EXISTS idx_products_user ON products(user_id);
-    CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
-    CREATE INDEX IF NOT EXISTS idx_product_images_product ON product_images(product_id, sort_order);
-    CREATE INDEX IF NOT EXISTS idx_inquiries_product ON inquiries(product_id, created_at DESC);
   `);
 
-  const defaults = ['Wall Printers', 'Floor Printers', 'UV Printers', 'Printing Materials', 'Accessories', 'Services'];
-  for (const name of defaults) {
-    await pool.query(
-      'INSERT INTO categories (name, slug) VALUES ($1, $2) ON CONFLICT (slug) DO NOTHING',
-      [name, makeSlug(name)]
-    );
-  }
-
-  const adminExists = await pool.query('SELECT id FROM users WHERE role = $1 LIMIT 1', ['admin']);
-  if (adminExists.rowCount === 0) {
-    const hash = await bcrypt.hash(ADMIN_PASSWORD, 12);
-    await pool.query(
-      'INSERT INTO users (name, email, password_hash, role) VALUES ($1, $2, $3, $4) ON CONFLICT (email) DO UPDATE SET role = $4, password_hash = $3, status = $5',
-      ['Admin', ADMIN_EMAIL.toLowerCase(), hash, 'admin', 'active']
-    );
-    console.log(`Seeded admin user: ${ADMIN_EMAIL}. Change ADMIN_PASSWORD after first deployment.`);
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@wallprinter.org';
+  const adminPassword = process.env.ADMIN_PASSWORD || 'ChangeMe123!';
+  const { rows } = await pool.query('SELECT id FROM admin_users WHERE email=$1', [adminEmail]);
+  if (!rows.length) {
+    const hash = await bcrypt.hash(adminPassword, 12);
+    await pool.query('INSERT INTO admin_users (email, password_hash) VALUES ($1,$2)', [adminEmail, hash]);
+    console.log(`Created admin user: ${adminEmail}`);
+    if (!process.env.ADMIN_PASSWORD) console.log('WARNING: ADMIN_PASSWORD not set. Default password is ChangeMe123! Change it before production use.');
   }
 }
 
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-app.set('trust proxy', 1);
-
-app.use(helmet({
-  contentSecurityPolicy: false,
-  crossOriginEmbedderPolicy: false,
-}));
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.urlencoded({ extended: true, limit: '8mb' }));
-app.use(express.json({ limit: '8mb' }));
-app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 250, standardHeaders: true, legacyHeaders: false }));
-app.use(session({
-  store: new PgSession({ pool, createTableIfMissing: true }),
-  secret: SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: 'lax',
-    maxAge: 1000 * 60 * 60 * 24 * 14,
-  },
-}));
-
-app.use((req, res, next) => {
-  req.flash = (type, message) => {
-    req.session.flash = req.session.flash || [];
-    req.session.flash.push({ type, message });
-  };
-  res.locals.flash = req.session.flash || [];
-  req.session.flash = [];
-  res.locals.user = req.session.user || null;
-  res.locals.path = req.path;
-  res.locals.formatDate = formatDate;
-  res.locals.shortText = shortText;
-  res.locals.money = money;
-  res.locals.appUrl = APP_URL;
-  next();
-});
-
-app.use(async (req, res, next) => {
-  if (req.session.user) {
-    const fresh = await getCurrentUser(req.session.user.id);
-    if (!fresh || fresh.status === 'disabled') {
-      req.session.destroy(() => res.redirect('/login'));
-      return;
-    }
-    req.session.user = fresh;
-    res.locals.user = fresh;
-  }
-  next();
-});
-app.use(ensureActive);
-
-async function loadCategories() {
-  const result = await pool.query('SELECT * FROM categories ORDER BY name ASC');
-  return result.rows;
-}
-
-async function productWithImages(idOrSlug, publicOnly = false) {
-  const where = Number.isInteger(Number(idOrSlug)) ? 'p.id = $1' : 'p.slug = $1';
-  const statusSql = publicOnly ? " AND p.status = 'approved'" : '';
-  const result = await pool.query(`
-    SELECT p.*, c.name AS category_name, c.slug AS category_slug, u.name AS seller_name, u.email AS seller_email
-    FROM products p
-    LEFT JOIN categories c ON c.id = p.category_id
-    JOIN users u ON u.id = p.user_id
-    WHERE ${where}${statusSql}
+async function getMachineWithPrimaryImage(idOrSlug, bySlug = true) {
+  const where = bySlug ? 'm.slug=$1' : 'm.id=$1';
+  const { rows } = await pool.query(`
+    SELECT m.*, img.id AS primary_image_id
+    FROM machines m
+    LEFT JOIN LATERAL (
+      SELECT id FROM machine_images WHERE machine_id=m.id ORDER BY is_primary DESC, id ASC LIMIT 1
+    ) img ON true
+    WHERE ${where}
     LIMIT 1
   `, [idOrSlug]);
-  const product = result.rows[0];
-  if (!product) return null;
-  const images = await pool.query('SELECT * FROM product_images WHERE product_id = $1 ORDER BY sort_order ASC, id ASC', [product.id]);
-  product.images = images.rows;
-  return product;
+  return rows[0];
 }
+
+app.get('/health', (req, res) => res.status(200).send('ok'));
 
 app.get('/', async (req, res, next) => {
   try {
-    const [featured, categories, counts] = await Promise.all([
-      pool.query(`
-        SELECT p.*, c.name AS category_name,
-          (SELECT image_data_url FROM product_images WHERE product_id = p.id ORDER BY sort_order ASC, id ASC LIMIT 1) AS image
-        FROM products p
-        LEFT JOIN categories c ON c.id = p.category_id
-        WHERE p.status = 'approved'
-        ORDER BY p.published_at DESC NULLS LAST, p.created_at DESC
-        LIMIT 8
-      `),
-      loadCategories(),
-      pool.query(`
-        SELECT
-          COUNT(*) FILTER (WHERE status = 'approved') AS approved,
-          COUNT(*) FILTER (WHERE status = 'pending') AS pending,
-          COUNT(*) AS total
-        FROM products
-      `),
-    ]);
-    res.render('home', { title: 'Wall Printer Product Marketplace', featured: featured.rows, categories, counts: counts.rows[0] });
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.get('/products', async (req, res, next) => {
-  try {
-    const search = safeTrim(req.query.search);
-    const category = safeTrim(req.query.category);
+    const { region, status, q } = req.query;
     const params = [];
-    const where = ["p.status = 'approved'"];
-    if (search) {
-      params.push(`%${search}%`);
-      where.push(`(p.title ILIKE $${params.length} OR p.summary ILIKE $${params.length} OR p.description ILIKE $${params.length} OR p.company ILIKE $${params.length})`);
+    const clauses = [`m.status IN ('available','reserved','sold')`];
+    if (region && REGIONS.includes(region)) {
+      params.push(region);
+      clauses.push(`m.region=$${params.length}`);
     }
-    if (category) {
-      params.push(category);
-      where.push(`c.slug = $${params.length}`);
+    if (status && ['available', 'reserved', 'sold'].includes(status)) {
+      params.push(status);
+      clauses.push(`m.status=$${params.length}`);
     }
-    const products = await pool.query(`
-      SELECT p.*, c.name AS category_name, c.slug AS category_slug,
-        (SELECT image_data_url FROM product_images WHERE product_id = p.id ORDER BY sort_order ASC, id ASC LIMIT 1) AS image
-      FROM products p
-      LEFT JOIN categories c ON c.id = p.category_id
-      WHERE ${where.join(' AND ')}
-      ORDER BY p.published_at DESC NULLS LAST, p.created_at DESC
+    if (q) {
+      params.push(`%${q}%`);
+      clauses.push(`(m.title ILIKE $${params.length} OR m.brand ILIKE $${params.length} OR m.model ILIKE $${params.length} OR m.country ILIKE $${params.length} OR m.city ILIKE $${params.length})`);
+    }
+    const { rows: machines } = await pool.query(`
+      SELECT m.*, img.id AS primary_image_id
+      FROM machines m
+      LEFT JOIN LATERAL (
+        SELECT id FROM machine_images WHERE machine_id=m.id ORDER BY is_primary DESC, id ASC LIMIT 1
+      ) img ON true
+      WHERE ${clauses.join(' AND ')}
+      ORDER BY m.featured DESC, CASE m.status WHEN 'available' THEN 1 WHEN 'reserved' THEN 2 WHEN 'sold' THEN 3 ELSE 4 END, m.created_at DESC
     `, params);
-    res.render('products', { title: 'Products', products: products.rows, categories: await loadCategories(), search, category });
-  } catch (error) {
-    next(error);
+
+    const { rows: stats } = await pool.query(`
+      SELECT region, COUNT(*)::int AS count
+      FROM machines
+      WHERE status IN ('available','reserved','sold') AND region IS NOT NULL AND region <> ''
+      GROUP BY region
+      ORDER BY region
+    `);
+
+    res.render('public/index', {
+      title: 'Wall Printer Exchange',
+      machines,
+      stats,
+      filters: { region, status, q }
+    });
+  } catch (err) {
+    next(err);
   }
 });
 
-app.get('/products/:slug', async (req, res, next) => {
+app.get('/machine/:slug', async (req, res, next) => {
   try {
-    const product = await productWithImages(req.params.slug, true);
-    if (!product) return res.status(404).render('404', { title: 'Product not found' });
-    await pool.query('UPDATE products SET views = views + 1 WHERE id = $1', [product.id]);
-    res.render('product-detail', { title: product.title, product });
-  } catch (error) {
-    next(error);
+    const machine = await getMachineWithPrimaryImage(req.params.slug, true);
+    if (!machine || !['available', 'reserved', 'sold'].includes(machine.status)) return res.status(404).render('public/404', { title: 'Listing not found' });
+    const { rows: images } = await pool.query('SELECT id, is_primary FROM machine_images WHERE machine_id=$1 ORDER BY is_primary DESC, id ASC', [machine.id]);
+    res.render('public/machine', { title: machine.title, machine, images });
+  } catch (err) {
+    next(err);
   }
 });
 
-app.post('/products/:id/inquiry', async (req, res, next) => {
-  try {
-    const product = await productWithImages(Number(req.params.id), true);
-    if (!product) return res.status(404).render('404', { title: 'Product not found' });
-    const name = safeTrim(req.body.name);
-    const email = safeTrim(req.body.email).toLowerCase();
-    const message = safeTrim(req.body.message);
-    if (!name || !email || !message) {
-      req.flash('error', 'Please fill in name, email, and message.');
-      return res.redirect(`/products/${product.slug}#inquiry`);
-    }
-    await pool.query('INSERT INTO inquiries (product_id, name, email, message) VALUES ($1, $2, $3, $4)', [product.id, name, email, message]);
-    req.flash('success', 'Inquiry submitted. The seller/admin can review it in the dashboard.');
-    res.redirect(`/products/${product.slug}#inquiry`);
-  } catch (error) {
-    next(error);
-  }
+app.get('/submit-machine', (req, res) => {
+  res.render('public/submit-machine', { title: 'Submit Your Machine', form: {}, errors: [] });
 });
 
-app.get('/register', (req, res) => res.render('auth-register', { title: 'Create account' }));
+app.post('/submit-machine', upload.array('images', 8), async (req, res, next) => {
+  const f = req.body;
+  const errors = [];
+  if (!bool(f.declaration_accepted)) errors.push('You must accept the listing declaration before submitting.');
+  if (!bool(f.seller_contact_release_consent)) errors.push('You must allow us to share your contact information with qualified buyers after admin review.');
+  ['title', 'seller_name', 'seller_email', 'region', 'country', 'city'].forEach(field => {
+    if (!f[field] || !String(f[field]).trim()) errors.push(`${field.replace(/_/g, ' ')} is required.`);
+  });
+  if (f.region && !REGIONS.includes(f.region)) errors.push('Please select a valid region.');
 
-app.post('/register', async (req, res, next) => {
-  try {
-    const name = safeTrim(req.body.name);
-    const email = safeTrim(req.body.email).toLowerCase();
-    const password = String(req.body.password || '');
-    if (!name || !email || password.length < 8) {
-      req.flash('error', 'Please enter your name, email, and a password with at least 8 characters.');
-      return res.redirect('/register');
-    }
-    const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
-    if (existing.rowCount) {
-      req.flash('error', 'This email is already registered.');
-      return res.redirect('/login');
-    }
-    const hash = await bcrypt.hash(password, 12);
-    const result = await pool.query(
-      'INSERT INTO users (name, email, password_hash, role) VALUES ($1, $2, $3, $4) RETURNING id, name, email, role, status, created_at',
-      [name, email, hash, 'user']
-    );
-    req.session.user = result.rows[0];
-    req.flash('success', 'Account created. You can now publish your product.');
-    res.redirect('/dashboard');
-  } catch (error) {
-    next(error);
-  }
-});
+  if (errors.length) return res.status(400).render('public/submit-machine', { title: 'Submit Your Machine', form: f, errors });
 
-app.get('/login', (req, res) => res.render('auth-login', { title: 'Log in' }));
-
-app.post('/login', async (req, res, next) => {
-  try {
-    const email = safeTrim(req.body.email).toLowerCase();
-    const password = String(req.body.password || '');
-    const result = await pool.query('SELECT * FROM users WHERE email = $1 LIMIT 1', [email]);
-    const user = result.rows[0];
-    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
-      req.flash('error', 'Invalid email or password.');
-      return res.redirect('/login');
-    }
-    if (user.status === 'disabled') {
-      req.flash('error', 'This account is disabled.');
-      return res.redirect('/login');
-    }
-    req.session.user = { id: user.id, name: user.name, email: user.email, role: user.role, status: user.status, created_at: user.created_at };
-    req.flash('success', 'Welcome back.');
-    res.redirect(user.role === 'admin' ? '/admin' : '/dashboard');
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.post('/logout', (req, res) => {
-  req.session.destroy(() => res.redirect('/'));
-});
-
-app.get('/dashboard', requireAuth, async (req, res, next) => {
-  try {
-    const products = await pool.query(`
-      SELECT p.*, c.name AS category_name,
-        (SELECT image_data_url FROM product_images WHERE product_id = p.id ORDER BY sort_order ASC, id ASC LIMIT 1) AS image
-      FROM products p
-      LEFT JOIN categories c ON c.id = p.category_id
-      WHERE p.user_id = $1
-      ORDER BY p.created_at DESC
-    `, [req.session.user.id]);
-    res.render('dashboard', { title: 'My Products', products: products.rows });
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.get('/dashboard/products/new', requireAuth, async (req, res, next) => {
-  try {
-    res.render('product-form', { title: 'Publish Product', product: {}, categories: await loadCategories(), action: '/dashboard/products/new', mode: 'create' });
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.post('/dashboard/products/new', requireAuth, upload.array('images', 5), async (req, res, next) => {
   const client = await pool.connect();
   try {
-    const body = req.body;
-    const title = safeTrim(body.title);
-    const description = safeTrim(body.description);
-    if (!title || !description) {
-      req.flash('error', 'Product title and description are required.');
-      return res.redirect('/dashboard/products/new');
-    }
-    const slug = await uniqueProductSlug(title);
     await client.query('BEGIN');
-    const result = await client.query(`
-      INSERT INTO products (user_id, category_id, title, slug, summary, description, price, currency, location, company, contact_email, whatsapp, website, status)
-      VALUES ($1, NULLIF($2, '')::INTEGER, $3, $4, $5, $6, NULLIF($7, '')::NUMERIC, $8, $9, $10, $11, $12, $13, 'pending')
-      RETURNING id
+    const slug = await uniqueSlug(f.title);
+    const { rows } = await client.query(`
+      INSERT INTO machines (
+        slug,title,brand,model,production_year,purchase_year,printhead_type,printhead_count,
+        working_status,condition_summary,usage_history,known_defects,accessories,asking_price,currency,
+        price_negotiable,video_url,details,region,country,city,exact_address,seller_name,seller_company,
+        seller_email,seller_phone,seller_whatsapp,seller_preferred_contact,seller_contact_release_consent,declaration_accepted
+      ) VALUES (
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30
+      ) RETURNING id
     `, [
-      req.session.user.id,
-      safeTrim(body.category_id),
-      title,
-      slug,
-      safeTrim(body.summary),
-      description,
-      safeTrim(body.price),
-      safeTrim(body.currency) || 'USD',
-      safeTrim(body.location),
-      safeTrim(body.company),
-      safeTrim(body.contact_email),
-      safeTrim(body.whatsapp),
-      safeTrim(body.website),
+      slug, f.title, f.brand || null, f.model || null, f.production_year || null, f.purchase_year || null,
+      f.printhead_type || null, numberOrNull(f.printhead_count), f.working_status || null, f.condition_summary || null,
+      f.usage_history || null, f.known_defects || null, f.accessories || null, numberOrNull(f.asking_price), f.currency || 'USD',
+      bool(f.price_negotiable), f.video_url || null, f.details || null, f.region, f.country, f.city, f.exact_address || null,
+      f.seller_name, f.seller_company || null, f.seller_email, f.seller_phone || null, f.seller_whatsapp || null,
+      f.seller_preferred_contact || null, bool(f.seller_contact_release_consent), bool(f.declaration_accepted)
     ]);
-    const productId = result.rows[0].id;
+    const machineId = rows[0].id;
     const files = req.files || [];
     for (let i = 0; i < files.length; i++) {
-      await client.query('INSERT INTO product_images (product_id, image_data_url, alt_text, sort_order) VALUES ($1, $2, $3, $4)', [productId, imageToDataUrl(files[i]), title, i]);
+      await client.query('INSERT INTO machine_images (machine_id, image, mime_type, file_name, is_primary) VALUES ($1,$2,$3,$4,$5)', [machineId, files[i].buffer, files[i].mimetype, files[i].originalname, i === 0]);
     }
     await client.query('COMMIT');
-    req.flash('success', 'Product submitted. Admin will review it before publishing.');
-    res.redirect('/dashboard');
-  } catch (error) {
+    res.render('public/submit-success', { title: 'Submission Received', type: 'machine' });
+  } catch (err) {
     await client.query('ROLLBACK');
-    next(error);
+    next(err);
   } finally {
     client.release();
   }
 });
 
-app.get('/dashboard/products/:id/edit', requireAuth, async (req, res, next) => {
-  try {
-    const product = await productWithImages(Number(req.params.id), false);
-    if (!product || product.user_id !== req.session.user.id) {
-      req.flash('error', 'Product not found.');
-      return res.redirect('/dashboard');
-    }
-    res.render('product-form', { title: 'Edit Product', product, categories: await loadCategories(), action: `/dashboard/products/${product.id}/edit`, mode: 'edit' });
-  } catch (error) {
-    next(error);
-  }
+app.get('/buying-request', (req, res) => {
+  res.render('public/buying-request', { title: 'Submit Buying Request', form: {}, errors: [], machine: null });
 });
 
-app.post('/dashboard/products/:id/edit', requireAuth, upload.array('images', 5), async (req, res, next) => {
-  const client = await pool.connect();
+app.post('/buying-request', async (req, res, next) => {
   try {
-    const product = await productWithImages(Number(req.params.id), false);
-    if (!product || product.user_id !== req.session.user.id) {
-      req.flash('error', 'Product not found.');
-      return res.redirect('/dashboard');
-    }
-    const body = req.body;
-    const title = safeTrim(body.title);
-    const description = safeTrim(body.description);
-    if (!title || !description) {
-      req.flash('error', 'Product title and description are required.');
-      return res.redirect(`/dashboard/products/${product.id}/edit`);
-    }
-    const slug = await uniqueProductSlug(title, product.id);
-    await client.query('BEGIN');
-    await client.query(`
-      UPDATE products SET
-        category_id = NULLIF($1, '')::INTEGER,
-        title = $2,
-        slug = $3,
-        summary = $4,
-        description = $5,
-        price = NULLIF($6, '')::NUMERIC,
-        currency = $7,
-        location = $8,
-        company = $9,
-        contact_email = $10,
-        whatsapp = $11,
-        website = $12,
-        status = CASE WHEN status = 'approved' THEN 'pending' ELSE status END,
-        rejection_reason = NULL,
-        updated_at = NOW()
-      WHERE id = $13 AND user_id = $14
+    const f = req.body;
+    const errors = [];
+    ['buyer_name', 'buyer_email', 'buyer_country'].forEach(field => {
+      if (!f[field] || !String(f[field]).trim()) errors.push(`${field.replace(/_/g, ' ')} is required.`);
+    });
+    if (!bool(f.verification_ack)) errors.push('You must acknowledge that buyers are responsible for verification.');
+    if (f.target_region && !REGIONS.includes(f.target_region)) errors.push('Please select a valid target region.');
+    if (errors.length) return res.status(400).render('public/buying-request', { title: 'Submit Buying Request', form: f, errors, machine: null });
+
+    await pool.query(`
+      INSERT INTO buyer_requests (
+        request_type,buyer_name,buyer_company,buyer_email,buyer_phone,buyer_whatsapp,buyer_country,
+        target_region,budget,preferred_brand,preferred_printheads,timeline,inspection_plan,shipping_help,message,verification_ack
+      ) VALUES ('buying',$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
     `, [
-      safeTrim(body.category_id),
-      title,
-      slug,
-      safeTrim(body.summary),
-      description,
-      safeTrim(body.price),
-      safeTrim(body.currency) || 'USD',
-      safeTrim(body.location),
-      safeTrim(body.company),
-      safeTrim(body.contact_email),
-      safeTrim(body.whatsapp),
-      safeTrim(body.website),
-      product.id,
-      req.session.user.id,
+      f.buyer_name, f.buyer_company || null, f.buyer_email, f.buyer_phone || null, f.buyer_whatsapp || null,
+      f.buyer_country, f.target_region || null, f.budget || null, f.preferred_brand || null, f.preferred_printheads || null,
+      f.timeline || null, f.inspection_plan || null, f.shipping_help || null, f.message || null, bool(f.verification_ack)
     ]);
-    const files = req.files || [];
-    if (files.length) {
-      await client.query('DELETE FROM product_images WHERE product_id = $1', [product.id]);
-      for (let i = 0; i < files.length; i++) {
-        await client.query('INSERT INTO product_images (product_id, image_data_url, alt_text, sort_order) VALUES ($1, $2, $3, $4)', [product.id, imageToDataUrl(files[i]), title, i]);
-      }
-    }
-    await client.query('COMMIT');
-    req.flash('success', 'Product updated. If it was already approved, it is now pending review again.');
-    res.redirect('/dashboard');
-  } catch (error) {
-    await client.query('ROLLBACK');
-    next(error);
-  } finally {
-    client.release();
+    res.render('public/submit-success', { title: 'Buying Request Received', type: 'buying' });
+  } catch (err) {
+    next(err);
   }
 });
 
-app.post('/dashboard/products/:id/archive', requireAuth, async (req, res, next) => {
+app.get('/machine/:slug/request-contact', async (req, res, next) => {
   try {
-    await pool.query('UPDATE products SET status = $1, updated_at = NOW() WHERE id = $2 AND user_id = $3', ['archived', req.params.id, req.session.user.id]);
-    req.flash('success', 'Product archived.');
-    res.redirect('/dashboard');
-  } catch (error) {
-    next(error);
+    const machine = await getMachineWithPrimaryImage(req.params.slug, true);
+    if (!machine || !['available', 'reserved'].includes(machine.status)) return res.status(404).render('public/404', { title: 'Listing not available' });
+    res.render('public/request-contact', { title: 'Request Seller Contact', machine, form: {}, errors: [] });
+  } catch (err) {
+    next(err);
   }
+});
+
+app.post('/machine/:slug/request-contact', async (req, res, next) => {
+  try {
+    const machine = await getMachineWithPrimaryImage(req.params.slug, true);
+    if (!machine || !['available', 'reserved'].includes(machine.status)) return res.status(404).render('public/404', { title: 'Listing not available' });
+    const f = req.body;
+    const errors = [];
+    ['buyer_name', 'buyer_email', 'buyer_country'].forEach(field => {
+      if (!f[field] || !String(f[field]).trim()) errors.push(`${field.replace(/_/g, ' ')} is required.`);
+    });
+    if (!bool(f.verification_ack)) errors.push('You must acknowledge the buyer verification responsibility.');
+    if (errors.length) return res.status(400).render('public/request-contact', { title: 'Request Seller Contact', machine, form: f, errors });
+
+    await pool.query(`
+      INSERT INTO buyer_requests (
+        request_type,machine_id,buyer_name,buyer_company,buyer_email,buyer_phone,buyer_whatsapp,buyer_country,
+        timeline,inspection_plan,shipping_help,message,verification_ack
+      ) VALUES ('contact',$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+    `, [
+      machine.id, f.buyer_name, f.buyer_company || null, f.buyer_email, f.buyer_phone || null, f.buyer_whatsapp || null,
+      f.buyer_country, f.timeline || null, f.inspection_plan || null, f.shipping_help || null, f.message || null, bool(f.verification_ack)
+    ]);
+    res.render('public/submit-success', { title: 'Contact Request Received', type: 'contact', machine });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get('/images/:id', async (req, res, next) => {
+  try {
+    const { rows } = await pool.query('SELECT image, mime_type FROM machine_images WHERE id=$1', [req.params.id]);
+    if (!rows.length) return res.status(404).send('Image not found');
+    res.setHeader('Content-Type', rows[0].mime_type);
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.send(rows[0].image);
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get('/inspection-checklist', (req, res) => {
+  res.render('public/checklist', { title: 'Buyer Verification Checklist' });
+});
+
+app.get('/admin/login', (req, res) => {
+  if (req.session.admin) return res.redirect('/admin');
+  res.render('admin/login', { title: 'Admin Login', error: null });
+});
+
+app.post('/admin/login', async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    const { rows } = await pool.query('SELECT * FROM admin_users WHERE email=$1 LIMIT 1', [email]);
+    const user = rows[0];
+    if (!user || !(await bcrypt.compare(password || '', user.password_hash))) {
+      return res.status(401).render('admin/login', { title: 'Admin Login', error: 'Invalid email or password.' });
+    }
+    req.session.admin = { id: user.id, email: user.email, role: user.role };
+    res.redirect('/admin');
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/admin/logout', (req, res) => {
+  req.session.destroy(() => res.redirect('/admin/login'));
 });
 
 app.get('/admin', requireAdmin, async (req, res, next) => {
   try {
-    const stats = await pool.query(`
-      SELECT
-        (SELECT COUNT(*) FROM users) AS users,
-        (SELECT COUNT(*) FROM products WHERE status = 'pending') AS pending,
-        (SELECT COUNT(*) FROM products WHERE status = 'approved') AS approved,
-        (SELECT COUNT(*) FROM inquiries) AS inquiries
-    `);
-    const recentProducts = await pool.query(`
-      SELECT p.*, c.name AS category_name, u.name AS seller_name
-      FROM products p
-      LEFT JOIN categories c ON c.id = p.category_id
-      JOIN users u ON u.id = p.user_id
-      ORDER BY p.created_at DESC
-      LIMIT 8
-    `);
-    res.render('admin-index', { title: 'Admin Dashboard', stats: stats.rows[0], recentProducts: recentProducts.rows });
-  } catch (error) {
-    next(error);
+    const [machineCounts, requestCounts, recentMachines, recentRequests] = await Promise.all([
+      pool.query('SELECT status, COUNT(*)::int AS count FROM machines GROUP BY status'),
+      pool.query('SELECT status, COUNT(*)::int AS count FROM buyer_requests GROUP BY status'),
+      pool.query('SELECT id, title, status, region, country, city, created_at FROM machines ORDER BY created_at DESC LIMIT 8'),
+      pool.query(`SELECT br.*, m.title AS machine_title FROM buyer_requests br LEFT JOIN machines m ON br.machine_id=m.id ORDER BY br.created_at DESC LIMIT 8`)
+    ]);
+    res.render('admin/dashboard', {
+      title: 'Admin Dashboard',
+      machineCounts: machineCounts.rows,
+      requestCounts: requestCounts.rows,
+      recentMachines: recentMachines.rows,
+      recentRequests: recentRequests.rows
+    });
+  } catch (err) {
+    next(err);
   }
 });
 
-app.get('/admin/products', requireAdmin, async (req, res, next) => {
+app.get('/admin/machines', requireAdmin, async (req, res, next) => {
   try {
-    const status = safeTrim(req.query.status);
+    const { status, region, q } = req.query;
     const params = [];
-    let filter = '';
-    if (['pending', 'approved', 'rejected', 'archived'].includes(status)) {
-      params.push(status);
-      filter = 'WHERE p.status = $1';
+    const clauses = [];
+    if (status && MACHINE_STATUSES.includes(status)) { params.push(status); clauses.push(`m.status=$${params.length}`); }
+    if (region && REGIONS.includes(region)) { params.push(region); clauses.push(`m.region=$${params.length}`); }
+    if (q) {
+      params.push(`%${q}%`);
+      clauses.push(`(m.title ILIKE $${params.length} OR m.seller_name ILIKE $${params.length} OR m.seller_email ILIKE $${params.length} OR m.country ILIKE $${params.length})`);
     }
-    const products = await pool.query(`
-      SELECT p.*, c.name AS category_name, u.name AS seller_name, u.email AS seller_email,
-        (SELECT image_data_url FROM product_images WHERE product_id = p.id ORDER BY sort_order ASC, id ASC LIMIT 1) AS image
-      FROM products p
-      LEFT JOIN categories c ON c.id = p.category_id
-      JOIN users u ON u.id = p.user_id
-      ${filter}
-      ORDER BY p.created_at DESC
+    const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+    const { rows: machines } = await pool.query(`
+      SELECT m.*, img.id AS primary_image_id
+      FROM machines m
+      LEFT JOIN LATERAL (
+        SELECT id FROM machine_images WHERE machine_id=m.id ORDER BY is_primary DESC, id ASC LIMIT 1
+      ) img ON true
+      ${where}
+      ORDER BY m.created_at DESC
     `, params);
-    res.render('admin-products', { title: 'Manage Products', products: products.rows, status });
-  } catch (error) {
-    next(error);
+    res.render('admin/machines', { title: 'Manage Machines', machines, filters: { status, region, q } });
+  } catch (err) {
+    next(err);
   }
 });
 
-app.get('/admin/products/:id', requireAdmin, async (req, res, next) => {
+app.get('/admin/machines/:id/edit', requireAdmin, async (req, res, next) => {
   try {
-    const product = await productWithImages(Number(req.params.id), false);
-    if (!product) return res.status(404).render('404', { title: 'Product not found' });
-    res.render('admin-product-detail', { title: product.title, product });
-  } catch (error) {
-    next(error);
+    const machine = await getMachineWithPrimaryImage(req.params.id, false);
+    if (!machine) return res.status(404).render('public/404', { title: 'Machine not found' });
+    const { rows: images } = await pool.query('SELECT id, file_name, is_primary, created_at FROM machine_images WHERE machine_id=$1 ORDER BY is_primary DESC, id ASC', [machine.id]);
+    res.render('admin/edit-machine', { title: `Edit ${machine.title}`, machine, images, errors: [] });
+  } catch (err) {
+    next(err);
   }
 });
 
-app.post('/admin/products/:id/approve', requireAdmin, async (req, res, next) => {
-  try {
-    await pool.query("UPDATE products SET status = 'approved', rejection_reason = NULL, published_at = COALESCE(published_at, NOW()), updated_at = NOW() WHERE id = $1", [req.params.id]);
-    await logAdmin(req.session.user.id, 'approve_product', 'product', Number(req.params.id));
-    req.flash('success', 'Product approved.');
-    res.redirect('/admin/products');
-  } catch (error) {
-    next(error);
+app.post('/admin/machines/:id/edit', requireAdmin, upload.array('new_images', 8), async (req, res, next) => {
+  const f = req.body;
+  const id = req.params.id;
+  const errors = [];
+  if (!f.title) errors.push('Title is required.');
+  if (f.status && !MACHINE_STATUSES.includes(f.status)) errors.push('Invalid status.');
+  if (f.region && !REGIONS.includes(f.region)) errors.push('Invalid region.');
+  if (errors.length) {
+    const machine = await getMachineWithPrimaryImage(id, false);
+    const { rows: images } = await pool.query('SELECT id, file_name, is_primary, created_at FROM machine_images WHERE machine_id=$1 ORDER BY is_primary DESC, id ASC', [id]);
+    return res.status(400).render('admin/edit-machine', { title: `Edit ${machine.title}`, machine: { ...machine, ...f }, images, errors });
   }
-});
 
-app.post('/admin/products/:id/reject', requireAdmin, async (req, res, next) => {
+  const client = await pool.connect();
   try {
-    const reason = safeTrim(req.body.reason) || 'Rejected by admin.';
-    await pool.query("UPDATE products SET status = 'rejected', rejection_reason = $2, updated_at = NOW() WHERE id = $1", [req.params.id, reason]);
-    await logAdmin(req.session.user.id, 'reject_product', 'product', Number(req.params.id), { reason });
-    req.flash('success', 'Product rejected.');
-    res.redirect('/admin/products');
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.post('/admin/products/:id/archive', requireAdmin, async (req, res, next) => {
-  try {
-    await pool.query("UPDATE products SET status = 'archived', updated_at = NOW() WHERE id = $1", [req.params.id]);
-    await logAdmin(req.session.user.id, 'archive_product', 'product', Number(req.params.id));
-    req.flash('success', 'Product archived.');
-    res.redirect('/admin/products');
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.post('/admin/products/:id/delete', requireAdmin, async (req, res, next) => {
-  try {
-    await pool.query('DELETE FROM products WHERE id = $1', [req.params.id]);
-    await logAdmin(req.session.user.id, 'delete_product', 'product', Number(req.params.id));
-    req.flash('success', 'Product deleted.');
-    res.redirect('/admin/products');
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.get('/admin/users', requireAdmin, async (req, res, next) => {
-  try {
-    const users = await pool.query(`
-      SELECT u.*,
-        (SELECT COUNT(*) FROM products p WHERE p.user_id = u.id) AS product_count
-      FROM users u
-      ORDER BY u.created_at DESC
-    `);
-    res.render('admin-users', { title: 'Manage Users', users: users.rows });
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.post('/admin/users/:id/role', requireAdmin, async (req, res, next) => {
-  try {
-    const role = req.body.role === 'admin' ? 'admin' : 'user';
-    await pool.query('UPDATE users SET role = $1, updated_at = NOW() WHERE id = $2', [role, req.params.id]);
-    await logAdmin(req.session.user.id, 'change_user_role', 'user', Number(req.params.id), { role });
-    req.flash('success', 'User role updated.');
-    res.redirect('/admin/users');
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.post('/admin/users/:id/status', requireAdmin, async (req, res, next) => {
-  try {
-    const status = req.body.status === 'disabled' ? 'disabled' : 'active';
-    if (Number(req.params.id) === Number(req.session.user.id) && status === 'disabled') {
-      req.flash('error', 'You cannot disable your own admin account.');
-      return res.redirect('/admin/users');
+    await client.query('BEGIN');
+    const old = await client.query('SELECT status FROM machines WHERE id=$1', [id]);
+    if (!old.rows.length) throw new Error('Machine not found.');
+    const previousStatus = old.rows[0].status;
+    await client.query(`
+      UPDATE machines SET
+        title=$1, brand=$2, model=$3, production_year=$4, purchase_year=$5, printhead_type=$6,
+        printhead_count=$7, working_status=$8, condition_summary=$9, usage_history=$10, known_defects=$11,
+        accessories=$12, asking_price=$13, currency=$14, price_negotiable=$15, video_url=$16, details=$17,
+        region=$18, country=$19, city=$20, exact_address=$21, seller_name=$22, seller_company=$23,
+        seller_email=$24, seller_phone=$25, seller_whatsapp=$26, seller_preferred_contact=$27,
+        status=$28, featured=$29, admin_notes=$30,
+        approved_at=CASE WHEN $28='available' AND approved_at IS NULL THEN NOW() ELSE approved_at END,
+        sold_at=CASE WHEN $28='sold' AND sold_at IS NULL THEN NOW() WHEN $28<>'sold' THEN NULL ELSE sold_at END,
+        updated_at=NOW()
+      WHERE id=$31
+    `, [
+      f.title, f.brand || null, f.model || null, f.production_year || null, f.purchase_year || null,
+      f.printhead_type || null, numberOrNull(f.printhead_count), f.working_status || null, f.condition_summary || null,
+      f.usage_history || null, f.known_defects || null, f.accessories || null, numberOrNull(f.asking_price), f.currency || 'USD',
+      bool(f.price_negotiable), f.video_url || null, f.details || null, f.region || null, f.country || null, f.city || null,
+      f.exact_address || null, f.seller_name || '', f.seller_company || null, f.seller_email || '', f.seller_phone || null,
+      f.seller_whatsapp || null, f.seller_preferred_contact || null, f.status || previousStatus, bool(f.featured), f.admin_notes || null, id
+    ]);
+    const files = req.files || [];
+    const existing = await client.query('SELECT COUNT(*)::int AS count FROM machine_images WHERE machine_id=$1', [id]);
+    let count = existing.rows[0].count;
+    for (const file of files) {
+      await client.query('INSERT INTO machine_images (machine_id, image, mime_type, file_name, is_primary) VALUES ($1,$2,$3,$4,$5)', [id, file.buffer, file.mimetype, file.originalname, count === 0]);
+      count += 1;
     }
-    await pool.query('UPDATE users SET status = $1, updated_at = NOW() WHERE id = $2', [status, req.params.id]);
-    await logAdmin(req.session.user.id, 'change_user_status', 'user', Number(req.params.id), { status });
-    req.flash('success', 'User status updated.');
-    res.redirect('/admin/users');
-  } catch (error) {
-    next(error);
+    await client.query('COMMIT');
+    await logAdmin(req, 'machine_updated', 'machine', Number(id), { previousStatus, newStatus: f.status });
+    flash(req, 'success', 'Machine listing updated.');
+    res.redirect(`/admin/machines/${id}/edit`);
+  } catch (err) {
+    await client.query('ROLLBACK');
+    next(err);
+  } finally {
+    client.release();
   }
 });
 
-app.get('/admin/categories', requireAdmin, async (req, res, next) => {
+app.post('/admin/machines/:id/status', requireAdmin, async (req, res, next) => {
   try {
-    const categories = await pool.query(`
-      SELECT c.*, (SELECT COUNT(*) FROM products p WHERE p.category_id = c.id) AS product_count
-      FROM categories c
-      ORDER BY c.name ASC
-    `);
-    res.render('admin-categories', { title: 'Manage Categories', categories: categories.rows });
-  } catch (error) {
-    next(error);
+    const { status } = req.body;
+    if (!MACHINE_STATUSES.includes(status)) throw new Error('Invalid status.');
+    await pool.query(`
+      UPDATE machines SET status=$1,
+        approved_at=CASE WHEN $1='available' AND approved_at IS NULL THEN NOW() ELSE approved_at END,
+        sold_at=CASE WHEN $1='sold' AND sold_at IS NULL THEN NOW() WHEN $1<>'sold' THEN NULL ELSE sold_at END,
+        updated_at=NOW()
+      WHERE id=$2
+    `, [status, req.params.id]);
+    await logAdmin(req, 'machine_status_changed', 'machine', Number(req.params.id), { status });
+    flash(req, 'success', `Machine marked as ${statusLabel(status)}.`);
+    res.redirect(req.get('referer') || '/admin/machines');
+  } catch (err) {
+    next(err);
   }
 });
 
-app.post('/admin/categories', requireAdmin, async (req, res, next) => {
+app.post('/admin/images/:id/delete', requireAdmin, async (req, res, next) => {
   try {
-    const name = safeTrim(req.body.name);
-    if (!name) {
-      req.flash('error', 'Category name is required.');
-      return res.redirect('/admin/categories');
+    const { rows } = await pool.query('DELETE FROM machine_images WHERE id=$1 RETURNING machine_id', [req.params.id]);
+    if (rows[0]) await logAdmin(req, 'image_deleted', 'machine', rows[0].machine_id, { imageId: req.params.id });
+    flash(req, 'success', 'Image deleted.');
+    res.redirect(req.get('referer') || '/admin/machines');
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get('/admin/requests', requireAdmin, async (req, res, next) => {
+  try {
+    const { status, type, q } = req.query;
+    const params = [];
+    const clauses = [];
+    if (status && REQUEST_STATUSES.includes(status)) { params.push(status); clauses.push(`br.status=$${params.length}`); }
+    if (type && ['buying', 'contact'].includes(type)) { params.push(type); clauses.push(`br.request_type=$${params.length}`); }
+    if (q) {
+      params.push(`%${q}%`);
+      clauses.push(`(br.buyer_name ILIKE $${params.length} OR br.buyer_email ILIKE $${params.length} OR br.buyer_country ILIKE $${params.length} OR m.title ILIKE $${params.length})`);
     }
-    await pool.query('INSERT INTO categories (name, slug) VALUES ($1, $2) ON CONFLICT (slug) DO NOTHING', [name, makeSlug(name)]);
-    await logAdmin(req.session.user.id, 'create_category', 'category', null, { name });
-    req.flash('success', 'Category created.');
-    res.redirect('/admin/categories');
-  } catch (error) {
-    next(error);
+    const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+    const { rows: requests } = await pool.query(`
+      SELECT br.*, m.title AS machine_title, m.slug AS machine_slug, m.region AS machine_region, m.country AS machine_country
+      FROM buyer_requests br
+      LEFT JOIN machines m ON br.machine_id=m.id
+      ${where}
+      ORDER BY br.created_at DESC
+    `, params);
+    res.render('admin/requests', { title: 'Buyer Requests', requests, filters: { status, type, q } });
+  } catch (err) {
+    next(err);
   }
 });
 
-app.post('/admin/categories/:id/delete', requireAdmin, async (req, res, next) => {
+app.get('/admin/requests/:id', requireAdmin, async (req, res, next) => {
   try {
-    await pool.query('DELETE FROM categories WHERE id = $1', [req.params.id]);
-    await logAdmin(req.session.user.id, 'delete_category', 'category', Number(req.params.id));
-    req.flash('success', 'Category deleted. Products in this category were not deleted.');
-    res.redirect('/admin/categories');
-  } catch (error) {
-    next(error);
+    const { rows } = await pool.query(`
+      SELECT br.*, m.title AS machine_title, m.slug AS machine_slug, m.seller_name, m.seller_company,
+             m.seller_email, m.seller_phone, m.seller_whatsapp, m.seller_preferred_contact,
+             m.exact_address, m.region AS machine_region, m.country AS machine_country, m.city AS machine_city
+      FROM buyer_requests br
+      LEFT JOIN machines m ON br.machine_id=m.id
+      WHERE br.id=$1
+    `, [req.params.id]);
+    if (!rows.length) return res.status(404).render('public/404', { title: 'Request not found' });
+    res.render('admin/request-detail', { title: 'Buyer Request Detail', request: rows[0] });
+  } catch (err) {
+    next(err);
   }
 });
 
-app.get('/admin/inquiries', requireAdmin, async (req, res, next) => {
+app.post('/admin/requests/:id/update', requireAdmin, async (req, res, next) => {
   try {
-    const inquiries = await pool.query(`
-      SELECT i.*, p.title AS product_title, p.slug AS product_slug
-      FROM inquiries i
-      JOIN products p ON p.id = i.product_id
-      ORDER BY i.created_at DESC
-    `);
-    res.render('admin-inquiries', { title: 'Inquiries', inquiries: inquiries.rows });
-  } catch (error) {
-    next(error);
+    const { status, admin_notes } = req.body;
+    if (!REQUEST_STATUSES.includes(status)) throw new Error('Invalid request status.');
+    await pool.query('UPDATE buyer_requests SET status=$1, admin_notes=$2, updated_at=NOW() WHERE id=$3', [status, admin_notes || null, req.params.id]);
+    await logAdmin(req, 'buyer_request_updated', 'buyer_request', Number(req.params.id), { status });
+    flash(req, 'success', 'Buyer request updated.');
+    res.redirect(`/admin/requests/${req.params.id}`);
+  } catch (err) {
+    next(err);
   }
 });
 
 app.get('/admin/logs', requireAdmin, async (req, res, next) => {
   try {
-    const logs = await pool.query(`
-      SELECT l.*, u.name AS admin_name, u.email AS admin_email
+    const { rows: logs } = await pool.query(`
+      SELECT l.*, a.email AS admin_email
       FROM admin_logs l
-      LEFT JOIN users u ON u.id = l.admin_user_id
+      LEFT JOIN admin_users a ON l.admin_id=a.id
       ORDER BY l.created_at DESC
-      LIMIT 100
+      LIMIT 200
     `);
-    res.render('admin-logs', { title: 'Admin Logs', logs: logs.rows });
-  } catch (error) {
-    next(error);
+    res.render('admin/logs', { title: 'Admin Logs', logs });
+  } catch (err) {
+    next(err);
   }
 });
 
-app.use((req, res) => res.status(404).render('404', { title: 'Page not found' }));
+app.use((req, res) => {
+  res.status(404).render('public/404', { title: 'Page not found' });
+});
 
-app.use((error, req, res, next) => {
-  console.error(error);
-  const message = error.message && error.message.includes('File too large')
-    ? 'Image file is too large. Max size is 2MB per image.'
-    : 'Something went wrong. Please try again.';
-  res.status(500).render('error', { title: 'Server error', message, detail: isProduction ? null : error.stack });
+app.use((err, req, res, next) => {
+  console.error(err);
+  const message = process.env.NODE_ENV === 'production' ? 'Something went wrong.' : err.message;
+  res.status(500).render('public/error', { title: 'Server Error', message });
 });
 
 initDb()
   .then(() => {
-    app.listen(PORT, () => console.log(`WallPrinter Products MVP running on port ${PORT}`));
+    app.listen(PORT, () => {
+      console.log(`Wall Printer Exchange running on port ${PORT}`);
+    });
   })
-  .catch((error) => {
-    console.error('Database initialization failed:', error);
+  .catch(err => {
+    console.error('Failed to initialize database:', err);
     process.exit(1);
   });

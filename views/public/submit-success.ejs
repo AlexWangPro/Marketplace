@@ -1,0 +1,18 @@
+<%- include('../partials/head') %>
+<section class="empty-state success-state">
+  <% if (type === 'machine') { %>
+    <h1>Machine submission received.</h1>
+    <p>Thank you. Your used wall printer listing is now pending admin review. It will not appear publicly until approved.</p>
+  <% } else if (type === 'contact') { %>
+    <h1>Contact request received.</h1>
+    <p>Thank you. Admin will review your request before seller contact information is shared.</p>
+  <% } else { %>
+    <h1>Buying request received.</h1>
+    <p>Thank you. Your buying request has been submitted for admin review and matching.</p>
+  <% } %>
+  <div class="hero-actions centered">
+    <a class="btn primary" href="/">Back to Listings</a>
+    <a class="btn secondary" href="/inspection-checklist">Read Verification Checklist</a>
+  </div>
+</section>
+<%- include('../partials/foot') %>
