@@ -1,5 +1,20 @@
 <%- include('../partials/head') %>
-<section class="detail-hero">
+<% const isPreview = typeof previewMode !== 'undefined' && previewMode; %>
+<% if (isPreview) { %>
+  <section class="admin-preview-bar">
+    <div>
+      <strong>Admin preview</strong>
+      <span>This is exactly how the public listing content will appear after approval.</span>
+    </div>
+    <div class="preview-actions">
+      <form method="post" action="/admin/machines/<%= machine.id %>/status"><input type="hidden" name="status" value="available"><button class="btn primary" type="submit">Approve listing</button></form>
+      <a class="btn secondary" href="/admin/machines/<%= machine.id %>/edit">Edit</a>
+      <a class="btn secondary" href="/admin/machines">Back</a>
+    </div>
+  </section>
+<% } %>
+
+<section class="detail-hero apple-detail-hero">
   <div>
     <p class="eyebrow"><%= machine.region || 'Region TBC' %> · <%= machine.country || 'Country TBC' %><%= machine.city ? ' · ' + machine.city : '' %></p>
     <h1><%= machine.title %></h1>
@@ -10,44 +25,50 @@
     </div>
   </div>
   <div class="detail-actions">
-    <% if (machine.status === 'sold') { %>
-      <span class="muted detail-action-note">Sold listing. Use the floating Buying Request button to request a similar machine.</span>
-    <% } else { %>
+    <% if (!isPreview && machine.status !== 'sold') { %>
       <a class="btn primary" href="/machine/<%= machine.slug %>/request-contact">Request Seller Contact</a>
+    <% } else if (!isPreview && machine.status === 'sold') { %>
+      <span class="muted detail-action-note">Sold listing. Use Buying Request for a similar machine.</span>
     <% } %>
-    <a class="btn secondary" href="/inspection-checklist">Verification Checklist</a>
   </div>
 </section>
 
-<section class="detail-layout">
+<section class="detail-layout apple-detail-layout">
   <div>
-    <div class="gallery">
+    <div class="gallery apple-gallery">
       <% if (images.length) { %>
         <% images.forEach((img, idx) => { %>
-          <img class="<%= idx === 0 ? 'main-photo' : '' %>" src="/images/<%= img.id %>" alt="<%= machine.title %> photo <%= idx + 1 %>">
+          <button class="gallery-item <%= idx === 0 ? 'main-photo' : '' %>" type="button" data-lightbox-src="/images/<%= img.id %>" data-lightbox-alt="<%= machine.title %> photo <%= idx + 1 %>">
+            <img src="/images/<%= img.id %>" alt="<%= machine.title %> photo <%= idx + 1 %>">
+          </button>
         <% }) %>
       <% } else { %>
         <div class="placeholder-image large">No images uploaded</div>
       <% } %>
     </div>
 
-    <section class="content-card">
-      <h2>Machine details</h2>
+    <section class="content-card apple-content-card">
+      <h2>Description</h2>
       <p><%= machine.details || 'No additional description has been published yet.' %></p>
       <% if (machine.video_url) { %>
         <p><a class="text-link" href="<%= machine.video_url %>" target="_blank" rel="noopener">Open seller video →</a></p>
       <% } %>
     </section>
 
-    <section class="content-card warning-card">
-      <h2>Verification required before purchase</h2>
-      <p>Wall Printer Exchange does not inspect or guarantee this used machine. Request recent photos, live videos, nozzle tests, ownership documents, included accessory lists, and written transaction terms before making any payment.</p>
-      <a class="text-link" href="/inspection-checklist">View full verification checklist →</a>
-    </section>
+    <% if (machine.accessories || machine.known_defects) { %>
+      <section class="content-card apple-content-card two-note-grid">
+        <% if (machine.accessories) { %>
+          <div><h2>Included accessories</h2><p><%= machine.accessories %></p></div>
+        <% } %>
+        <% if (machine.known_defects) { %>
+          <div><h2>Known defects</h2><p><%= machine.known_defects %></p></div>
+        <% } %>
+      </section>
+    <% } %>
   </div>
 
-  <aside class="sidebar-card">
-    <h2>Key information</h2>
+  <aside class="sidebar-card apple-sidebar-card">
+    <h2>Specs</h2>
     <dl class="spec-list">
       <dt>Brand</dt><dd><%= machine.brand || 'Not specified' %></dd>
       <dt>Model</dt><dd><%= machine.model || 'Not specified' %></dd>
@@ -57,17 +78,9 @@
       <dt>Head count</dt><dd><%= machine.printhead_count || 'Not specified' %></dd>
       <dt>Working status</dt><dd><%= machine.working_status || 'Not specified' %></dd>
       <dt>Location</dt><dd><%= [machine.region, machine.country, machine.city].filter(Boolean).join(' · ') || 'Not specified' %></dd>
-      <dt>Exact address</dt><dd>Hidden. Available only through seller after introduction / inspection arrangement.</dd>
-      <dt>Seller contact</dt><dd>Hidden publicly. Request introduction for admin review.</dd>
+      <dt>Seller contact</dt><dd>Hidden until admin-approved introduction.</dd>
     </dl>
-    <% if (machine.accessories) { %>
-      <h3>Included accessories</h3>
-      <p><%= machine.accessories %></p>
-    <% } %>
-    <% if (machine.known_defects) { %>
-      <h3>Known defects</h3>
-      <p><%= machine.known_defects %></p>
-    <% } %>
+    <p class="sidebar-note">Buyers verify machine condition, ownership, payment terms, and logistics directly with the seller.</p>
   </aside>
 </section>
 <%- include('../partials/foot') %>

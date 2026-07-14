@@ -171,3 +171,54 @@
 
   document.querySelectorAll('[data-image-input]').forEach(setupImageInput);
 })();
+
+(function () {
+  const buttons = document.querySelectorAll('[data-lightbox-src]');
+  if (!buttons.length) return;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'lightbox-overlay';
+  overlay.setAttribute('aria-hidden', 'true');
+  overlay.innerHTML = '<button class="lightbox-close" type="button" aria-label="Close">×</button><img alt=""><p></p>';
+  document.body.appendChild(overlay);
+
+  const img = overlay.querySelector('img');
+  const caption = overlay.querySelector('p');
+  const close = () => {
+    overlay.classList.remove('active');
+    overlay.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('modal-open');
+  };
+
+  buttons.forEach((button) => {
+    button.addEventListener('click', () => {
+      img.src = button.getAttribute('data-lightbox-src');
+      img.alt = button.getAttribute('data-lightbox-alt') || '';
+      caption.textContent = button.getAttribute('data-lightbox-alt') || '';
+      overlay.classList.add('active');
+      overlay.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('modal-open');
+    });
+  });
+
+  overlay.addEventListener('click', (event) => {
+    if (event.target === overlay || event.target.matches('.lightbox-close')) close();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && overlay.classList.contains('active')) close();
+  });
+})();
+
+(function () {
+  const form = document.querySelector('[data-match-form]');
+  if (!form) return;
+  const boxes = Array.from(form.querySelectorAll('[data-match-checkbox]'));
+  function enforceLimit(changed) {
+    const checked = boxes.filter(box => box.checked);
+    if (checked.length > 5) {
+      changed.checked = false;
+      alert('You can match up to 5 machines only.');
+    }
+  }
+  boxes.forEach((box) => box.addEventListener('change', () => enforceLimit(box)));
+})();

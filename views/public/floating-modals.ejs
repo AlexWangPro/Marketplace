@@ -9,7 +9,7 @@
     <div class="modal-header">
       <p class="eyebrow">Seller submission</p>
       <h2 id="listMachineTitle">List your used wall printer</h2>
-      <p>Review the terms first. After confirmation, you can submit machine information for admin review.</p>
+      <p>Confirm the listing terms first. Then submit the machine for admin review.</p>
     </div>
 
     <form method="post" action="/submit-machine" enctype="multipart/form-data" data-seller-modal-form>
@@ -17,16 +17,16 @@
         <div class="terms-scroll">
           <h3>Used Wall Printer Listing Terms</h3>
           <p>Wall Printer Exchange is a used wall printer listing and introduction platform. We are not the seller, buyer, manufacturer, inspection provider, escrow provider, payment processor, shipping company, customs broker, installer, or warranty provider for any used machine listed on this website.</p>
-          <p>By submitting a machine, you confirm that all information you provide is accurate, complete, current, and not misleading to the best of your knowledge. This includes machine brand, model, year, printhead configuration, working condition, usage history, known defects, included accessories, asking price, location, images, videos, and other relevant details.</p>
-          <p>You confirm that you are the lawful owner of the machine, or authorized by the lawful owner to submit the machine for sale. You also confirm that the machine is not subject to any undisclosed ownership dispute, lien, financing restriction, legal restriction, or third-party claim that would prevent its sale or transfer.</p>
-          <p>Your phone number, email address, WhatsApp number, exact address, and other direct contact information will not be publicly displayed. However, you authorize Wall Printer Exchange to share your contact information with qualified buyers who have expressed serious interest and have been reviewed by the administrator.</p>
-          <p>Buyers are responsible for their own due diligence. Wall Printer Exchange does not independently verify every technical detail and does not guarantee machine condition, print quality, remaining service life, accessories, software, ownership, shipping condition, customs clearance, installation, training, or after-sales support.</p>
-          <p>Wall Printer Exchange does not collect payment on behalf of buyers or sellers unless separately agreed in writing. Payment, refund, shipping, tax, import duty, customs, inspection, installation, training, and after-sale terms must be agreed directly between buyer and seller.</p>
-          <p>Wall Printer Exchange may charge a listing fee, introduction fee, referral fee, success fee, commission, or other service fee when applicable. Any such fee should be confirmed separately in writing.</p>
+          <p>By submitting a machine, you confirm that all information you provide is accurate, complete, current, and not misleading to the best of your knowledge.</p>
+          <p>You confirm that you are the lawful owner of the machine, or authorized by the lawful owner to submit the machine for sale.</p>
+          <p>Your phone number, email address, WhatsApp number, exact address, and other direct contact information will not be publicly displayed. You authorize Wall Printer Exchange to share your contact information with qualified buyers after admin review.</p>
+          <p>Buyers are responsible for their own due diligence. Wall Printer Exchange does not guarantee machine condition, print quality, remaining service life, ownership, shipping condition, customs clearance, installation, training, or after-sales support.</p>
+          <p>Payment, refund, shipping, tax, import duty, customs, inspection, installation, training, and after-sale terms must be agreed directly between buyer and seller.</p>
+          <p>Wall Printer Exchange may charge a listing fee, introduction fee, referral fee, success fee, commission, or other service fee when applicable.</p>
         </div>
         <label class="check-row"><input type="checkbox" name="declaration_accepted" data-terms-confirm> I have read, understood, and agree to these listing terms.</label>
         <div class="modal-actions">
-          <button class="btn primary" type="button" data-next-seller-step>Continue to machine information</button>
+          <button class="btn primary" type="button" data-next-seller-step>Continue</button>
         </div>
       </section>
 
@@ -80,7 +80,7 @@
 
           <div class="form-card compact-card">
             <h3>Condition, details, and media</h3>
-            <label>Machine description and condition<textarea name="details" rows="7" placeholder="Describe the machine condition, usage history, current working status, maintenance, print quality, and any important details."></textarea></label>
+            <label>Machine description and condition<textarea name="details" rows="7" placeholder="Describe condition, usage history, current working status, maintenance, print quality, and important details."></textarea></label>
             <label>Known defects or problems<textarea name="known_defects" rows="3"></textarea></label>
             <label>Included accessories<textarea name="accessories" rows="3" placeholder="rails, computer, software, ink, spare parts, tools..."></textarea></label>
             <label>Video URL<input name="video_url" placeholder="YouTube / Google Drive / Dropbox link"></label>
@@ -91,8 +91,8 @@
           </div>
         </div>
         <div class="modal-actions sticky-actions">
-          <button class="btn secondary" type="button" data-prev-seller-step>Back to Terms</button>
-          <button class="btn primary" type="submit">Submit Machine for Review</button>
+          <button class="btn secondary" type="button" data-prev-seller-step>Back</button>
+          <button class="btn primary" type="submit">Submit for Review</button>
         </div>
       </section>
     </form>
@@ -104,8 +104,8 @@
     <button class="modal-close" type="button" data-close-modal aria-label="Close">×</button>
     <div class="modal-header">
       <p class="eyebrow">Buyer request</p>
-      <h2 id="buyingRequestTitle">Tell us what used wall printer you need</h2>
-      <p>Submit your requirements. Admin can match you with available listings or sellers.</p>
+      <h2 id="buyingRequestTitle">Tell us what you need</h2>
+      <p>Admin can match you with up to five suitable listings.</p>
     </div>
     <form method="post" action="/buying-request">
       <section class="form-card compact-card">
@@ -133,14 +133,17 @@
           <label>Preferred brand<input name="preferred_brand"></label>
           <label>Preferred printheads<input name="preferred_printheads" placeholder="Ricoh GH2220, 4 heads, etc."></label>
           <label>Purchase timeline<input name="timeline" placeholder="Immediately / 1-3 months / later"></label>
-          <label>Need shipping support?<input name="shipping_help" placeholder="Yes / No / Not sure"></label>
+          <label>Inspection plan
+            <select name="inspection_plan">
+              <option value="">Select option</option>
+              <% inspectionPlans.forEach(plan => { %><option value="<%= plan %>"><%= plan %></option><% }) %>
+            </select>
+          </label>
         </div>
-        <label>Inspection plan<textarea name="inspection_plan" rows="3" placeholder="In-person inspection, local representative, or live video demo?"></textarea></label>
-        <label>Additional requirements<textarea name="message" rows="4"></textarea></label>
+        <label>Message<textarea name="message" rows="4" placeholder="Tell us about your target machine and budget."></textarea></label>
       </section>
 
-      <section class="declaration-box compact compact-card">
-        <h3>Buyer acknowledgement</h3>
+      <section class="declaration-box compact">
         <p>I understand that Wall Printer Exchange does not inspect, guarantee, sell, warrant, collect payment, ship, install, or provide after-sales service for any listed machine. I am responsible for verifying the machine, seller, ownership, payment terms, shipping, customs, and all transaction details before purchase.</p>
         <label class="check-row"><input type="checkbox" name="verification_ack" required> I understand and accept buyer verification responsibility.</label>
       </section>

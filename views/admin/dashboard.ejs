@@ -1,39 +1,75 @@
 <%- include('../partials/head') %>
-<section class="admin-top">
-  <div>
-    <p class="eyebrow">Admin</p>
-    <h1>Dashboard</h1>
+<section class="admin-shell">
+  <div class="admin-hero-clean">
+    <div>
+      <p class="eyebrow">Admin</p>
+      <h1>Dashboard</h1>
+      <p>Review seller submissions, buyer requests, and contact matches.</p>
+    </div>
+    <form method="post" action="/admin/logout"><button class="btn secondary" type="submit">Logout</button></form>
   </div>
-  <form method="post" action="/admin/logout"><button class="btn secondary" type="submit">Logout</button></form>
-</section>
-<nav class="admin-nav">
-  <a href="/admin">Dashboard</a>
-  <a href="/admin/machines">Machines</a>
-  <a href="/admin/requests">Buyer Requests</a>
-  <a href="/admin/logs">Logs</a>
-</nav>
-<section class="stats-grid">
-  <% machineCounts.forEach(row => { %><a class="stat-card" href="/admin/machines?status=<%= row.status %>"><span><%= row.count %></span><%= statusLabel(row.status) %> machines</a><% }) %>
-  <% requestCounts.forEach(row => { %><a class="stat-card" href="/admin/requests?status=<%= row.status %>"><span><%= row.count %></span><%= statusLabel(row.status) %> requests</a><% }) %>
-</section>
-<section class="admin-two-col">
-  <div class="content-card">
-    <h2>Recent machines</h2>
-    <table class="admin-table">
-      <thead><tr><th>Title</th><th>Status</th><th>Location</th><th>Date</th></tr></thead>
-      <tbody>
-        <% recentMachines.forEach(m => { %><tr><td><a href="/admin/machines/<%= m.id %>/edit"><%= m.title %></a></td><td><%= statusLabel(m.status) %></td><td><%= [m.region,m.country,m.city].filter(Boolean).join(' · ') %></td><td><%= formatDate(m.created_at) %></td></tr><% }) %>
-      </tbody>
-    </table>
-  </div>
-  <div class="content-card">
-    <h2>Recent requests</h2>
-    <table class="admin-table">
-      <thead><tr><th>Buyer</th><th>Type</th><th>Status</th><th>Date</th></tr></thead>
-      <tbody>
-        <% recentRequests.forEach(r => { %><tr><td><a href="/admin/requests/<%= r.id %>"><%= r.buyer_name %></a></td><td><%= r.request_type %></td><td><%= statusLabel(r.status) %></td><td><%= formatDate(r.created_at) %></td></tr><% }) %>
-      </tbody>
-    </table>
-  </div>
+  <nav class="admin-nav clean-admin-nav">
+    <a href="/admin" class="active">Dashboard</a>
+    <a href="/admin/machines">Machines</a>
+    <a href="/admin/requests">Buyer Requests</a>
+  </nav>
+
+  <section class="admin-card-grid">
+    <a class="admin-metric-card primary-metric" href="/admin/machines?status=pending_review">
+      <span><%= (machineCounts.find(r => r.status === 'pending_review') || {}).count || 0 %></span>
+      <strong>Pending machines</strong>
+      <small>Preview, edit, and approve listings.</small>
+    </a>
+    <a class="admin-metric-card" href="/admin/machines?status=available">
+      <span><%= (machineCounts.find(r => r.status === 'available') || {}).count || 0 %></span>
+      <strong>Available</strong>
+      <small>Public listings ready for buyers.</small>
+    </a>
+    <a class="admin-metric-card" href="/admin/requests?status=new">
+      <span><%= (requestCounts.find(r => r.status === 'new') || {}).count || 0 %></span>
+      <strong>New buyer requests</strong>
+      <small>Review and match buyers.</small>
+    </a>
+    <a class="admin-metric-card" href="/admin/requests?status=matched">
+      <span><%= (requestCounts.find(r => r.status === 'matched') || {}).count || 0 %></span>
+      <strong>Matched</strong>
+      <small>Introductions sent or ready.</small>
+    </a>
+  </section>
+
+  <section class="admin-two-col clean-admin-two-col">
+    <div class="content-card clean-admin-card">
+      <div class="card-title-row"><h2>Recent machines</h2><a class="text-link" href="/admin/machines">View all</a></div>
+      <table class="admin-table clean-table">
+        <thead><tr><th>Machine</th><th>Status</th><th>Location</th><th></th></tr></thead>
+        <tbody>
+          <% recentMachines.forEach(m => { %>
+            <tr>
+              <td><strong><%= m.title %></strong><br><small><%= formatDate(m.created_at) %></small></td>
+              <td><span class="status-badge <%= m.status %>"><%= statusLabel(m.status) %></span></td>
+              <td><%= [m.region,m.country,m.city].filter(Boolean).join(' · ') || '—' %></td>
+              <td><a class="btn tiny" href="/admin/machines/<%= m.id %>/preview">Preview</a></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <div class="content-card clean-admin-card">
+      <div class="card-title-row"><h2>Recent buyer requests</h2><a class="text-link" href="/admin/requests">View all</a></div>
+      <table class="admin-table clean-table">
+        <thead><tr><th>Buyer</th><th>Type</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          <% recentRequests.forEach(r => { %>
+            <tr>
+              <td><strong><%= r.buyer_name %></strong><br><small><%= formatDate(r.created_at) %></small></td>
+              <td><%= r.request_type === 'contact' ? 'Contact' : 'Buying' %></td>
+              <td><span class="status-badge <%= r.status %>"><%= statusLabel(r.status) %></span></td>
+              <td><a class="btn tiny" href="/admin/requests/<%= r.id %>">Review</a></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </section>
 </section>
 <%- include('../partials/foot') %>

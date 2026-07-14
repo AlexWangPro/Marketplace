@@ -238,3 +238,15 @@ If Railway stays on **Building the image** for too long, use **Deployments → V
 This package includes a public-registry `package-lock.json`, `.npmrc`, and `nixpacks.toml` so Railway should install dependencies from `https://registry.npmjs.org/`, not from any local/internal registry. If your previous GitHub repository still contains an old `package-lock.json`, replace it with this one or delete all files in the repository before uploading this version.
 
 If Railway still tries to download from an internal OpenAI/Caas registry, clear the build cache and redeploy without cache.
+
+## v2.6 update notes
+
+- Removed public Admin Logs navigation; `/admin/logs` now redirects to the dashboard.
+- Admin machine review now supports previewing the exact front-end listing view, one-click approval, and edit access.
+- Public machine gallery images can be clicked for enlarged preview.
+- Buyer forms no longer ask for shipping support.
+- Buyer inspection plan is now a select field with predefined options.
+- When Admin approves a seller contact request, both buyer and seller receive each other's contact information by email if SMTP is configured.
+- Admin can manually match a buying request with up to 5 available/reserved machines. The buyer receives selected options and seller contacts; matched sellers receive buyer information.
+- Public UI and Admin dashboard have been simplified with a cleaner Apple-inspired catalog layout.
+

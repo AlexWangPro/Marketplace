@@ -12,6 +12,13 @@ const PORT = process.env.PORT || 3000;
 const REGIONS = ['Europe', 'North America', 'South America', 'Asia', 'Middle East', 'Africa', 'Oceania'];
 const MACHINE_STATUSES = ['pending_review', 'available', 'reserved', 'sold', 'archived', 'rejected'];
 const REQUEST_STATUSES = ['new', 'reviewed', 'contact_shared', 'matched', 'closed', 'spam', 'archived'];
+const INSPECTION_PLANS = [
+  'Live video demonstration',
+  'Third-party inspection',
+  'Local representative visit',
+  'Recent photos and videos first',
+  'Not decided yet'
+];
 const MAX_UPLOAD_IMAGES = 8;
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 const ALLOWED_IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -67,14 +74,19 @@ async function sendMail({ to, subject, text, html }) {
     }
   });
 
-  await transporter.sendMail({
-    from: process.env.MAIL_FROM || process.env.SMTP_USER,
-    to,
-    subject,
-    text,
-    html
-  });
-  return { sent: true };
+  try {
+    await transporter.sendMail({
+      from: process.env.MAIL_FROM || process.env.SMTP_USER,
+      to,
+      subject,
+      text,
+      html
+    });
+    return { sent: true };
+  } catch (err) {
+    console.error('Email send failed:', err.message);
+    return { sent: false, reason: err.message || 'Email send failed' };
+  }
 }
 
 function renderChecklistText() {
@@ -83,6 +95,44 @@ function renderChecklistText() {
 
 function renderChecklistHtml() {
   return `<ol>${CHECKLIST_ITEMS.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ol>`;
+}
+
+function compactContactText(lines) {
+  return lines.filter(([, value]) => value).map(([label, value]) => `${label}: ${value}`).join('\n');
+}
+
+function compactContactHtml(lines) {
+  return lines
+    .filter(([, value]) => value)
+    .map(([label, value]) => `<tr><th align="left" style="padding:6px 14px 6px 0;color:#555;white-space:nowrap;">${escapeHtml(label)}</th><td style="padding:6px 0;">${escapeHtml(value)}</td></tr>`)
+    .join('');
+}
+
+function sellerContactLines(request) {
+  return [
+    ['Seller name', request.seller_name],
+    ['Company', request.seller_company],
+    ['Email', request.seller_email],
+    ['Phone', request.seller_phone],
+    ['WhatsApp', request.seller_whatsapp],
+    ['Preferred contact', request.seller_preferred_contact],
+    ['Machine location', [request.machine_region, request.machine_country, request.machine_city].filter(Boolean).join(' · ')],
+    ['Exact address', request.exact_address]
+  ];
+}
+
+function buyerContactLines(request) {
+  return [
+    ['Buyer name', request.buyer_name],
+    ['Company', request.buyer_company],
+    ['Email', request.buyer_email],
+    ['Phone', request.buyer_phone],
+    ['WhatsApp', request.buyer_whatsapp],
+    ['Country', request.buyer_country],
+    ['Timeline', request.timeline],
+    ['Inspection plan', request.inspection_plan],
+    ['Message', request.message]
+  ];
 }
 
 function escapeHtml(value) {
@@ -94,49 +144,159 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
-async function sendContactReleaseEmail(request) {
+async function sendContactReleaseEmails(request) {
   if (!request || request.request_type !== 'contact' || !request.buyer_email || !request.machine_title) {
     return { sent: false, reason: 'Request is not an eligible contact release.' };
   }
 
-  const sellerLines = [
-    ['Seller name', request.seller_name],
-    ['Company', request.seller_company],
-    ['Email', request.seller_email],
-    ['Phone', request.seller_phone],
-    ['WhatsApp', request.seller_whatsapp],
-    ['Preferred contact', request.seller_preferred_contact],
-    ['Machine location', [request.machine_region, request.machine_country, request.machine_city].filter(Boolean).join(' · ')],
-    ['Exact address', request.exact_address]
-  ].filter(([, value]) => value);
-
-  const sellerText = sellerLines.map(([label, value]) => `${label}: ${value}`).join('\n');
-  const sellerHtml = sellerLines.map(([label, value]) => `<tr><th align="left" style="padding:6px 12px 6px 0;color:#555;">${escapeHtml(label)}</th><td style="padding:6px 0;">${escapeHtml(value)}</td></tr>`).join('');
-
+  const sellerLines = sellerContactLines(request).filter(([, value]) => value);
+  const buyerLines = buyerContactLines(request).filter(([, value]) => value);
   const listingUrl = request.machine_slug ? absoluteUrl(`/machine/${request.machine_slug}`) : absoluteUrl('/');
   const checklistUrl = absoluteUrl('/inspection-checklist');
   const subject = `Seller contact approved: ${request.machine_title}`;
 
-  const text = `Hello ${request.buyer_name || ''},\n\nYour request to view seller contact information has been approved by Wall Printer Exchange.\n\nMachine: ${request.machine_title}\nListing: ${listingUrl}\n\nSeller contact information:\n${sellerText || 'Seller contact information is currently incomplete. Please contact Wall Printer Exchange for details.'}\n\nImportant: Wall Printer Exchange is a listing and introduction platform only. We do not inspect, guarantee, sell, warrant, collect payment, ship, install, or provide after-sales service for this machine. You are responsible for verifying the machine, seller, ownership, payment terms, shipping, customs, and all transaction details before purchase.\n\nBuyer Verification Checklist:\n${renderChecklistText()}\n\nFull checklist: ${checklistUrl}\n\nWall Printer Exchange`;
+  const sellerText = compactContactText(sellerLines);
+  const sellerHtml = compactContactHtml(sellerLines);
+  const buyerText = compactContactText(buyerLines);
+  const buyerHtml = compactContactHtml(buyerLines);
 
-  const html = `
-    <div style="font-family:Arial,sans-serif;line-height:1.55;color:#222;max-width:760px;margin:0 auto;">
-      <h2>Seller contact approved</h2>
+  const buyerMail = await sendMail({
+    to: request.buyer_email,
+    subject,
+    text: `Hello ${request.buyer_name || ''},\n\nYour request to view seller contact information has been approved by Wall Printer Exchange.\n\nMachine: ${request.machine_title}\nListing: ${listingUrl}\n\nSeller contact information:\n${sellerText || 'Seller contact information is currently incomplete. Please contact Wall Printer Exchange for details.'}\n\nImportant: Wall Printer Exchange is a listing and introduction platform only. We do not inspect, guarantee, sell, warrant, collect payment, ship, install, or provide after-sales service for this machine. You are responsible for verifying the machine, seller, ownership, payment terms, shipping, customs, and all transaction details before purchase.\n\nBuyer Verification Checklist:\n${renderChecklistText()}\n\nFull checklist: ${checklistUrl}\n\nWall Printer Exchange`,
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.55;color:#222;max-width:760px;margin:0 auto;">
+        <h2>Seller contact approved</h2>
+        <p>Hello ${escapeHtml(request.buyer_name || '')},</p>
+        <p>Your request to view seller contact information has been approved by <strong>Wall Printer Exchange</strong>.</p>
+        <p><strong>Machine:</strong> ${escapeHtml(request.machine_title)}<br><strong>Listing:</strong> <a href="${listingUrl}">${listingUrl}</a></p>
+        <h3>Seller contact information</h3>
+        <table>${sellerHtml || '<tr><td>Seller contact information is currently incomplete. Please contact Wall Printer Exchange for details.</td></tr>'}</table>
+        <div style="background:#fff7e6;border:1px solid #ead3a6;padding:16px;border-radius:12px;margin:20px 0;">
+          <strong>Important:</strong> Wall Printer Exchange is a listing and introduction platform only. We do not inspect, guarantee, sell, warrant, collect payment, ship, install, or provide after-sales service for this machine. You are responsible for verifying the machine, seller, ownership, payment terms, shipping, customs, and all transaction details before purchase.
+        </div>
+        <h3>Buyer Verification Checklist</h3>
+        ${renderChecklistHtml()}
+        <p><a href="${checklistUrl}">Open the full verification checklist</a></p>
+        <p>Wall Printer Exchange</p>
+      </div>`
+  });
+
+  let sellerMail = { sent: false, reason: 'Seller email not available' };
+  if (request.seller_email) {
+    sellerMail = await sendMail({
+      to: request.seller_email,
+      subject: `Buyer introduction: ${request.machine_title}`,
+      text: `Hello ${request.seller_name || ''},\n\nWall Printer Exchange has approved a buyer introduction for your listed machine.\n\nMachine: ${request.machine_title}\nListing: ${listingUrl}\n\nBuyer contact information:\n${buyerText || 'Buyer contact information is incomplete.'}\n\nYou and the buyer may now communicate directly. Wall Printer Exchange does not collect payment, inspect the machine, arrange shipping, or provide warranty for this transaction.\n\nWall Printer Exchange`,
+      html: `
+        <div style="font-family:Arial,sans-serif;line-height:1.55;color:#222;max-width:760px;margin:0 auto;">
+          <h2>Buyer introduction approved</h2>
+          <p>Hello ${escapeHtml(request.seller_name || '')},</p>
+          <p>Wall Printer Exchange has approved a buyer introduction for your listed machine.</p>
+          <p><strong>Machine:</strong> ${escapeHtml(request.machine_title)}<br><strong>Listing:</strong> <a href="${listingUrl}">${listingUrl}</a></p>
+          <h3>Buyer contact information</h3>
+          <table>${buyerHtml || '<tr><td>Buyer contact information is incomplete.</td></tr>'}</table>
+          <p>You and the buyer may now communicate directly. Wall Printer Exchange does not collect payment, inspect the machine, arrange shipping, or provide warranty for this transaction.</p>
+          <p>Wall Printer Exchange</p>
+        </div>`
+    });
+  }
+
+  return {
+    sent: Boolean(buyerMail.sent || sellerMail.sent),
+    buyer: buyerMail,
+    seller: sellerMail,
+    reason: [buyerMail, sellerMail].filter(r => !r.sent && r.reason).map(r => r.reason).join('; ')
+  };
+}
+
+async function sendManualMatchEmails(request, machines) {
+  if (!request || request.request_type !== 'buying' || !request.buyer_email || !machines.length) {
+    return { sent: false, reason: 'No eligible buying request or matched machines.' };
+  }
+
+  const checklistUrl = absoluteUrl('/inspection-checklist');
+  const machineBlocksText = machines.map((m, index) => {
+    const listingUrl = m.slug ? absoluteUrl(`/machine/${m.slug}`) : absoluteUrl('/');
+    const sellerText = compactContactText([
+      ['Seller name', m.seller_name],
+      ['Company', m.seller_company],
+      ['Email', m.seller_email],
+      ['Phone', m.seller_phone],
+      ['WhatsApp', m.seller_whatsapp],
+      ['Preferred contact', m.seller_preferred_contact]
+    ]);
+    return `${index + 1}. ${m.title}\nLocation: ${[m.region, m.country, m.city].filter(Boolean).join(' · ') || 'Not specified'}\nPrice: ${money(m.asking_price, m.currency)}\nListing: ${listingUrl}\nSeller contact:\n${sellerText || 'Seller contact information is incomplete.'}`;
+  }).join('\n\n');
+
+  const machineBlocksHtml = machines.map((m, index) => {
+    const listingUrl = m.slug ? absoluteUrl(`/machine/${m.slug}`) : absoluteUrl('/');
+    const sellerHtml = compactContactHtml([
+      ['Seller name', m.seller_name],
+      ['Company', m.seller_company],
+      ['Email', m.seller_email],
+      ['Phone', m.seller_phone],
+      ['WhatsApp', m.seller_whatsapp],
+      ['Preferred contact', m.seller_preferred_contact]
+    ]);
+    return `<div style="border:1px solid #e5e5e5;border-radius:14px;padding:16px;margin:14px 0;">
+      <h3 style="margin:0 0 8px;">${index + 1}. ${escapeHtml(m.title)}</h3>
+      <p style="margin:0 0 8px;"><strong>Location:</strong> ${escapeHtml([m.region, m.country, m.city].filter(Boolean).join(' · ') || 'Not specified')}<br><strong>Price:</strong> ${escapeHtml(money(m.asking_price, m.currency))}<br><strong>Listing:</strong> <a href="${listingUrl}">${listingUrl}</a></p>
+      <table>${sellerHtml || '<tr><td>Seller contact information is incomplete.</td></tr>'}</table>
+    </div>`;
+  }).join('');
+
+  const buyerMail = await sendMail({
+    to: request.buyer_email,
+    subject: `Matched used wall printers for your request`,
+    text: `Hello ${request.buyer_name || ''},\n\nWall Printer Exchange has matched up to ${machines.length} used wall printer listing(s) for your buying request. Please review the options below and contact sellers directly for verification and negotiation.\n\n${machineBlocksText}\n\nImportant: Wall Printer Exchange is a listing and introduction platform only. We do not inspect, guarantee, sell, warrant, collect payment, ship, install, or provide after-sales service for any machine. You are responsible for independent verification before payment.\n\nBuyer Verification Checklist:\n${renderChecklistText()}\n\nFull checklist: ${checklistUrl}\n\nWall Printer Exchange`,
+    html: `<div style="font-family:Arial,sans-serif;line-height:1.55;color:#222;max-width:800px;margin:0 auto;">
+      <h2>Matched used wall printers</h2>
       <p>Hello ${escapeHtml(request.buyer_name || '')},</p>
-      <p>Your request to view seller contact information has been approved by <strong>Wall Printer Exchange</strong>.</p>
-      <p><strong>Machine:</strong> ${escapeHtml(request.machine_title)}<br><strong>Listing:</strong> <a href="${listingUrl}">${listingUrl}</a></p>
-      <h3>Seller contact information</h3>
-      <table>${sellerHtml || '<tr><td>Seller contact information is currently incomplete. Please contact Wall Printer Exchange for details.</td></tr>'}</table>
+      <p>Wall Printer Exchange has matched up to <strong>${machines.length}</strong> used wall printer listing(s) for your buying request. Please review the options below and contact sellers directly for verification and negotiation.</p>
+      ${machineBlocksHtml}
       <div style="background:#fff7e6;border:1px solid #ead3a6;padding:16px;border-radius:12px;margin:20px 0;">
-        <strong>Important:</strong> Wall Printer Exchange is a listing and introduction platform only. We do not inspect, guarantee, sell, warrant, collect payment, ship, install, or provide after-sales service for this machine. You are responsible for verifying the machine, seller, ownership, payment terms, shipping, customs, and all transaction details before purchase.
+        <strong>Important:</strong> Wall Printer Exchange is a listing and introduction platform only. We do not inspect, guarantee, sell, warrant, collect payment, ship, install, or provide after-sales service for any machine. You are responsible for independent verification before payment.
       </div>
       <h3>Buyer Verification Checklist</h3>
       ${renderChecklistHtml()}
       <p><a href="${checklistUrl}">Open the full verification checklist</a></p>
       <p>Wall Printer Exchange</p>
-    </div>`;
+    </div>`
+  });
 
-  return sendMail({ to: request.buyer_email, subject, text, html });
+  const sellerResults = [];
+  for (const m of machines) {
+    if (!m.seller_email) {
+      sellerResults.push({ machineId: m.id, sent: false, reason: 'Seller email not available' });
+      continue;
+    }
+    const buyerHtml = compactContactHtml(buyerContactLines(request));
+    const listingUrl = m.slug ? absoluteUrl(`/machine/${m.slug}`) : absoluteUrl('/');
+    const result = await sendMail({
+      to: m.seller_email,
+      subject: `Buyer match for your listed machine: ${m.title}`,
+      text: `Hello ${m.seller_name || ''},\n\nWall Printer Exchange has matched a buyer request with your listed machine.\n\nMachine: ${m.title}\nListing: ${listingUrl}\n\nBuyer contact information:\n${compactContactText(buyerContactLines(request))}\n\nYou and the buyer may now communicate directly. Wall Printer Exchange does not collect payment, inspect the machine, arrange shipping, or provide warranty for this transaction.\n\nWall Printer Exchange`,
+      html: `<div style="font-family:Arial,sans-serif;line-height:1.55;color:#222;max-width:760px;margin:0 auto;">
+        <h2>Buyer match for your listed machine</h2>
+        <p>Hello ${escapeHtml(m.seller_name || '')},</p>
+        <p>Wall Printer Exchange has matched a buyer request with your listed machine.</p>
+        <p><strong>Machine:</strong> ${escapeHtml(m.title)}<br><strong>Listing:</strong> <a href="${listingUrl}">${listingUrl}</a></p>
+        <h3>Buyer contact information</h3>
+        <table>${buyerHtml || '<tr><td>Buyer contact information is incomplete.</td></tr>'}</table>
+        <p>You and the buyer may now communicate directly. Wall Printer Exchange does not collect payment, inspect the machine, arrange shipping, or provide warranty for this transaction.</p>
+        <p>Wall Printer Exchange</p>
+      </div>`
+    });
+    sellerResults.push({ machineId: m.id, ...result });
+  }
+
+  return {
+    sent: Boolean(buyerMail.sent || sellerResults.some(r => r.sent)),
+    buyer: buyerMail,
+    sellers: sellerResults,
+    reason: [buyerMail, ...sellerResults].filter(r => !r.sent && r.reason).map(r => r.reason).join('; ')
+  };
 }
 
 const upload = multer({
@@ -195,6 +355,7 @@ app.use((req, res, next) => {
   res.locals.regions = REGIONS;
   res.locals.machineStatuses = MACHINE_STATUSES;
   res.locals.requestStatuses = REQUEST_STATUSES;
+  res.locals.inspectionPlans = INSPECTION_PLANS;
   res.locals.flash = req.session.flash || null;
   delete req.session.flash;
   res.locals.statusLabel = statusLabel;
@@ -448,6 +609,10 @@ async function initDb() {
     ALTER TABLE buyer_requests ADD COLUMN IF NOT EXISTS contact_shared_at TIMESTAMPTZ;
     ALTER TABLE buyer_requests ADD COLUMN IF NOT EXISTS contact_email_sent_at TIMESTAMPTZ;
     ALTER TABLE buyer_requests ADD COLUMN IF NOT EXISTS contact_email_error TEXT;
+    ALTER TABLE buyer_requests ADD COLUMN IF NOT EXISTS matched_machine_ids INTEGER[] DEFAULT '{}'::INTEGER[];
+    ALTER TABLE buyer_requests ADD COLUMN IF NOT EXISTS match_shared_at TIMESTAMPTZ;
+    ALTER TABLE buyer_requests ADD COLUMN IF NOT EXISTS match_email_sent_at TIMESTAMPTZ;
+    ALTER TABLE buyer_requests ADD COLUMN IF NOT EXISTS match_email_error TEXT;
   `);
 
   const adminEmail = process.env.ADMIN_EMAIL || 'admin@wallprinter.org';
@@ -609,7 +774,7 @@ app.post('/buying-request', async (req, res, next) => {
     `, [
       f.buyer_name, f.buyer_company || null, f.buyer_email, f.buyer_phone || null, f.buyer_whatsapp || null,
       f.buyer_country, f.target_region || null, f.budget || null, f.preferred_brand || null, f.preferred_printheads || null,
-      f.timeline || null, f.inspection_plan || null, f.shipping_help || null, f.message || null, bool(f.verification_ack)
+      f.timeline || null, f.inspection_plan || null, null, f.message || null, bool(f.verification_ack)
     ]);
     res.render('public/submit-success', { title: 'Buying Request Received', type: 'buying' });
   } catch (err) {
@@ -646,7 +811,7 @@ app.post('/machine/:slug/request-contact', async (req, res, next) => {
       ) VALUES ('contact',$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
     `, [
       machine.id, f.buyer_name, f.buyer_company || null, f.buyer_email, f.buyer_phone || null, f.buyer_whatsapp || null,
-      f.buyer_country, f.timeline || null, f.inspection_plan || null, f.shipping_help || null, f.message || null, bool(f.verification_ack)
+      f.buyer_country, f.timeline || null, f.inspection_plan || null, null, f.message || null, bool(f.verification_ack)
     ]);
     res.render('public/submit-success', { title: 'Contact Request Received', type: 'contact', machine });
   } catch (err) {
@@ -736,6 +901,18 @@ app.get('/admin/machines', requireAdmin, async (req, res, next) => {
       ORDER BY m.created_at DESC
     `, params);
     res.render('admin/machines', { title: 'Manage Machines', machines, filters: { status, region, q } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+
+app.get('/admin/machines/:id/preview', requireAdmin, async (req, res, next) => {
+  try {
+    const machine = await getMachineWithPrimaryImage(req.params.id, false);
+    if (!machine) return res.status(404).render('public/404', { title: 'Listing not found' });
+    const { rows: images } = await pool.query('SELECT id, is_primary FROM machine_images WHERE machine_id=$1 ORDER BY is_primary DESC, id ASC', [machine.id]);
+    res.render('public/machine', { title: `Preview - ${machine.title}`, machine, images, previewMode: true });
   } catch (err) {
     next(err);
   }
@@ -876,7 +1053,35 @@ app.get('/admin/requests/:id', requireAdmin, async (req, res, next) => {
       WHERE br.id=$1
     `, [req.params.id]);
     if (!rows.length) return res.status(404).render('public/404', { title: 'Request not found' });
-    res.render('admin/request-detail', { title: 'Buyer Request Detail', request: rows[0] });
+    const request = rows[0];
+    let candidateMachines = [];
+    let matchedMachines = [];
+    if (request.request_type === 'buying') {
+      const { rows: candidates } = await pool.query(`
+        SELECT m.*, img.id AS primary_image_id
+        FROM machines m
+        LEFT JOIN LATERAL (
+          SELECT id FROM machine_images WHERE machine_id=m.id ORDER BY is_primary DESC, id ASC LIMIT 1
+        ) img ON true
+        WHERE m.status IN ('available','reserved')
+        ORDER BY m.featured DESC, m.created_at DESC
+        LIMIT 50
+      `);
+      candidateMachines = candidates;
+      if (request.matched_machine_ids && request.matched_machine_ids.length) {
+        const { rows: matched } = await pool.query(`
+          SELECT m.*, img.id AS primary_image_id
+          FROM machines m
+          LEFT JOIN LATERAL (
+            SELECT id FROM machine_images WHERE machine_id=m.id ORDER BY is_primary DESC, id ASC LIMIT 1
+          ) img ON true
+          WHERE m.id = ANY($1::int[])
+          ORDER BY array_position($1::int[], m.id)
+        `, [request.matched_machine_ids]);
+        matchedMachines = matched;
+      }
+    }
+    res.render('admin/request-detail', { title: 'Buyer Request Detail', request, candidateMachines, matchedMachines });
   } catch (err) {
     next(err);
   }
@@ -911,7 +1116,7 @@ app.post('/admin/requests/:id/update', requireAdmin, async (req, res, next) => {
     `, [status, admin_notes || null, req.params.id]);
 
     if (status === 'contact_shared' && requestBefore.status !== 'contact_shared' && requestBefore.request_type === 'contact') {
-      emailResult = await sendContactReleaseEmail({ ...requestBefore, status });
+      emailResult = await sendContactReleaseEmails({ ...requestBefore, status });
       await pool.query(`
         UPDATE buyer_requests SET
           contact_email_sent_at=CASE WHEN $1=true THEN NOW() ELSE contact_email_sent_at END,
@@ -935,20 +1140,57 @@ app.post('/admin/requests/:id/update', requireAdmin, async (req, res, next) => {
   }
 });
 
-app.get('/admin/logs', requireAdmin, async (req, res, next) => {
+
+app.post('/admin/requests/:id/match', requireAdmin, async (req, res, next) => {
   try {
-    const { rows: logs } = await pool.query(`
-      SELECT l.*, a.email AS admin_email
-      FROM admin_logs l
-      LEFT JOIN admin_users a ON l.admin_id=a.id
-      ORDER BY l.created_at DESC
-      LIMIT 200
-    `);
-    res.render('admin/logs', { title: 'Admin Logs', logs });
+    let machineIds = req.body.machine_ids || [];
+    if (!Array.isArray(machineIds)) machineIds = machineIds ? [machineIds] : [];
+    machineIds = machineIds.map(id => Number(id)).filter(Number.isInteger);
+    machineIds = [...new Set(machineIds)].slice(0, 5);
+
+    if (!machineIds.length) {
+      flash(req, 'error', 'Select at least one machine to match.');
+      return res.redirect(`/admin/requests/${req.params.id}`);
+    }
+    if (machineIds.length > 5) throw new Error('You can match up to 5 machines only.');
+
+    const { rows } = await pool.query('SELECT * FROM buyer_requests WHERE id=$1 LIMIT 1', [req.params.id]);
+    const request = rows[0];
+    if (!request || request.request_type !== 'buying') return res.status(404).render('public/404', { title: 'Buying request not found' });
+
+    const { rows: machines } = await pool.query(`
+      SELECT * FROM machines
+      WHERE id = ANY($1::int[]) AND status IN ('available','reserved')
+      ORDER BY array_position($1::int[], id)
+    `, [machineIds]);
+
+    if (!machines.length) {
+      flash(req, 'error', 'No available or reserved machines were found for the selected IDs.');
+      return res.redirect(`/admin/requests/${req.params.id}`);
+    }
+
+    const emailResult = await sendManualMatchEmails(request, machines);
+    await pool.query(`
+      UPDATE buyer_requests SET
+        status='matched',
+        matched_machine_ids=$1::int[],
+        match_shared_at=NOW(),
+        match_email_sent_at=CASE WHEN $2=true THEN NOW() ELSE match_email_sent_at END,
+        match_email_error=$3,
+        updated_at=NOW()
+      WHERE id=$4
+    `, [machines.map(m => m.id), Boolean(emailResult.sent), emailResult.sent ? null : emailResult.reason || 'Email not sent', req.params.id]);
+
+    await logAdmin(req, 'machines_matched_to_buyer', 'buyer_request', Number(req.params.id), { machineIds: machines.map(m => m.id), emailResult });
+    if (emailResult.sent) flash(req, 'success', `Matched ${machines.length} machine(s) and sent introduction email(s).`);
+    else flash(req, 'success', `Matched ${machines.length} machine(s). Email was not sent: ${emailResult.reason || 'SMTP not configured'}.`);
+    res.redirect(`/admin/requests/${req.params.id}`);
   } catch (err) {
     next(err);
   }
 });
+
+app.get('/admin/logs', requireAdmin, (req, res) => res.redirect('/admin'));
 
 app.use((req, res) => {
   res.status(404).render('public/404', { title: 'Page not found' });

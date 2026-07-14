@@ -1,16 +1,17 @@
 </main>
-<footer class="site-footer clean-footer">
+<footer class="site-footer clean-footer apple-footer">
   <div>
     <strong>Wall Printer Exchange</strong>
-    <p>A listing and introduction platform for used wall printers. Buyers must independently verify machine condition, seller identity, payment, shipping, customs, and after-sale terms.</p>
+    <p>Used wall printer listings and buyer introductions. Transactions are handled directly between buyers and sellers.</p>
   </div>
   <div class="footer-links footer-quiet-links">
-    <a href="/inspection-checklist">Verification Checklist</a>
     <% if (!admin) { %><a href="/admin/login">Admin Login</a><% } %>
   </div>
 </footer>
 <% if (!currentPath.startsWith('/admin')) { %>
   <%- include('../public/floating-modals') %>
+  <script src="/app.js" defer></script>
+<% } else { %>
   <script src="/app.js" defer></script>
 <% } %>
 </body>

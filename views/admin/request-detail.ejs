@@ -1,76 +1,106 @@
 <%- include('../partials/head') %>
-<section class="admin-top"><div><p class="eyebrow">Admin</p><h1>Buyer Request Detail</h1></div><a class="btn secondary" href="/admin/requests">Back to Requests</a></section>
-<nav class="admin-nav"><a href="/admin">Dashboard</a><a href="/admin/machines">Machines</a><a href="/admin/requests">Buyer Requests</a><a href="/admin/logs">Logs</a></nav>
-<section class="detail-layout admin-detail-layout">
-  <div>
-    <section class="content-card">
-      <h2>Buyer</h2>
-      <dl class="spec-list two-col">
-        <dt>Name</dt><dd><%= request.buyer_name %></dd>
-        <dt>Company</dt><dd><%= request.buyer_company || '—' %></dd>
-        <dt>Email</dt><dd><%= request.buyer_email %></dd>
-        <dt>Phone</dt><dd><%= request.buyer_phone || '—' %></dd>
-        <dt>WhatsApp</dt><dd><%= request.buyer_whatsapp || '—' %></dd>
-        <dt>Country</dt><dd><%= request.buyer_country || '—' %></dd>
-        <dt>Timeline</dt><dd><%= request.timeline || '—' %></dd>
-        <dt>Shipping help</dt><dd><%= request.shipping_help || '—' %></dd>
-      </dl>
-      <h3>Inspection plan</h3><p><%= request.inspection_plan || '—' %></p>
-      <h3>Message</h3><p><%= request.message || '—' %></p>
-      <h3>Contact release email</h3>
-      <p class="muted small">
-        Shared at: <%= request.contact_shared_at ? formatDate(request.contact_shared_at) : '—' %><br>
-        Email sent at: <%= request.contact_email_sent_at ? formatDate(request.contact_email_sent_at) : '—' %><br>
-        Email error: <%= request.contact_email_error || '—' %>
-      </p>
-      <% if (request.request_type === 'buying') { %>
-        <h3>Buying requirement</h3>
-        <dl class="spec-list two-col">
-          <dt>Target region</dt><dd><%= request.target_region || 'Any' %></dd>
-          <dt>Budget</dt><dd><%= request.budget || '—' %></dd>
-          <dt>Preferred brand</dt><dd><%= request.preferred_brand || '—' %></dd>
-          <dt>Preferred printheads</dt><dd><%= request.preferred_printheads || '—' %></dd>
-        </dl>
-      <% } %>
-    </section>
+<section class="admin-shell">
+  <div class="admin-hero-clean"><div><p class="eyebrow">Admin</p><h1>Buyer Request</h1><p>Review buyer information, release seller contacts, or send matched machines.</p></div><a class="btn secondary" href="/admin/requests">Back</a></div>
+  <nav class="admin-nav clean-admin-nav"><a href="/admin">Dashboard</a><a href="/admin/machines">Machines</a><a href="/admin/requests" class="active">Buyer Requests</a></nav>
 
-    <% if (request.machine_title) { %>
-      <section class="content-card private-card">
-        <h2>Private seller contact for requested listing</h2>
-        <p class="muted">Share this information only after you decide the buyer is qualified and the seller has consented under the listing declaration. When this request is changed to <strong>Contact Shared</strong>, the buyer will receive an email with the seller contact details and the verification checklist if SMTP is configured.</p>
-        <dl class="spec-list two-col">
-          <dt>Machine</dt><dd><a href="/admin/machines/<%= request.machine_id %>/edit"><%= request.machine_title %></a></dd>
-          <dt>Public location</dt><dd><%= [request.machine_region, request.machine_country, request.machine_city].filter(Boolean).join(' · ') || '—' %></dd>
-          <dt>Seller name</dt><dd><%= request.seller_name || '—' %></dd>
-          <dt>Company</dt><dd><%= request.seller_company || '—' %></dd>
-          <dt>Email</dt><dd><%= request.seller_email || '—' %></dd>
-          <dt>Phone</dt><dd><%= request.seller_phone || '—' %></dd>
-          <dt>WhatsApp</dt><dd><%= request.seller_whatsapp || '—' %></dd>
-          <dt>Preferred contact</dt><dd><%= request.seller_preferred_contact || '—' %></dd>
-          <dt>Exact address</dt><dd><%= request.exact_address || '—' %></dd>
-        </dl>
-        <div class="copy-box">
-Buyer: <%= request.buyer_name %> / <%= request.buyer_email %> / <%= request.buyer_whatsapp || request.buyer_phone || 'No phone provided' %>
-Seller: <%= request.seller_name || '' %> / <%= request.seller_email || '' %> / <%= request.seller_whatsapp || request.seller_phone || '' %>
-Machine: <%= request.machine_title %>
+  <section class="detail-layout admin-detail-layout clean-request-layout">
+    <div>
+      <section class="content-card clean-admin-card">
+        <div class="card-title-row">
+          <h2>Buyer</h2>
+          <span class="status-badge <%= request.status %>"><%= statusLabel(request.status) %></span>
         </div>
+        <dl class="spec-list two-col">
+          <dt>Name</dt><dd><%= request.buyer_name %></dd>
+          <dt>Company</dt><dd><%= request.buyer_company || '—' %></dd>
+          <dt>Email</dt><dd><%= request.buyer_email %></dd>
+          <dt>Phone</dt><dd><%= request.buyer_phone || '—' %></dd>
+          <dt>WhatsApp</dt><dd><%= request.buyer_whatsapp || '—' %></dd>
+          <dt>Country</dt><dd><%= request.buyer_country || '—' %></dd>
+          <dt>Timeline</dt><dd><%= request.timeline || '—' %></dd>
+          <dt>Inspection plan</dt><dd><%= request.inspection_plan || '—' %></dd>
+        </dl>
+        <h3>Message</h3><p><%= request.message || '—' %></p>
+        <% if (request.request_type === 'buying') { %>
+          <h3>Buying requirement</h3>
+          <dl class="spec-list two-col">
+            <dt>Target region</dt><dd><%= request.target_region || 'Any' %></dd>
+            <dt>Budget</dt><dd><%= request.budget || '—' %></dd>
+            <dt>Preferred brand</dt><dd><%= request.preferred_brand || '—' %></dd>
+            <dt>Preferred printheads</dt><dd><%= request.preferred_printheads || '—' %></dd>
+          </dl>
+        <% } %>
       </section>
-    <% } %>
-  </div>
 
-  <aside class="sidebar-card">
-    <h2>Admin review</h2>
-    <form method="post" action="/admin/requests/<%= request.id %>/update">
-      <label>Status
-        <select name="status"><% requestStatuses.forEach(s => { %><option value="<%= s %>" <%= request.status === s ? 'selected' : '' %>><%= statusLabel(s) %></option><% }) %></select>
-      </label>
-      <label>Admin notes<textarea name="admin_notes" rows="8"><%= request.admin_notes || '' %></textarea></label>
-      <button class="btn primary" type="submit">Update Request</button>
-      <% if (request.request_type === 'contact' && request.machine_title) { %>
-        <p class="muted small">Tip: choose “Contact Shared” to approve the buyer and send seller contact details + checklist by email. SMTP status: <strong><%= mailConfigured ? 'configured' : 'not configured' %></strong>.</p>
+      <% if (request.machine_title) { %>
+        <section class="content-card private-card clean-admin-card">
+          <div class="card-title-row"><h2>Requested listing</h2><a class="text-link" href="/admin/machines/<%= request.machine_id %>/preview">Preview machine</a></div>
+          <dl class="spec-list two-col">
+            <dt>Machine</dt><dd><a href="/admin/machines/<%= request.machine_id %>/edit"><%= request.machine_title %></a></dd>
+            <dt>Public location</dt><dd><%= [request.machine_region, request.machine_country, request.machine_city].filter(Boolean).join(' · ') || '—' %></dd>
+            <dt>Seller name</dt><dd><%= request.seller_name || '—' %></dd>
+            <dt>Company</dt><dd><%= request.seller_company || '—' %></dd>
+            <dt>Email</dt><dd><%= request.seller_email || '—' %></dd>
+            <dt>Phone</dt><dd><%= request.seller_phone || '—' %></dd>
+            <dt>WhatsApp</dt><dd><%= request.seller_whatsapp || '—' %></dd>
+            <dt>Preferred contact</dt><dd><%= request.seller_preferred_contact || '—' %></dd>
+            <dt>Exact address</dt><dd><%= request.exact_address || '—' %></dd>
+          </dl>
+          <div class="copy-box">Buyer: <%= request.buyer_name %> / <%= request.buyer_email %> / <%= request.buyer_whatsapp || request.buyer_phone || 'No phone provided' %>
+Seller: <%= request.seller_name || '' %> / <%= request.seller_email || '' %> / <%= request.seller_whatsapp || request.seller_phone || '' %>
+Machine: <%= request.machine_title %></div>
+        </section>
       <% } %>
-    </form>
-    <p class="muted small">Use “Contact Shared” only after admin review. For buying requests without a specific machine, the system will not send seller contact details automatically.</p>
-  </aside>
+
+      <% if (request.request_type === 'buying') { %>
+        <section class="content-card clean-admin-card">
+          <div class="card-title-row">
+            <h2>Manual machine match</h2>
+            <small>Select up to 5 machines</small>
+          </div>
+          <% if (matchedMachines && matchedMachines.length) { %>
+            <div class="matched-strip">
+              <% matchedMachines.forEach(m => { %>
+                <a href="/admin/machines/<%= m.id %>/preview"><%= m.title %></a>
+              <% }) %>
+            </div>
+          <% } %>
+          <form method="post" action="/admin/requests/<%= request.id %>/match" data-match-form>
+            <div class="match-machine-grid">
+              <% candidateMachines.forEach(m => { %>
+                <label class="match-card">
+                  <input type="checkbox" name="machine_ids" value="<%= m.id %>" <%= request.matched_machine_ids && request.matched_machine_ids.includes(m.id) ? 'checked' : '' %> data-match-checkbox>
+                  <% if (m.primary_image_id) { %><img src="/images/<%= m.primary_image_id %>" alt=""><% } else { %><div class="placeholder-image mini">No image</div><% } %>
+                  <span><strong><%= m.title %></strong><small><%= [m.region,m.country,m.city].filter(Boolean).join(' · ') %> · <%= money(m.asking_price, m.currency) %></small></span>
+                </label>
+              <% }) %>
+            </div>
+            <p class="muted small">The buyer will receive selected machine options with seller contacts. Sellers will receive buyer contact information.</p>
+            <button class="btn primary" type="submit">Send Match Email</button>
+          </form>
+        </section>
+      <% } %>
+    </div>
+
+    <aside class="sidebar-card apple-sidebar-card admin-review-card">
+      <h2>Review</h2>
+      <form method="post" action="/admin/requests/<%= request.id %>/update">
+        <label>Status
+          <select name="status"><% requestStatuses.forEach(s => { %><option value="<%= s %>" <%= request.status === s ? 'selected' : '' %>><%= statusLabel(s) %></option><% }) %></select>
+        </label>
+        <label>Admin notes<textarea name="admin_notes" rows="7"><%= request.admin_notes || '' %></textarea></label>
+        <button class="btn primary" type="submit">Update Request</button>
+        <% if (request.request_type === 'contact' && request.machine_title) { %>
+          <p class="muted small">Choose “Contact Shared” to email both buyer and seller with each other’s contact information. SMTP: <strong><%= mailConfigured ? 'configured' : 'not configured' %></strong>.</p>
+        <% } %>
+      </form>
+      <hr>
+      <p class="muted small">
+        Contact release: <%= request.contact_email_sent_at ? formatDate(request.contact_email_sent_at) : 'not sent' %><br>
+        Match email: <%= request.match_email_sent_at ? formatDate(request.match_email_sent_at) : 'not sent' %><br>
+        Error: <%= request.contact_email_error || request.match_email_error || '—' %>
+      </p>
+    </aside>
+  </section>
 </section>
 <%- include('../partials/foot') %>
