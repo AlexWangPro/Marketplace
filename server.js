@@ -12,6 +12,9 @@ const PORT = process.env.PORT || 3000;
 const REGIONS = ['Europe', 'North America', 'South America', 'Asia', 'Middle East', 'Africa', 'Oceania'];
 const MACHINE_STATUSES = ['pending_review', 'available', 'reserved', 'sold', 'archived', 'rejected'];
 const REQUEST_STATUSES = ['new', 'reviewed', 'contact_shared', 'matched', 'closed', 'spam', 'archived'];
+const MAX_UPLOAD_IMAGES = 8;
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+const ALLOWED_IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 if (!process.env.DATABASE_URL) {
   console.error('\nMissing DATABASE_URL. Add a PostgreSQL database and set DATABASE_URL.');
@@ -138,12 +141,33 @@ async function sendContactReleaseEmail(request) {
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 2 * 1024 * 1024, files: 8 },
+  limits: { fileSize: MAX_IMAGE_BYTES, files: MAX_UPLOAD_IMAGES },
   fileFilter: (req, file, cb) => {
-    if (!file.mimetype.startsWith('image/')) return cb(new Error('Only image uploads are allowed.'));
+    if (!ALLOWED_IMAGE_MIME_TYPES.includes(file.mimetype)) {
+      return cb(new Error('Only JPG, PNG, WEBP, or GIF images are allowed.'));
+    }
     cb(null, true);
   }
 });
+
+function machineUpload(req, res, next) {
+  upload.array('images', MAX_UPLOAD_IMAGES)(req, res, (err) => {
+    if (!err) return next();
+
+    let message = err.message || 'Image upload failed.';
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') message = 'One or more images are too large. Each image must be 2MB or smaller.';
+      if (err.code === 'LIMIT_FILE_COUNT') message = `You can upload up to ${MAX_UPLOAD_IMAGES} images.`;
+      if (err.code === 'LIMIT_UNEXPECTED_FILE') message = 'Unexpected upload field. Please upload images only through the Images field.';
+    }
+
+    return res.status(400).render('public/submit-machine', {
+      title: 'Submit Your Machine',
+      form: req.body || {},
+      errors: [message]
+    });
+  });
+}
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -321,6 +345,7 @@ async function initDb() {
     CREATE INDEX IF NOT EXISTS idx_machines_region ON machines(region);
     CREATE INDEX IF NOT EXISTS idx_machines_country ON machines(country);
     CREATE INDEX IF NOT EXISTS idx_machines_featured ON machines(featured);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_machines_slug_unique ON machines(slug);
 
     CREATE TABLE IF NOT EXISTS machine_images (
       id SERIAL PRIMARY KEY,
@@ -375,6 +400,51 @@ async function initDb() {
   `);
 
   await pool.query(`
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS slug TEXT;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS title TEXT;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS brand TEXT;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS model TEXT;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS production_year TEXT;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS purchase_year TEXT;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS printhead_type TEXT;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS printhead_count INTEGER;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS working_status TEXT;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS condition_summary TEXT;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS usage_history TEXT;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS known_defects TEXT;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS accessories TEXT;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS asking_price NUMERIC(12,2);
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS currency TEXT DEFAULT 'USD';
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS price_negotiable BOOLEAN DEFAULT false;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS video_url TEXT;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS details TEXT;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS region TEXT;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS country TEXT;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS city TEXT;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS exact_address TEXT;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS seller_name TEXT;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS seller_company TEXT;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS seller_email TEXT;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS seller_phone TEXT;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS seller_whatsapp TEXT;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS seller_preferred_contact TEXT;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS seller_contact_release_consent BOOLEAN DEFAULT false;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS declaration_accepted BOOLEAN DEFAULT false;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'pending_review';
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS featured BOOLEAN DEFAULT false;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS admin_notes TEXT;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS sold_at TIMESTAMPTZ;
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+    ALTER TABLE machines ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
+    ALTER TABLE machine_images ADD COLUMN IF NOT EXISTS machine_id INTEGER;
+    ALTER TABLE machine_images ADD COLUMN IF NOT EXISTS image BYTEA;
+    ALTER TABLE machine_images ADD COLUMN IF NOT EXISTS mime_type TEXT;
+    ALTER TABLE machine_images ADD COLUMN IF NOT EXISTS file_name TEXT;
+    ALTER TABLE machine_images ADD COLUMN IF NOT EXISTS is_primary BOOLEAN DEFAULT false;
+    ALTER TABLE machine_images ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
     ALTER TABLE buyer_requests ADD COLUMN IF NOT EXISTS contact_shared_at TIMESTAMPTZ;
     ALTER TABLE buyer_requests ADD COLUMN IF NOT EXISTS contact_email_sent_at TIMESTAMPTZ;
     ALTER TABLE buyer_requests ADD COLUMN IF NOT EXISTS contact_email_error TEXT;
@@ -468,7 +538,7 @@ app.get('/submit-machine', (req, res) => {
   res.render('public/submit-machine', { title: 'Submit Your Machine', form: {}, errors: [] });
 });
 
-app.post('/submit-machine', upload.array('images', 8), async (req, res, next) => {
+app.post('/submit-machine', machineUpload, async (req, res, next) => {
   const f = req.body;
   const errors = [];
   if (!bool(f.declaration_accepted)) errors.push('You must accept the listing declaration before submitting.');
@@ -495,8 +565,8 @@ app.post('/submit-machine', upload.array('images', 8), async (req, res, next) =>
       ) RETURNING id
     `, [
       slug, f.title, f.brand || null, f.model || null, f.production_year || null, f.purchase_year || null,
-      f.printhead_type || null, numberOrNull(f.printhead_count), f.working_status || null, f.condition_summary || null,
-      f.usage_history || null, f.known_defects || null, f.accessories || null, numberOrNull(f.asking_price), f.currency || 'USD',
+      f.printhead_type || null, numberOrNull(f.printhead_count), f.working_status || null, null,
+      null, f.known_defects || null, f.accessories || null, numberOrNull(f.asking_price), f.currency || 'USD',
       bool(f.price_negotiable), f.video_url || null, f.details || null, f.region, f.country, f.city, f.exact_address || null,
       f.seller_name, f.seller_company || null, f.seller_email, f.seller_phone || null, f.seller_whatsapp || null,
       f.seller_preferred_contact || null, bool(f.seller_contact_release_consent), bool(f.declaration_accepted)
@@ -682,7 +752,7 @@ app.get('/admin/machines/:id/edit', requireAdmin, async (req, res, next) => {
   }
 });
 
-app.post('/admin/machines/:id/edit', requireAdmin, upload.array('new_images', 8), async (req, res, next) => {
+app.post('/admin/machines/:id/edit', requireAdmin, upload.array('new_images', MAX_UPLOAD_IMAGES), async (req, res, next) => {
   const f = req.body;
   const id = req.params.id;
   const errors = [];
@@ -715,8 +785,8 @@ app.post('/admin/machines/:id/edit', requireAdmin, upload.array('new_images', 8)
       WHERE id=$31
     `, [
       f.title, f.brand || null, f.model || null, f.production_year || null, f.purchase_year || null,
-      f.printhead_type || null, numberOrNull(f.printhead_count), f.working_status || null, f.condition_summary || null,
-      f.usage_history || null, f.known_defects || null, f.accessories || null, numberOrNull(f.asking_price), f.currency || 'USD',
+      f.printhead_type || null, numberOrNull(f.printhead_count), f.working_status || null, null,
+      null, f.known_defects || null, f.accessories || null, numberOrNull(f.asking_price), f.currency || 'USD',
       bool(f.price_negotiable), f.video_url || null, f.details || null, f.region || null, f.country || null, f.city || null,
       f.exact_address || null, f.seller_name || '', f.seller_company || null, f.seller_email || '', f.seller_phone || null,
       f.seller_whatsapp || null, f.seller_preferred_contact || null, f.status || previousStatus, bool(f.featured), f.admin_notes || null, id
@@ -886,6 +956,14 @@ app.use((req, res) => {
 
 app.use((err, req, res, next) => {
   console.error(err);
+  if (err instanceof multer.MulterError || /image/i.test(err.message || '')) {
+    const message = err.code === 'LIMIT_FILE_SIZE'
+      ? 'One or more images are too large. Each image must be 2MB or smaller.'
+      : err.code === 'LIMIT_FILE_COUNT'
+        ? `You can upload up to ${MAX_UPLOAD_IMAGES} images.`
+        : err.message || 'Image upload failed.';
+    return res.status(400).render('public/error', { title: 'Upload Error', message });
+  }
   const message = process.env.NODE_ENV === 'production' ? 'Something went wrong.' : err.message;
   res.status(500).render('public/error', { title: 'Server Error', message });
 });

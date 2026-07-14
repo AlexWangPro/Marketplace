@@ -42,11 +42,9 @@
       <label>Currency<input name="currency" value="<%= machine.currency || 'USD' %>"></label>
     </div>
     <label class="check-row"><input type="checkbox" name="price_negotiable" <%= machine.price_negotiable ? 'checked' : '' %>> Price negotiable</label>
-    <label>Condition summary<textarea name="condition_summary" rows="3"><%= machine.condition_summary || '' %></textarea></label>
-    <label>Usage history<textarea name="usage_history" rows="3"><%= machine.usage_history || '' %></textarea></label>
+    <label>Machine description and condition<textarea name="details" rows="8"><%= machine.details || machine.condition_summary || machine.usage_history || '' %></textarea></label>
     <label>Known defects<textarea name="known_defects" rows="3"><%= machine.known_defects || '' %></textarea></label>
     <label>Accessories<textarea name="accessories" rows="3"><%= machine.accessories || '' %></textarea></label>
-    <label>Details<textarea name="details" rows="6"><%= machine.details || '' %></textarea></label>
     <label>Video URL<input name="video_url" value="<%= machine.video_url || '' %>"></label>
   </section>
 

@@ -68,3 +68,106 @@
     if (prevButton) prevButton.addEventListener('click', () => showSellerStep('terms'));
   }
 })();
+
+(function () {
+  const MAX_FILES = 8;
+  const MAX_BYTES = 2 * 1024 * 1024;
+  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  const ALLOWED_LABEL = 'JPG, PNG, WEBP, or GIF';
+
+  function formatSize(bytes) {
+    if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
+    return `${Math.ceil(bytes / 1024)}KB`;
+  }
+
+  function setFiles(input, files) {
+    const dataTransfer = new DataTransfer();
+    files.forEach((file) => dataTransfer.items.add(file));
+    input.files = dataTransfer.files;
+  }
+
+  function setupImageInput(input) {
+    const container = input.closest('.form-card') || input.closest('form') || document;
+    const preview = container.querySelector('[data-image-preview]');
+    const errorBox = container.querySelector('[data-image-error]');
+    if (!preview || !errorBox) return;
+
+    let selectedFiles = [];
+
+    function showErrors(errors) {
+      errorBox.innerHTML = '';
+      if (!errors.length) {
+        errorBox.classList.remove('active');
+        return;
+      }
+      errorBox.classList.add('active');
+      errors.forEach((message) => {
+        const p = document.createElement('p');
+        p.textContent = message;
+        errorBox.appendChild(p);
+      });
+    }
+
+    function render() {
+      preview.innerHTML = '';
+      selectedFiles.forEach((file, index) => {
+        const item = document.createElement('div');
+        item.className = 'image-preview-item';
+
+        const img = document.createElement('img');
+        img.alt = file.name;
+        img.src = URL.createObjectURL(file);
+        img.onload = () => URL.revokeObjectURL(img.src);
+
+        const meta = document.createElement('div');
+        meta.className = 'image-preview-meta';
+        meta.innerHTML = `<strong>${index === 0 ? 'Primary image' : 'Image ' + (index + 1)}</strong><span>${file.name}</span><small>${formatSize(file.size)}</small>`;
+
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'image-remove-btn';
+        remove.textContent = 'Remove';
+        remove.addEventListener('click', () => {
+          selectedFiles.splice(index, 1);
+          setFiles(input, selectedFiles);
+          render();
+        });
+
+        item.appendChild(img);
+        item.appendChild(meta);
+        item.appendChild(remove);
+        preview.appendChild(item);
+      });
+    }
+
+    input.addEventListener('change', () => {
+      const incoming = Array.from(input.files || []);
+      const errors = [];
+      const valid = [];
+
+      incoming.forEach((file) => {
+        if (!ALLOWED_TYPES.includes(file.type)) {
+          errors.push(`${file.name} was skipped. Supported formats: ${ALLOWED_LABEL}.`);
+          return;
+        }
+        if (file.size > MAX_BYTES) {
+          errors.push(`${file.name} was skipped. Maximum size is 2MB; this file is ${formatSize(file.size)}.`);
+          return;
+        }
+        valid.push(file);
+      });
+
+      selectedFiles = selectedFiles.concat(valid);
+      if (selectedFiles.length > MAX_FILES) {
+        errors.push(`Only the first ${MAX_FILES} valid images were kept.`);
+        selectedFiles = selectedFiles.slice(0, MAX_FILES);
+      }
+
+      setFiles(input, selectedFiles);
+      showErrors(errors);
+      render();
+    });
+  }
+
+  document.querySelectorAll('[data-image-input]').forEach(setupImageInput);
+})();

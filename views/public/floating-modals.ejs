@@ -80,14 +80,14 @@
 
           <div class="form-card compact-card">
             <h3>Condition, details, and media</h3>
-            <label>Condition summary<textarea name="condition_summary" rows="3" placeholder="Short public condition summary"></textarea></label>
-            <label>Usage history<textarea name="usage_history" rows="3"></textarea></label>
+            <label>Machine description and condition<textarea name="details" rows="7" placeholder="Describe the machine condition, usage history, current working status, maintenance, print quality, and any important details."></textarea></label>
             <label>Known defects or problems<textarea name="known_defects" rows="3"></textarea></label>
             <label>Included accessories<textarea name="accessories" rows="3" placeholder="rails, computer, software, ink, spare parts, tools..."></textarea></label>
-            <label>Full details<textarea name="details" rows="4"></textarea></label>
             <label>Video URL<input name="video_url" placeholder="YouTube / Google Drive / Dropbox link"></label>
-            <label>Images<input type="file" name="images" accept="image/*" multiple></label>
-            <p class="muted small">Up to 8 images. Each image maximum 2MB.</p>
+            <label>Images<input type="file" name="images" accept="image/jpeg,image/png,image/webp,image/gif" multiple data-image-input></label>
+            <p class="muted small">Up to 8 images. JPG, PNG, WEBP, or GIF only. Each image maximum 2MB.</p>
+            <div class="image-upload-error" data-image-error aria-live="polite"></div>
+            <div class="image-preview-grid" data-image-preview></div>
           </div>
         </div>
         <div class="modal-actions sticky-actions">

@@ -50,11 +50,9 @@
       <label>Currency<input name="currency" value="<%= form.currency || 'USD' %>"></label>
     </div>
     <label class="check-row"><input type="checkbox" name="price_negotiable" <%= form.price_negotiable ? 'checked' : '' %>> Price is negotiable</label>
-    <label>Condition summary<textarea name="condition_summary" rows="3" placeholder="Short public condition summary"><%= form.condition_summary || '' %></textarea></label>
-    <label>Usage history<textarea name="usage_history" rows="3"><%= form.usage_history || '' %></textarea></label>
+    <label>Machine description and condition<textarea name="details" rows="7" placeholder="Describe the machine condition, usage history, current working status, maintenance, print quality, and any important details."><%= form.details || form.condition_summary || form.usage_history || '' %></textarea></label>
     <label>Known defects or problems<textarea name="known_defects" rows="3"><%= form.known_defects || '' %></textarea></label>
     <label>Included accessories<textarea name="accessories" rows="3" placeholder="rails, computer, software, ink, spare parts, tools..."><%= form.accessories || '' %></textarea></label>
-    <label>Full details<textarea name="details" rows="5"><%= form.details || '' %></textarea></label>
     <label>Video URL<input name="video_url" value="<%= form.video_url || '' %>" placeholder="YouTube / Google Drive / Dropbox link"></label>
   </section>
 
@@ -76,8 +74,10 @@
 
   <section class="form-card">
     <h2>Images</h2>
-    <p class="muted">Upload up to 8 images. Each image maximum 2MB. The first image will be used as the primary listing image.</p>
-    <input type="file" name="images" accept="image/*" multiple>
+    <p class="muted">Upload up to 8 images. JPG, PNG, WEBP, or GIF only. Each image maximum 2MB. The first image will be used as the primary listing image.</p>
+    <input type="file" name="images" accept="image/jpeg,image/png,image/webp,image/gif" multiple data-image-input>
+    <div class="image-upload-error" data-image-error aria-live="polite"></div>
+    <div class="image-preview-grid" data-image-preview></div>
   </section>
 
   <button class="btn primary large" type="submit">Submit Machine for Review</button>
