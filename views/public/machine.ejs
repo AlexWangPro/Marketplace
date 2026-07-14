@@ -4,7 +4,7 @@
   <section class="admin-preview-bar">
     <div>
       <strong>Admin preview</strong>
-      <span>This is exactly how the public listing content will appear after approval.</span>
+      <span>This is how the public listing will appear after approval.</span>
     </div>
     <div class="preview-actions">
       <form method="post" action="/admin/machines/<%= machine.id %>/status"><input type="hidden" name="status" value="available"><button class="btn primary" type="submit">Approve listing</button></form>
@@ -14,73 +14,99 @@
   </section>
 <% } %>
 
-<section class="detail-hero apple-detail-hero">
-  <div>
-    <p class="eyebrow"><%= machine.region || 'Region TBC' %> · <%= machine.country || 'Country TBC' %><%= machine.city ? ' · ' + machine.city : '' %></p>
+<section class="machine-detail-top">
+  <div class="machine-detail-copy">
+    <p class="eyebrow"><%= [machine.region, machine.country, machine.city].filter(Boolean).join(' · ') || 'Location TBC' %></p>
     <h1><%= machine.title %></h1>
-    <div class="detail-meta">
+    <div class="detail-chip-row">
       <span class="status-badge <%= machine.status %>"><%= statusLabel(machine.status) %></span>
-      <span><%= machine.status === 'sold' ? 'Sold listing remains visible for reference.' : money(machine.asking_price, machine.currency) %></span>
+      <strong><%= machine.status === 'sold' ? 'Sold' : money(machine.asking_price, machine.currency) %></strong>
       <% if (machine.price_negotiable && machine.status !== 'sold') { %><span>Negotiable</span><% } %>
     </div>
   </div>
-  <div class="detail-actions">
+  <div class="detail-action-stack">
     <% if (!isPreview && machine.status !== 'sold') { %>
-      <a class="btn primary" href="/machine/<%= machine.slug %>/request-contact">Request Seller Contact</a>
+      <a class="btn primary large" href="/machine/<%= machine.slug %>/request-contact">Request Seller Contact</a>
     <% } else if (!isPreview && machine.status === 'sold') { %>
-      <span class="muted detail-action-note">Sold listing. Use Buying Request for a similar machine.</span>
+      <button class="btn primary large" type="button" data-open-modal="buying-request">Request similar machine</button>
     <% } %>
   </div>
 </section>
 
-<section class="detail-layout apple-detail-layout">
-  <div>
-    <div class="gallery apple-gallery">
-      <% if (images.length) { %>
-        <% images.forEach((img, idx) => { %>
-          <button class="gallery-item <%= idx === 0 ? 'main-photo' : '' %>" type="button" data-lightbox-src="/images/<%= img.id %>" data-lightbox-alt="<%= machine.title %> photo <%= idx + 1 %>">
-            <img src="/images/<%= img.id %>" alt="<%= machine.title %> photo <%= idx + 1 %>">
-          </button>
-        <% }) %>
-      <% } else { %>
-        <div class="placeholder-image large">No images uploaded</div>
-      <% } %>
-    </div>
-
-    <section class="content-card apple-content-card">
-      <h2>Description</h2>
-      <p><%= machine.details || 'No additional description has been published yet.' %></p>
-      <% if (machine.video_url) { %>
-        <p><a class="text-link" href="<%= machine.video_url %>" target="_blank" rel="noopener">Open seller video →</a></p>
-      <% } %>
-    </section>
-
-    <% if (machine.accessories || machine.known_defects) { %>
-      <section class="content-card apple-content-card two-note-grid">
-        <% if (machine.accessories) { %>
-          <div><h2>Included accessories</h2><p><%= machine.accessories %></p></div>
-        <% } %>
-        <% if (machine.known_defects) { %>
-          <div><h2>Known defects</h2><p><%= machine.known_defects %></p></div>
-        <% } %>
-      </section>
+<section class="detail-gallery-section">
+  <div class="detail-gallery-main">
+    <% if (images.length) { %>
+      <button class="gallery-item hero-photo" type="button" data-lightbox-src="/images/<%= images[0].id %>" data-lightbox-alt="<%= machine.title %> primary photo">
+        <img src="/images/<%= images[0].id %>" alt="<%= machine.title %> primary photo">
+      </button>
+    <% } else { %>
+      <div class="placeholder-image large">No images uploaded</div>
     <% } %>
   </div>
+  <% if (images.length > 1) { %>
+    <div class="detail-thumb-strip" aria-label="Machine photos">
+      <% images.slice(1).forEach((img, idx) => { %>
+        <button class="gallery-item thumb-photo" type="button" data-lightbox-src="/images/<%= img.id %>" data-lightbox-alt="<%= machine.title %> photo <%= idx + 2 %>">
+          <img src="/images/<%= img.id %>" alt="<%= machine.title %> photo <%= idx + 2 %>">
+        </button>
+      <% }) %>
+    </div>
+  <% } %>
+</section>
 
-  <aside class="sidebar-card apple-sidebar-card">
-    <h2>Specs</h2>
-    <dl class="spec-list">
-      <dt>Brand</dt><dd><%= machine.brand || 'Not specified' %></dd>
-      <dt>Model</dt><dd><%= machine.model || 'Not specified' %></dd>
-      <dt>Production year</dt><dd><%= machine.production_year || 'Not specified' %></dd>
-      <dt>Purchase year</dt><dd><%= machine.purchase_year || 'Not specified' %></dd>
-      <dt>Printhead</dt><dd><%= machine.printhead_type || 'Not specified' %></dd>
-      <dt>Head count</dt><dd><%= machine.printhead_count || 'Not specified' %></dd>
-      <dt>Working status</dt><dd><%= machine.working_status || 'Not specified' %></dd>
-      <dt>Location</dt><dd><%= [machine.region, machine.country, machine.city].filter(Boolean).join(' · ') || 'Not specified' %></dd>
-      <dt>Seller contact</dt><dd>Hidden until admin-approved introduction.</dd>
-    </dl>
-    <p class="sidebar-note">Buyers verify machine condition, ownership, payment terms, and logistics directly with the seller.</p>
-  </aside>
+<section class="machine-essentials">
+  <div class="essential-card">
+    <span>Brand</span>
+    <strong><%= machine.brand || 'Not specified' %></strong>
+  </div>
+  <div class="essential-card">
+    <span>Model</span>
+    <strong><%= machine.model || 'Not specified' %></strong>
+  </div>
+  <div class="essential-card">
+    <span>Year</span>
+    <strong><%= machine.production_year || machine.purchase_year || 'Not specified' %></strong>
+  </div>
+  <div class="essential-card">
+    <span>Printhead</span>
+    <strong><%= [machine.printhead_type, machine.printhead_count ? machine.printhead_count + ' heads' : null].filter(Boolean).join(' · ') || 'Not specified' %></strong>
+  </div>
+  <div class="essential-card">
+    <span>Working status</span>
+    <strong><%= machine.working_status || 'Not specified' %></strong>
+  </div>
+  <div class="essential-card">
+    <span>Seller contact</span>
+    <strong>Released after approval</strong>
+  </div>
+</section>
+
+<section class="detail-accordion-stack">
+  <details open>
+    <summary>Machine notes</summary>
+    <div class="detail-prose"><p><%= machine.details || 'No additional description has been published yet.' %></p></div>
+  </details>
+  <% if (machine.accessories) { %>
+    <details>
+      <summary>Included accessories</summary>
+      <div class="detail-prose"><p><%= machine.accessories %></p></div>
+    </details>
+  <% } %>
+  <% if (machine.known_defects) { %>
+    <details>
+      <summary>Known defects</summary>
+      <div class="detail-prose"><p><%= machine.known_defects %></p></div>
+    </details>
+  <% } %>
+  <% if (machine.video_url) { %>
+    <details>
+      <summary>Seller video</summary>
+      <div class="detail-prose"><p><a class="text-link" href="<%= machine.video_url %>" target="_blank" rel="noopener">Open seller video →</a></p></div>
+    </details>
+  <% } %>
+  <details>
+    <summary>Buyer verification reminder</summary>
+    <div class="detail-prose"><p>Wall Printer Exchange is a listing and introduction platform only. Buyers verify condition, ownership, payment terms, and logistics directly with the seller before purchase.</p></div>
+  </details>
 </section>
 <%- include('../partials/foot') %>

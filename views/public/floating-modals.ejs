@@ -1,6 +1,6 @@
-<div class="floating-actions" aria-label="Quick actions">
-  <button class="float-btn primary" type="button" data-open-modal="list-machine">List your machine</button>
-  <button class="float-btn" type="button" data-open-modal="buying-request">Buying Request</button>
+<div class="floating-actions action-hub" aria-label="Quick actions">
+  <button class="float-btn primary" type="button" data-open-modal="list-machine"><span>Sell</span><strong>List machine</strong></button>
+  <button class="float-btn" type="button" data-open-modal="buying-request"><span>Buy</span><strong>Buying request</strong></button>
 </div>
 
 <div class="modal-overlay" data-modal="list-machine" aria-hidden="true">
@@ -9,7 +9,7 @@
     <div class="modal-header">
       <p class="eyebrow">Seller submission</p>
       <h2 id="listMachineTitle">List your used wall printer</h2>
-      <p>Confirm the listing terms first. Then submit the machine for admin review.</p>
+      <p>Confirm the terms, then submit the machine for review.</p>
     </div>
 
     <form method="post" action="/submit-machine" enctype="multipart/form-data" data-seller-modal-form>
@@ -105,7 +105,7 @@
     <div class="modal-header">
       <p class="eyebrow">Buyer request</p>
       <h2 id="buyingRequestTitle">Tell us what you need</h2>
-      <p>Admin can match you with up to five suitable listings.</p>
+      <p>Submit your target machine. Admin can match up to five suitable listings.</p>
     </div>
     <form method="post" action="/buying-request">
       <section class="form-card compact-card">

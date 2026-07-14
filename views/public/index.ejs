@@ -1,53 +1,66 @@
 <%- include('../partials/head') %>
-<section class="apple-hero">
+<section class="home-hero-minimal">
   <p class="eyebrow">Wall Printer Exchange</p>
-  <h1>Used wall printers, clearly presented.</h1>
-  <p>Browse reviewed listings by region and status. Seller contact information is released only after admin approval.</p>
+  <h1>Used wall printers. Listed clearly.</h1>
+  <p>Search available, reserved, and sold machines worldwide. Use the action buttons to submit a machine or buying request.</p>
 </section>
 
-<section class="apple-filter-panel">
-  <form class="filters apple-filters" method="get" action="/">
-    <input type="search" name="q" placeholder="Search brand, model, country..." value="<%= filters.q || '' %>">
-    <select name="region">
-      <option value="">All regions</option>
-      <% regions.forEach(r => { %>
-        <option value="<%= r %>" <%= filters.region === r ? 'selected' : '' %>><%= r %></option>
-      <% }) %>
-    </select>
-    <select name="status">
-      <option value="">All statuses</option>
-      <option value="available" <%= filters.status === 'available' ? 'selected' : '' %>>Available</option>
-      <option value="reserved" <%= filters.status === 'reserved' ? 'selected' : '' %>>Reserved</option>
-      <option value="sold" <%= filters.status === 'sold' ? 'selected' : '' %>>Sold</option>
-    </select>
-    <button class="btn primary" type="submit">Search</button>
+<section class="search-dock" aria-label="Machine search">
+  <form method="get" action="/" class="search-dock-form">
+    <div class="primary-search-row">
+      <label class="visually-hidden" for="machineSearch">Search machines</label>
+      <input id="machineSearch" type="search" name="q" placeholder="Search machine, brand, model, country..." value="<%= filters.q || '' %>" autocomplete="off">
+      <button class="btn primary" type="submit">Search</button>
+    </div>
+    <details class="advanced-filter-drawer">
+      <summary>
+        <span>Region & status</span>
+        <small><%= [filters.region || 'All regions', filters.status ? statusLabel(filters.status) : 'All statuses'].join(' · ') %></small>
+      </summary>
+      <div class="advanced-filter-grid">
+        <label>Region
+          <select name="region">
+            <option value="">All regions</option>
+            <% regions.forEach(r => { %>
+              <option value="<%= r %>" <%= filters.region === r ? 'selected' : '' %>><%= r %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>Status
+          <select name="status">
+            <option value="">All statuses</option>
+            <option value="available" <%= filters.status === 'available' ? 'selected' : '' %>>Available</option>
+            <option value="reserved" <%= filters.status === 'reserved' ? 'selected' : '' %>>Reserved</option>
+            <option value="sold" <%= filters.status === 'sold' ? 'selected' : '' %>>Sold</option>
+          </select>
+        </label>
+        <div class="filter-drawer-actions">
+          <a class="btn secondary" href="/">Reset</a>
+          <button class="btn primary" type="submit">Apply</button>
+        </div>
+      </div>
+    </details>
   </form>
-  <div class="region-pills apple-region-pills">
-    <a class="pill <%= !filters.region ? 'active' : '' %>" href="/">All</a>
-    <% regions.forEach(r => { const stat = stats.find(s => s.region === r); %>
-      <a class="pill <%= filters.region === r ? 'active' : '' %>" href="/?region=<%= encodeURIComponent(r) %>"><%= r %><span><%= stat ? stat.count : 0 %></span></a>
-    <% }) %>
-  </div>
 </section>
 
-<section class="apple-section-head">
+<section class="catalog-heading-minimal">
   <div>
     <p class="eyebrow">Machines</p>
-    <h2>Current listings</h2>
+    <h2><%= machines.length %> listing<%= machines.length === 1 ? '' : 's' %></h2>
   </div>
-  <p><%= machines.length %> listing<%= machines.length === 1 ? '' : 's' %></p>
+  <p>Machine-first catalog. Details open when needed.</p>
 </section>
 
 <% if (!machines.length) { %>
-  <section class="empty-state apple-empty-state">
-    <h3>No machines match this filter.</h3>
-    <p>Use the floating Buying Request button to tell us what you need.</p>
+  <section class="empty-state clean-empty-state">
+    <h3>No matching machines.</h3>
+    <p>Submit a buying request from the floating button and admin can match suitable listings.</p>
   </section>
 <% } else { %>
-  <section class="machine-grid apple-machine-grid">
+  <section class="machine-grid focus-machine-grid">
     <% machines.forEach(machine => { %>
-      <article class="machine-card apple-machine-card <%= machine.status === 'sold' ? 'is-sold' : '' %>">
-        <a href="/machine/<%= machine.slug %>" class="card-image apple-card-image">
+      <article class="machine-card focus-machine-card <%= machine.status === 'sold' ? 'is-sold' : '' %>">
+        <a href="/machine/<%= machine.slug %>" class="card-image focus-card-image" aria-label="View <%= machine.title %>">
           <% if (machine.primary_image_id) { %>
             <img src="/images/<%= machine.primary_image_id %>" alt="<%= machine.title %>">
           <% } else { %>
@@ -55,22 +68,22 @@
           <% } %>
           <span class="status-badge <%= machine.status %>"><%= statusLabel(machine.status) %></span>
         </a>
-        <div class="card-body apple-card-body">
-          <p class="meta"><%= [machine.region, machine.country, machine.city].filter(Boolean).join(' · ') || 'Location TBC' %></p>
-          <h3><a href="/machine/<%= machine.slug %>"><%= machine.title %></a></h3>
-          <p class="specs"><%= [machine.brand, machine.model, machine.printhead_type, machine.printhead_count ? machine.printhead_count + ' heads' : null].filter(Boolean).join(' · ') || 'Specs pending' %></p>
-          <div class="apple-card-bottom">
-            <p class="price"><%= machine.status === 'sold' ? 'Sold' : money(machine.asking_price, machine.currency) %><% if (machine.price_negotiable && machine.status !== 'sold') { %> <span>Negotiable</span><% } %></p>
-            <a class="card-link" href="/machine/<%= machine.slug %>">View</a>
+        <div class="focus-card-body">
+          <div class="focus-card-topline">
+            <span><%= [machine.region, machine.country].filter(Boolean).join(' · ') || 'Location TBC' %></span>
+            <strong><%= machine.status === 'sold' ? 'Sold' : money(machine.asking_price, machine.currency) %></strong>
           </div>
+          <h3><a href="/machine/<%= machine.slug %>"><%= machine.title %></a></h3>
+          <p><%= [machine.production_year, machine.brand, machine.model, machine.printhead_type, machine.printhead_count ? machine.printhead_count + ' heads' : null].filter(Boolean).join(' · ') || 'Specs pending' %></p>
+          <a class="machine-view-link" href="/machine/<%= machine.slug %>">View machine</a>
         </div>
       </article>
     <% }) %>
   </section>
 <% } %>
 
-<section class="apple-micro-note">
-  <strong>Buyer-led verification.</strong>
-  <span>Wall Printer Exchange does not inspect, guarantee, sell, collect payment, ship, install, or warrant listed machines.</span>
+<section class="quiet-platform-note">
+  <span>Listing and introduction platform only.</span>
+  <span>Buyers verify machine condition, ownership, payment, and logistics directly with sellers.</span>
 </section>
 <%- include('../partials/foot') %>
