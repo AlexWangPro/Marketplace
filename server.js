@@ -55,13 +55,38 @@ function absoluteUrl(pathname = '/') {
 }
 
 function mailConfigured() {
-  return Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+  return Boolean(process.env.RESEND_API_KEY || (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS));
 }
 
 async function sendMail({ to, subject, text, html }) {
-  if (!mailConfigured()) {
-    console.warn('SMTP not configured. Email was not sent:', subject, 'to', to);
-    return { sent: false, reason: 'SMTP not configured' };
+  const from = process.env.MAIL_FROM || process.env.SMTP_USER || 'Wall Printer Exchange <noreply@wallprinter.org>';
+
+  if (process.env.RESEND_API_KEY) {
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ from, to: [to], subject, html: html || `<pre>${escapeHtml(text || '')}</pre>`, text })
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const message = payload.message || payload.error || `Resend API returned ${response.status}`;
+        console.error('Email send failed:', message);
+        return { sent: false, reason: message };
+      }
+      return { sent: true, provider: 'resend', id: payload.id };
+    } catch (err) {
+      console.error('Email send failed:', err.message);
+      return { sent: false, reason: err.message || 'Email send failed' };
+    }
+  }
+
+  if (!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS)) {
+    console.warn('Email provider not configured. Email was not sent:', subject, 'to', to);
+    return { sent: false, reason: 'Email provider not configured' };
   }
 
   const transporter = nodemailer.createTransport({
@@ -75,14 +100,8 @@ async function sendMail({ to, subject, text, html }) {
   });
 
   try {
-    await transporter.sendMail({
-      from: process.env.MAIL_FROM || process.env.SMTP_USER,
-      to,
-      subject,
-      text,
-      html
-    });
-    return { sent: true };
+    await transporter.sendMail({ from, to, subject, text, html });
+    return { sent: true, provider: 'smtp' };
   } catch (err) {
     console.error('Email send failed:', err.message);
     return { sent: false, reason: err.message || 'Email send failed' };
@@ -724,7 +743,16 @@ app.get('/machine/:slug', async (req, res, next) => {
     const machine = await getMachineWithPrimaryImage(req.params.slug, true);
     if (!machine || !['available', 'reserved', 'sold'].includes(machine.status)) return res.status(404).render('public/404', { title: 'Listing not found' });
     const { rows: images } = await pool.query('SELECT id, is_primary FROM machine_images WHERE machine_id=$1 ORDER BY is_primary DESC, id ASC', [machine.id]);
-    res.render('public/machine', { title: machine.title, machine, images });
+    const { rows: navMachines } = await pool.query(`
+      SELECT id, title, slug, status
+      FROM machines
+      WHERE status IN ('available','reserved','sold')
+      ORDER BY featured DESC, CASE status WHEN 'available' THEN 1 WHEN 'reserved' THEN 2 WHEN 'sold' THEN 3 ELSE 4 END, created_at DESC
+    `);
+    const currentIndex = navMachines.findIndex(item => Number(item.id) === Number(machine.id));
+    const prevMachine = currentIndex > 0 ? navMachines[currentIndex - 1] : null;
+    const nextMachine = currentIndex >= 0 && currentIndex < navMachines.length - 1 ? navMachines[currentIndex + 1] : null;
+    res.render('public/machine', { title: machine.title, machine, images, prevMachine, nextMachine });
   } catch (err) {
     next(err);
   }

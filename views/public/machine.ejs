@@ -18,99 +18,89 @@
   </section>
 <% } %>
 
-<section class="v28-detail-hero">
-  <div class="v28-detail-kicker">
-    <span class="status-badge <%= machine.status %>"><%= statusLabel(machine.status) %></span>
-    <span><%= locationText %></span>
+<nav class="v29-detail-nav" aria-label="Machine navigation">
+  <a class="v29-nav-pill" href="/">← Back to machines</a>
+  <div class="v29-detail-nextprev">
+    <% if (prevMachine) { %><a class="v29-nav-pill muted" href="/machine/<%= prevMachine.slug %>">Previous</a><% } %>
+    <% if (nextMachine) { %><a class="v29-nav-pill" href="/machine/<%= nextMachine.slug %>">Next machine →</a><% } %>
   </div>
-  <div class="v28-detail-title-row">
-    <div>
-      <h1><%= machine.title %></h1>
-      <p><%= [machine.production_year, machine.brand, machine.model, headText !== 'Not specified' ? headText : null].filter(Boolean).join(' · ') || 'Used wall printer listing' %></p>
-    </div>
-    <aside class="v28-price-panel">
-      <span>Asking price</span>
-      <strong><%= priceText %></strong>
-      <% if (machine.price_negotiable && machine.status !== 'sold') { %><small>Negotiable</small><% } %>
-    </aside>
-  </div>
-  <% if (!isPreview) { %>
-    <div class="v28-detail-actions">
-      <% if (machine.status !== 'sold') { %>
-        <a class="btn primary large" href="/machine/<%= machine.slug %>/request-contact">Request Seller Contact</a>
-      <% } else { %>
-        <button class="btn primary large" type="button" data-open-modal="buying-request">Request similar machine</button>
+</nav>
+
+<section class="v29-machine-stage">
+  <div class="v29-media-column">
+    <div class="v29-gallery-card" aria-label="Machine photos">
+      <div class="v29-main-photo-wrap">
+        <% if (images.length) { %>
+          <button class="v29-main-photo" type="button" data-gallery-main-button data-lightbox-src="/images/<%= images[0].id %>" data-lightbox-alt="<%= machine.title %> photo">
+            <img data-gallery-main src="/images/<%= images[0].id %>" alt="<%= machine.title %> photo">
+          </button>
+        <% } else { %>
+          <div class="placeholder-image v29-no-photo">No images uploaded</div>
+        <% } %>
+      </div>
+      <% if (images.length > 1) { %>
+        <div class="v29-thumbnail-rail">
+          <% images.forEach((img, idx) => { %>
+            <button class="v29-thumb <%= idx === 0 ? 'active' : '' %>" type="button" data-gallery-thumb data-src="/images/<%= img.id %>" data-alt="<%= machine.title %> photo <%= idx + 1 %>">
+              <img src="/images/<%= img.id %>" alt="<%= machine.title %> photo <%= idx + 1 %>">
+            </button>
+          <% }) %>
+        </div>
       <% } %>
-      <button class="btn secondary large" type="button" data-open-modal="buying-request">Submit buying request</button>
     </div>
-  <% } %>
-</section>
-
-<section class="v28-product-viewer" aria-label="Machine photos">
-  <div class="v28-main-photo-wrap">
-    <% if (images.length) { %>
-      <button class="v28-main-photo" type="button" data-gallery-main-button data-lightbox-src="/images/<%= images[0].id %>" data-lightbox-alt="<%= machine.title %> photo">
-        <img data-gallery-main src="/images/<%= images[0].id %>" alt="<%= machine.title %> photo">
-      </button>
-    <% } else { %>
-      <div class="placeholder-image v28-no-photo">No images uploaded</div>
-    <% } %>
   </div>
-  <% if (images.length > 1) { %>
-    <div class="v28-thumbnail-rail">
-      <% images.forEach((img, idx) => { %>
-        <button class="v28-thumb <%= idx === 0 ? 'active' : '' %>" type="button" data-gallery-thumb data-src="/images/<%= img.id %>" data-alt="<%= machine.title %> photo <%= idx + 1 %>">
-          <img src="/images/<%= img.id %>" alt="<%= machine.title %> photo <%= idx + 1 %>">
-        </button>
-      <% }) %>
+
+  <aside class="v29-info-column">
+    <div class="v29-info-panel">
+      <div class="v29-status-line">
+        <span class="status-badge <%= machine.status %>"><%= statusLabel(machine.status) %></span>
+        <span><%= locationText %></span>
+      </div>
+      <h1><%= machine.title %></h1>
+      <div class="v29-price-block">
+        <span>Asking price</span>
+        <strong><%= priceText %></strong>
+        <% if (machine.price_negotiable && machine.status !== 'sold') { %><small>Negotiable</small><% } %>
+      </div>
+      <div class="v29-quick-specs">
+        <div><span>Location</span><strong><%= locationText %></strong></div>
+        <div><span>Brand / Model</span><strong><%= [machine.brand, machine.model].filter(Boolean).join(' · ') || 'Not specified' %></strong></div>
+        <div><span>Year</span><strong><%= machine.production_year || machine.purchase_year || 'Not specified' %></strong></div>
+        <div><span>Printhead</span><strong><%= headText %></strong></div>
+        <div><span>Working status</span><strong><%= machine.working_status || 'Not specified' %></strong></div>
+        <div><span>Seller contact</span><strong>Released after approval</strong></div>
+      </div>
+      <% if (!isPreview) { %>
+        <div class="v29-action-stack">
+          <% if (machine.status !== 'sold') { %>
+            <a class="btn primary large" href="/machine/<%= machine.slug %>/request-contact">Request Seller Contact</a>
+          <% } else { %>
+            <button class="btn primary large" type="button" data-open-modal="buying-request">Request similar machine</button>
+          <% } %>
+          <button class="btn secondary large" type="button" data-open-modal="buying-request">Submit buying request</button>
+        </div>
+      <% } %>
     </div>
-  <% } %>
-</section>
-
-<section class="v28-essential-strip">
-  <div>
-    <span>Location</span>
-    <strong><%= locationText %></strong>
-  </div>
-  <div>
-    <span>Brand / Model</span>
-    <strong><%= [machine.brand, machine.model].filter(Boolean).join(' · ') || 'Not specified' %></strong>
-  </div>
-  <div>
-    <span>Year</span>
-    <strong><%= machine.production_year || machine.purchase_year || 'Not specified' %></strong>
-  </div>
-  <div>
-    <span>Printhead</span>
-    <strong><%= headText %></strong>
-  </div>
-  <div>
-    <span>Working status</span>
-    <strong><%= machine.working_status || 'Not specified' %></strong>
-  </div>
-  <div>
-    <span>Seller contact</span>
-    <strong>Released after approval</strong>
-  </div>
+  </aside>
 </section>
 
 <% if (machine.video_url) { %>
-  <section class="v28-video-section">
-    <div class="v28-section-title">
+  <section class="v29-video-section">
+    <div class="v29-section-title">
       <p class="eyebrow">Video</p>
-      <h2>Seller video preview</h2>
+      <h2>Seller video</h2>
     </div>
     <% if (videoEmbed) { %>
-      <div class="v28-video-frame">
+      <div class="v29-video-frame">
         <iframe src="<%= videoEmbed %>" title="Seller video for <%= machine.title %>" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
       </div>
     <% } else { %>
-      <a class="v28-video-link" href="<%= machine.video_url %>" target="_blank" rel="noopener">Open seller video →</a>
+      <a class="v29-video-link" href="<%= machine.video_url %>" target="_blank" rel="noopener">Open seller video →</a>
     <% } %>
   </section>
 <% } %>
 
-<section class="detail-accordion-stack v28-accordion-stack">
+<section class="detail-accordion-stack v29-accordion-stack">
   <details>
     <summary>Machine description</summary>
     <div class="detail-prose"><p><%= machine.details || 'No additional description has been published yet.' %></p></div>
@@ -132,4 +122,9 @@
     <div class="detail-prose"><p>Wall Printer Exchange is a listing and introduction platform only. Buyers verify condition, ownership, payment terms, and logistics directly with the seller before purchase.</p></div>
   </details>
 </section>
+
+<nav class="v29-bottom-nav" aria-label="More machines">
+  <a class="v29-nav-pill" href="/">← Back to machines</a>
+  <% if (nextMachine) { %><a class="v29-nav-pill" href="/machine/<%= nextMachine.slug %>">Next machine →</a><% } %>
+</nav>
 <%- include('../partials/foot') %>

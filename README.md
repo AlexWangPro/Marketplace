@@ -23,7 +23,7 @@ The platform is designed as a listing and introduction service, not a transactio
   - Reserved
   - Sold
 - Sold machines remain visible for reference and lead capture
-- Machine detail pages
+- Machine detail pages with desktop split view, next/previous machine navigation, Apple-style image viewer, and embedded YouTube/Vimeo preview when possible
 - Seller contact details hidden from public pages
 - Buyer verification checklist
 - Floating action buttons for seller machine submission and buyer request
@@ -44,7 +44,7 @@ The platform is designed as a listing and introduction service, not a transactio
 - Review buyer requests and contact requests
 - Mark requests as New / Reviewed / Contact Shared / Matched / Closed / Spam / Archived
 - When a machine contact request is changed to Contact Shared, send the buyer seller contact details and the verification checklist by email if SMTP is configured
-- Admin logs
+- Admin request matching emails for buyers and sellers
 
 ## Tech stack
 
@@ -109,7 +109,14 @@ PGSSL=true
 
 ### Optional email delivery
 
-To email buyers when Admin approves seller contact release, add SMTP variables to the **Web Service**:
+Recommended for Railway Hobby: use Resend API over HTTPS. Add these variables to the **Web Service**:
+
+```text
+RESEND_API_KEY=re_xxxxxxxxxxxxxxxxx
+MAIL_FROM=Wall Printer Exchange <noreply@wallprinter.org>
+```
+
+SMTP is also supported, but Railway only allows outbound SMTP on Pro and above. If you use SMTP, add:
 
 ```text
 SMTP_HOST=smtp.your-provider.com
@@ -127,7 +134,7 @@ When Admin opens a buyer contact request and changes status to `Contact Shared`,
 - A clear disclaimer that Wall Printer Exchange does not inspect, guarantee, collect payment, ship, install, or provide after-sales service
 - The buyer verification checklist and a link to `/inspection-checklist`
 
-If SMTP is not configured, the request status is still updated, but the app records that the email was not sent. You can then manually copy seller contact details from Admin.
+If no email provider is configured, the request status is still updated, but the app records that the email was not sent. You can then manually copy seller contact details from Admin.
 
 
 ### 5. Deploy
@@ -173,7 +180,7 @@ Add:
 wallprinter.org
 ```
 
-Railway will show the DNS records you need to add at your domain DNS provider.
+Railway will show the DNS records you need to add at your domain DNS provider. For `www.wallprinter.org`, this is usually a CNAME plus TXT verification record. For the root/apex `wallprinter.org`, use the record Railway shows; if your DNS provider does not allow a root CNAME, use an ALIAS/ANAME/flattened CNAME option if available, or point `www.wallprinter.org` first and redirect the root domain to `www` at your DNS/domain provider.
 
 ## Image storage note
 
@@ -250,3 +257,12 @@ If Railway still tries to download from an internal OpenAI/Caas registry, clear 
 - Admin can manually match a buying request with up to 5 available/reserved machines. The buyer receives selected options and seller contacts; matched sellers receive buyer information.
 - Public UI and Admin dashboard have been simplified with a cleaner Apple-inspired catalog layout.
 
+
+
+## v2.9 update notes
+
+- Machine detail pages now include Back to machines, Previous, and Next machine navigation.
+- Desktop machine detail pages use a two-column split: photos on the left, price/details/actions on the right.
+- Mobile detail pages stack the same content with compact Apple-style photo viewing and clearer information cards.
+- Seller videos from YouTube, YouTube Shorts, youtu.be, and Vimeo are embedded directly when possible.
+- Email delivery now supports Resend API via `RESEND_API_KEY`, which is recommended for Railway Hobby because outbound SMTP is restricted.
