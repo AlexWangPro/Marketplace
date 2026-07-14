@@ -222,3 +222,24 @@
   }
   boxes.forEach((box) => box.addEventListener('change', () => enforceLimit(box)));
 })();
+
+(function () {
+  const mainImage = document.querySelector('[data-gallery-main]');
+  const mainButton = document.querySelector('[data-gallery-main-button]');
+  const thumbs = Array.from(document.querySelectorAll('[data-gallery-thumb]'));
+  if (!mainImage || !mainButton || !thumbs.length) return;
+
+  thumbs.forEach((thumb) => {
+    thumb.addEventListener('click', () => {
+      const src = thumb.getAttribute('data-src');
+      const alt = thumb.getAttribute('data-alt') || '';
+      if (!src) return;
+      mainImage.src = src;
+      mainImage.alt = alt;
+      mainButton.setAttribute('data-lightbox-src', src);
+      mainButton.setAttribute('data-lightbox-alt', alt);
+      thumbs.forEach((item) => item.classList.remove('active'));
+      thumb.classList.add('active');
+    });
+  });
+})();

@@ -362,6 +362,7 @@ app.use((req, res, next) => {
   res.locals.formatDate = formatDate;
   res.locals.money = money;
   res.locals.truncate = truncate;
+  res.locals.videoEmbedUrl = videoEmbedUrl;
   res.locals.mailConfigured = mailConfigured();
   next();
 });
@@ -408,6 +409,36 @@ function money(value, currency) {
 function truncate(text, length = 140) {
   if (!text) return '';
   return text.length > length ? `${text.slice(0, length).trim()}…` : text;
+}
+
+
+function videoEmbedUrl(input) {
+  if (!input) return '';
+  try {
+    const url = new URL(String(input).trim());
+    const host = url.hostname.replace(/^www\./, '').toLowerCase();
+    if (host === 'youtu.be') {
+      const id = url.pathname.split('/').filter(Boolean)[0];
+      return id ? `https://www.youtube.com/embed/${encodeURIComponent(id)}` : '';
+    }
+    if (host === 'youtube.com' || host === 'm.youtube.com') {
+      let id = '';
+      if (url.pathname === '/watch') id = url.searchParams.get('v') || '';
+      if (url.pathname.startsWith('/shorts/')) id = url.pathname.split('/').filter(Boolean)[1] || '';
+      if (url.pathname.startsWith('/embed/')) id = url.pathname.split('/').filter(Boolean)[1] || '';
+      return id ? `https://www.youtube.com/embed/${encodeURIComponent(id)}` : '';
+    }
+    if (host === 'vimeo.com') {
+      const id = url.pathname.split('/').filter(Boolean).find(part => /^\d+$/.test(part));
+      return id ? `https://player.vimeo.com/video/${encodeURIComponent(id)}` : '';
+    }
+    if (host === 'player.vimeo.com' && url.pathname.startsWith('/video/')) {
+      return url.href;
+    }
+    return '';
+  } catch (err) {
+    return '';
+  }
 }
 
 function slugify(input) {
