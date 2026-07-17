@@ -1,24 +1,38 @@
 <!doctype html>
-<html lang="<%= lang || 'en' %>" dir="<%= currentLanguage && currentLanguage.dir ? currentLanguage.dir : 'ltr' %>">
+<%
+  const safeLang = typeof lang !== 'undefined' && lang ? lang : 'en';
+  const safeCurrentLanguage = typeof currentLanguage !== 'undefined' && currentLanguage ? currentLanguage : { code: safeLang, dir: 'ltr', nativeName: 'English' };
+  const safeCurrentPath = typeof currentPath !== 'undefined' && currentPath ? currentPath : '/';
+  const safeLanguages = typeof languages !== 'undefined' && Array.isArray(languages) ? languages : [{ code: 'en', nativeName: 'English', dir: 'ltr' }];
+  const safeT = typeof t !== 'undefined' ? t : (key) => key;
+  const safeLocalPath = typeof localPath !== 'undefined' ? localPath : (pathname) => pathname || '/';
+  const safeLangUrl = typeof langUrl !== 'undefined' ? langUrl : (code, pathname) => pathname || '/';
+  const safeAbsoluteUrl = typeof absoluteUrl !== 'undefined' ? absoluteUrl : (pathname) => pathname || '/';
+  const safeLocalizedAbsolute = typeof localizedAbsolute !== 'undefined' ? localizedAbsolute : safeAbsoluteUrl;
+  const safeAdmin = typeof admin !== 'undefined' ? admin : null;
+  const safeFlash = typeof flash !== 'undefined' ? flash : null;
+%>
+<html lang="<%= safeLang %>" dir="<%= safeCurrentLanguage && safeCurrentLanguage.dir ? safeCurrentLanguage.dir : 'ltr' %>">
 <head>
-  <% const pageTitle = title ? title + ' · Wall Printer Exchange' : 'Wall Printer Exchange · Used Wall Printer Listings'; %>
+  <% const safeTitle = typeof title !== 'undefined' && title ? title : ''; %>
+  <% const pageTitle = safeTitle ? safeTitle + ' · Wall Printer Exchange' : 'Wall Printer Exchange · Used Wall Printer Listings'; %>
   <% const pageDescription = typeof metaDescription !== 'undefined' && metaDescription ? metaDescription : 'Browse reviewed used wall printer machines, request private seller introductions, and use buyer-led verification before purchase.'; %>
-  <% const pageUrl = typeof canonicalUrl !== 'undefined' && canonicalUrl ? canonicalUrl : localizedAbsolute(currentPath || '/'); %>
+  <% const pageUrl = typeof canonicalUrl !== 'undefined' && canonicalUrl ? canonicalUrl : safeLocalizedAbsolute(safeCurrentPath || '/'); %>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title><%= pageTitle %></title>
   <meta name="description" content="<%= pageDescription %>">
-  <meta name="robots" content="<%= currentPath && currentPath.startsWith('/admin') ? 'noindex,nofollow' : 'index,follow' %>">
+  <meta name="robots" content="<%= safeCurrentPath && safeCurrentPath.startsWith('/admin') ? 'noindex,nofollow' : 'index,follow' %>">
   <meta name="theme-color" content="#111827">
   <link rel="canonical" href="<%= pageUrl %>">
-  <% if (!currentPath.startsWith('/admin')) { %>
-    <% languages.forEach(language => { %>
-      <link rel="alternate" hreflang="<%= language.code %>" href="<%= absoluteUrl(langUrl(language.code, currentPath || '/')) %>">
+  <% if (!safeCurrentPath.startsWith('/admin')) { %>
+    <% safeLanguages.forEach(language => { %>
+      <link rel="alternate" hreflang="<%= language.code %>" href="<%= safeAbsoluteUrl(safeLangUrl(language.code, safeCurrentPath || '/')) %>">
     <% }) %>
-    <link rel="alternate" hreflang="x-default" href="<%= absoluteUrl(langUrl('en', currentPath || '/')) %>">
+    <link rel="alternate" hreflang="x-default" href="<%= safeAbsoluteUrl(safeLangUrl('en', safeCurrentPath || '/')) %>">
   <% } %>
   <meta property="og:site_name" content="Wall Printer Exchange">
-  <meta property="og:locale" content="<%= lang === 'en' ? 'en_US' : lang %>">
+  <meta property="og:locale" content="<%= safeLang === 'en' ? 'en_US' : safeLang %>">
   <meta property="og:type" content="<%= typeof ogType !== 'undefined' && ogType ? ogType : 'website' %>">
   <meta property="og:title" content="<%= pageTitle %>">
   <meta property="og:description" content="<%= pageDescription %>">
@@ -27,38 +41,38 @@
   <meta name="twitter:card" content="<%= typeof ogImage !== 'undefined' && ogImage ? 'summary_large_image' : 'summary' %>">
   <meta name="twitter:title" content="<%= pageTitle %>">
   <meta name="twitter:description" content="<%= pageDescription %>">
-  <link rel="stylesheet" href="/styles.css?v=3.8">
+  <link rel="stylesheet" href="/styles.css?v=3.8.1">
 </head>
-<body class="<%= currentLanguage && currentLanguage.dir === 'rtl' ? 'rtl' : '' %>">
+<body class="<%= safeCurrentLanguage && safeCurrentLanguage.dir === 'rtl' ? 'rtl' : '' %>">
 <header class="site-header minimal-header mobile-clean-header">
-  <a class="brand" href="<%= localPath('/') %>">
+  <a class="brand" href="<%= safeLocalPath('/') %>">
     <span class="brand-mark">WPE</span>
     <span>
       <strong>Wall Printer Exchange</strong>
-      <small><%= t('brand.subtitle') %></small>
+      <small><%= safeT('brand.subtitle') %></small>
     </span>
   </a>
   <nav class="site-nav" aria-label="Primary navigation">
-    <a href="<%= localPath('/') %>" class="<%= currentPath === '/' ? 'active' : '' %>"><%= t('nav.machines') %></a>
-    <a href="<%= localPath('/buyer-guide') %>" class="<%= currentPath === '/buyer-guide' ? 'active' : '' %>"><%= t('nav.buyerGuide') %></a>
-    <a href="<%= localPath('/seller-guide') %>" class="<%= currentPath === '/seller-guide' ? 'active' : '' %>"><%= t('nav.sellerGuide') %></a>
-    <a href="<%= localPath('/about') %>" class="<%= currentPath === '/about' ? 'active' : '' %>"><%= t('nav.about') %></a>
+    <a href="<%= safeLocalPath('/') %>" class="<%= safeCurrentPath === '/' ? 'active' : '' %>"><%= safeT('nav.machines') %></a>
+    <a href="<%= safeLocalPath('/buyer-guide') %>" class="<%= safeCurrentPath === '/buyer-guide' ? 'active' : '' %>"><%= safeT('nav.buyerGuide') %></a>
+    <a href="<%= safeLocalPath('/seller-guide') %>" class="<%= safeCurrentPath === '/seller-guide' ? 'active' : '' %>"><%= safeT('nav.sellerGuide') %></a>
+    <a href="<%= safeLocalPath('/about') %>" class="<%= safeCurrentPath === '/about' ? 'active' : '' %>"><%= safeT('nav.about') %></a>
   </nav>
-  <div class="language-switcher" aria-label="<%= t('nav.language') %>">
+  <div class="language-switcher" aria-label="<%= safeT('nav.language') %>">
     <select class="language-select" data-language-select>
-      <% languages.forEach(language => { %>
-        <option value="<%= langUrl(language.code, currentPath || '/') %>" <%= language.code === lang ? 'selected' : '' %>><%= language.nativeName %></option>
+      <% safeLanguages.forEach(language => { %>
+        <option value="<%= safeLangUrl(language.code, safeCurrentPath || '/') %>" <%= language.code === safeLang ? 'selected' : '' %>><%= language.nativeName %></option>
       <% }) %>
     </select>
   </div>
-  <% if (admin) { %>
+  <% if (safeAdmin) { %>
     <div class="admin-mini-nav">
-      <a class="admin-link" href="/admin"><%= t('nav.adminDashboard') %></a>
+      <a class="admin-link" href="/admin"><%= safeT('nav.adminDashboard') %></a>
       <form method="post" action="/admin/logout"><button class="btn tiny secondary" type="submit">Logout</button></form>
     </div>
   <% } %>
 </header>
-<% if (flash) { %>
-  <div class="flash <%= flash.type %>"><%= flash.message %></div>
+<% if (safeFlash) { %>
+  <div class="flash <%= safeFlash.type %>"><%= safeFlash.message %></div>
 <% } %>
 <main>

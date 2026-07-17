@@ -45,6 +45,27 @@ function localizedAbsolute(pathname = '/', lang = DEFAULT_LANG) {
   return absoluteUrl(localizedPath(pathname, lang));
 }
 
+function detectRequestLanguage(req) {
+  const original = req && (req.originalUrl || req.url || req.path || '/');
+  const match = String(original).match(new RegExp(`^/(${LANGUAGE_CODES.join('|')})(?=/|\?|$)`));
+  return match ? match[1] : DEFAULT_LANG;
+}
+
+function applyLanguageLocals(req, res) {
+  const lang = (req && req.lang) || detectRequestLanguage(req) || DEFAULT_LANG;
+  const currentPath = (req && req.path) || '/';
+  const currentLanguage = LANGUAGES.find(language => language.code === lang) || LANGUAGES[0];
+  res.locals.currentPath = currentPath;
+  res.locals.lang = lang;
+  res.locals.langPrefix = lang === DEFAULT_LANG ? '' : `/${lang}`;
+  res.locals.languages = LANGUAGES;
+  res.locals.currentLanguage = currentLanguage;
+  res.locals.t = (key) => translate(lang, key);
+  res.locals.localPath = (pathname) => localizedPath(pathname, lang);
+  res.locals.langUrl = (code, pathname = currentPath) => localizedPath(pathname, code);
+  res.locals.localizedAbsolute = (pathname) => localizedAbsolute(pathname, lang);
+}
+
 const MACHINE_STATUSES = ['pending_review', 'available', 'reserved', 'sold', 'archived', 'rejected'];
 const REQUEST_STATUSES = ['new', 'reviewed', 'contact_shared', 'matched', 'closed', 'spam', 'archived'];
 const INSPECTION_PLANS = [
@@ -489,15 +510,7 @@ app.use((req, res, next) => {
 });
 
 app.use((req, res, next) => {
-  res.locals.currentPath = req.path;
-  res.locals.lang = req.lang || DEFAULT_LANG;
-  res.locals.langPrefix = req.langPrefix || '';
-  res.locals.languages = LANGUAGES;
-  res.locals.currentLanguage = LANGUAGES.find(language => language.code === res.locals.lang) || LANGUAGES[0];
-  res.locals.t = (key) => translate(res.locals.lang, key);
-  res.locals.localPath = (pathname) => localizedPath(pathname, res.locals.lang);
-  res.locals.langUrl = (code, pathname = req.path) => localizedPath(pathname, code);
-  res.locals.localizedAbsolute = (pathname) => localizedAbsolute(pathname, res.locals.lang);
+  applyLanguageLocals(req, res);
   res.locals.admin = req.session.admin || null;
   res.locals.regions = REGIONS;
   res.locals.machineStatuses = MACHINE_STATUSES;
@@ -1068,7 +1081,7 @@ app.get('/images/:id', async (req, res, next) => {
 });
 
 app.get('/healthz', (req, res) => {
-  res.json({ ok: true, service: 'wall-printer-exchange', version: '3.8' });
+  res.json({ ok: true, service: 'wall-printer-exchange', version: '3.8.1' });
 });
 
 app.get('/robots.txt', (req, res) => {
@@ -1522,6 +1535,21 @@ app.use((req, res) => {
 
 app.use((err, req, res, next) => {
   console.error(err);
+  applyLanguageLocals(req, res);
+  res.locals.admin = (req.session && req.session.admin) || null;
+  res.locals.regions = REGIONS;
+  res.locals.machineStatuses = MACHINE_STATUSES;
+  res.locals.requestStatuses = REQUEST_STATUSES;
+  res.locals.inspectionPlans = INSPECTION_PLANS;
+  res.locals.flash = (req.session && req.session.flash) || null;
+  res.locals.statusLabel = statusLabel;
+  res.locals.formatDate = formatDate;
+  res.locals.money = money;
+  res.locals.truncate = truncate;
+  res.locals.videoEmbedUrl = videoEmbedUrl;
+  res.locals.absoluteUrl = absoluteUrl;
+  res.locals.imageUrl = imageUrl;
+  res.locals.mailConfigured = mailConfigured();
   if (err instanceof multer.MulterError || /image/i.test(err.message || '')) {
     const message = err.code === 'LIMIT_FILE_SIZE'
       ? 'One or more images are too large. Each image must be 2MB or smaller.'

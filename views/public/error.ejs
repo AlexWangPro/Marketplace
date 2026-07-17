@@ -1,6 +1,7 @@
 <%- include('../partials/head') %>
+<% const safePageT = typeof t !== 'undefined' ? t : (key) => key; const safePageLocalPath = typeof localPath !== 'undefined' ? localPath : (pathname) => pathname || '/'; %>
 <section class="launch-state-card error-state-v37 mobile-page-hero">
-  <p class="eyebrow"><%= title || 'Error' %></p><h1><%= t('error.h1') %></h1><p><%= message || t('error.text') %></p>
-  <div class="hero-actions centered"><a class="btn primary" href="<%= localPath('/') %>"><%= t('error.back') %></a><button class="btn secondary" type="button" onclick="window.history.back()"><%= t('error.goBack') %></button></div>
+  <p class="eyebrow"><%= title || 'Error' %></p><h1><%= safePageT('error.h1') %></h1><p><%= message || safePageT('error.text') %></p>
+  <div class="hero-actions centered"><a class="btn primary" href="<%= safePageLocalPath('/') %>"><%= safePageT('error.back') %></a><button class="btn secondary" type="button" onclick="window.history.back()"><%= safePageT('error.goBack') %></button></div>
 </section>
 <%- include('../partials/foot') %>

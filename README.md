@@ -1,8 +1,8 @@
-# Wall Printer Exchange v3.8
+# Wall Printer Exchange v3.8.1
 
 Railway Node/Express version for Wall Printer Exchange.
 
-## What is new in v3.8
+## What is new in v3.8.1
 
 - 10-language public UI, excluding Chinese:
   - English `/`
@@ -73,3 +73,8 @@ Images are stored in PostgreSQL as `BYTEA` and served through `/images/:id`. Thi
 ## Notes
 
 Admin pages remain English. Public pages, navigation, core platform pages, main CTAs, and mobile browsing UI are multilingual.
+
+
+## v3.8.1 hotfix
+
+Fixes missing i18n locals on error rendering paths so `/public/error.ejs` and shared partials no longer throw `lang is not defined` if an error occurs before normal locale middleware completes.

@@ -1,22 +1,27 @@
 </main>
+<%
+  const safeFooterT = typeof t !== 'undefined' ? t : (key) => key;
+  const safeFooterLocalPath = typeof localPath !== 'undefined' ? localPath : (pathname) => pathname || '/';
+  const safeFooterCurrentPath = typeof currentPath !== 'undefined' ? currentPath : '/';
+  const safeFooterAdmin = typeof admin !== 'undefined' ? admin : null;
+  const safeCanIncludeFloating = typeof t !== 'undefined' && typeof regions !== 'undefined' && typeof inspectionPlans !== 'undefined';
+%>
 <footer class="site-footer clean-footer apple-footer site-footer-v37 mobile-clean-footer">
   <div>
     <strong>Wall Printer Exchange</strong>
-    <p><%= t('footer.text') %></p>
+    <p><%= safeFooterT('footer.text') %></p>
   </div>
   <div class="footer-links footer-quiet-links">
-    <a href="<%= localPath('/about') %>"><%= t('nav.about') %></a>
-    <a href="<%= localPath('/buyer-guide') %>"><%= t('nav.buyerGuide') %></a>
-    <a href="<%= localPath('/seller-guide') %>"><%= t('nav.sellerGuide') %></a>
-    <a href="<%= localPath('/verification-checklist') %>"><%= t('footer.verification') %></a>
-    <% if (!admin) { %><a href="/admin/login"><%= t('footer.adminLogin') %></a><% } %>
+    <a href="<%= safeFooterLocalPath('/about') %>"><%= safeFooterT('nav.about') %></a>
+    <a href="<%= safeFooterLocalPath('/buyer-guide') %>"><%= safeFooterT('nav.buyerGuide') %></a>
+    <a href="<%= safeFooterLocalPath('/seller-guide') %>"><%= safeFooterT('nav.sellerGuide') %></a>
+    <a href="<%= safeFooterLocalPath('/verification-checklist') %>"><%= safeFooterT('footer.verification') %></a>
+    <% if (!safeFooterAdmin) { %><a href="/admin/login"><%= safeFooterT('footer.adminLogin') %></a><% } %>
   </div>
 </footer>
-<% if (!currentPath.startsWith('/admin')) { %>
+<% if (!safeFooterCurrentPath.startsWith('/admin') && safeCanIncludeFloating) { %>
   <%- include('../public/floating-modals') %>
-  <script src="/app.js?v=3.8" defer></script>
-<% } else { %>
-  <script src="/app.js?v=3.8" defer></script>
 <% } %>
+<script src="/app.js?v=3.8.1" defer></script>
 </body>
 </html>
