@@ -300,3 +300,8 @@ If Railway still tries to download from an internal OpenAI/Caas registry, clear 
 ## v3.3 cleanup note
 
 This package removes the public listing-count header from the homepage. The previous `.v30-catalog-head` / `.catalog-listings-head` sections are also hidden in CSS as a cache-safety measure.
+
+
+## v3.4 polish note
+
+This version refines the machine detail page, Admin Machines list, Buyer Requests list, and Buyer Request detail screen. It keeps image storage in PostgreSQL and focuses on cleaner UI, simpler admin actions, and better review flow clarity.

@@ -1,46 +1,73 @@
 <%- include('../partials/head') %>
-<section class="admin-shell">
-  <div class="admin-hero-clean">
-    <div><p class="eyebrow">Admin</p><h1>Machines</h1><p>Preview public listings, approve submissions, edit machine details, or update status.</p></div>
+<% const currentStatus = filters.status || ''; %>
+<section class="admin-shell v34-admin-shell">
+  <div class="admin-hero-clean v34-admin-hero">
+    <div>
+      <p class="eyebrow">Admin</p>
+      <h1>Machines</h1>
+      <p>Review seller submissions, manage public status, and keep listings clean.</p>
+    </div>
     <a class="btn secondary" href="/admin">Dashboard</a>
   </div>
   <nav class="admin-nav clean-admin-nav"><a href="/admin">Dashboard</a><a href="/admin/machines" class="active">Machines</a><a href="/admin/requests">Buyer Requests</a></nav>
 
-  <form class="filters admin-filters apple-admin-filters" method="get" action="/admin/machines">
-    <input type="search" name="q" placeholder="Search listing, seller, email..." value="<%= filters.q || '' %>">
-    <select name="status"><option value="">All statuses</option><% machineStatuses.forEach(s => { %><option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= statusLabel(s) %></option><% }) %></select>
-    <select name="region"><option value="">All regions</option><% regions.forEach(r => { %><option value="<%= r %>" <%= filters.region === r ? 'selected' : '' %>><%= r %></option><% }) %></select>
-    <button class="btn primary" type="submit">Filter</button>
-  </form>
+  <section class="v34-admin-toolbar">
+    <div class="v34-status-tabs" aria-label="Machine status filters">
+      <a class="<%= !currentStatus ? 'active' : '' %>" href="/admin/machines">All</a>
+      <% ['pending_review','available','reserved','sold','archived','rejected'].forEach(s => { %>
+        <a class="<%= currentStatus === s ? 'active' : '' %>" href="/admin/machines?status=<%= s %>"><%= statusLabel(s) %></a>
+      <% }) %>
+    </div>
+    <form class="v34-admin-search" method="get" action="/admin/machines">
+      <input type="search" name="q" placeholder="Search machine, seller, email, country..." value="<%= filters.q || '' %>">
+      <select name="region"><option value="">All regions</option><% regions.forEach(r => { %><option value="<%= r %>" <%= filters.region === r ? 'selected' : '' %>><%= r %></option><% }) %></select>
+      <% if (filters.status) { %><input type="hidden" name="status" value="<%= filters.status %>"><% } %>
+      <button class="btn primary" type="submit">Search</button>
+      <a class="btn secondary" href="/admin/machines">Reset</a>
+    </form>
+  </section>
 
-  <section class="content-card clean-admin-card">
-    <table class="admin-table rich clean-table">
-      <thead><tr><th>Machine</th><th>Seller</th><th>Location</th><th>Price</th><th>Status</th><th>Review</th></tr></thead>
-      <tbody>
-        <% machines.forEach(m => { %>
-          <tr>
-            <td class="machine-cell"><% if (m.primary_image_id) { %><img src="/images/<%= m.primary_image_id %>" alt=""><% } %><div><strong><%= m.title %></strong><small><%= [m.brand,m.model,m.printhead_type].filter(Boolean).join(' · ') || 'Specs pending' %></small></div></td>
-            <td><%= m.seller_name || '—' %><br><small><%= m.seller_email || '' %></small></td>
-            <td><%= [m.region,m.country,m.city].filter(Boolean).join(' · ') || '—' %></td>
-            <td><%= money(m.asking_price, m.currency) %></td>
-            <td><span class="status-badge <%= m.status %>"><%= statusLabel(m.status) %></span></td>
-            <td class="table-actions clean-table-actions">
-              <a class="btn tiny primary" href="/admin/machines/<%= m.id %>/preview">Preview</a>
-              <% if (m.status === 'pending_review') { %>
-                <form method="post" action="/admin/machines/<%= m.id %>/status"><input type="hidden" name="status" value="available"><button class="btn tiny secondary" type="submit">Approve</button></form>
-              <% } %>
-              <a class="btn tiny secondary" href="/admin/machines/<%= m.id %>/edit">Edit</a>
-              <% ['reserved','sold','archived','rejected'].forEach(s => { %>
-                <form method="post" action="/admin/machines/<%= m.id %>/status"><input type="hidden" name="status" value="<%= s %>"><button class="btn tiny ghost" type="submit"><%= statusLabel(s) %></button></form>
-              <% }) %>
-              <form method="post" action="/admin/machines/<%= m.id %>/delete" data-confirm-delete="Delete this machine listing permanently? Buyer requests linked to it will remain, but the listing will be removed.">
-                <button class="btn tiny danger soft-danger" type="submit">Delete</button>
-              </form>
-            </td>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
+  <section class="content-card clean-admin-card v34-table-card">
+    <% if (!machines.length) { %>
+      <div class="v34-empty-admin"><h2>No machines found.</h2><p>Try another filter or clear the search.</p></div>
+    <% } else { %>
+      <table class="admin-table rich clean-table v34-admin-table">
+        <thead><tr><th>Machine</th><th>Seller</th><th>Location</th><th>Price</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>
+          <% machines.forEach(m => { %>
+            <tr>
+              <td class="machine-cell v34-machine-cell">
+                <% if (m.primary_image_id) { %><img src="/images/<%= m.primary_image_id %>" alt=""><% } else { %><div class="v34-admin-thumb">WPE</div><% } %>
+                <div>
+                  <strong><%= m.title %></strong>
+                  <small><%= [m.brand,m.model,m.printhead_type].filter(Boolean).join(' · ') || 'Specs pending' %></small>
+                  <small>Submitted <%= formatDate(m.created_at) %></small>
+                </div>
+              </td>
+              <td><strong><%= m.seller_name || '—' %></strong><br><small><%= m.seller_email || '' %></small></td>
+              <td><%= [m.region,m.country,m.city].filter(Boolean).join(' · ') || '—' %></td>
+              <td><%= money(m.asking_price, m.currency) %></td>
+              <td><span class="status-badge <%= m.status %>"><%= statusLabel(m.status) %></span></td>
+              <td class="v34-action-cell">
+                <div class="v34-action-row">
+                  <a class="btn tiny primary" href="/admin/machines/<%= m.id %>/preview">Preview</a>
+                  <a class="btn tiny secondary" href="/admin/machines/<%= m.id %>/edit">Edit</a>
+                </div>
+                <form class="v34-status-form" method="post" action="/admin/machines/<%= m.id %>/status">
+                  <select name="status" aria-label="Change machine status">
+                    <% machineStatuses.forEach(s => { %><option value="<%= s %>" <%= m.status === s ? 'selected' : '' %>><%= statusLabel(s) %></option><% }) %>
+                  </select>
+                  <button class="btn tiny secondary" type="submit">Update</button>
+                </form>
+                <form method="post" action="/admin/machines/<%= m.id %>/delete" data-confirm-delete="Delete this machine listing permanently? Buyer requests linked to it will remain, but the listing will be removed.">
+                  <button class="btn tiny danger soft-danger" type="submit">Delete</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
   </section>
 </section>
 <%- include('../partials/foot') %>

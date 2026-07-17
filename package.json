@@ -1,7 +1,7 @@
 {
   "name": "wall-printer-exchange",
-  "version": "3.1.0",
-  "description": "Wall Printer Exchange - used wall printer listing and buyer request platform with admin review.",
+  "version": "3.4.0",
+  "description": "Wall Printer Exchange - polished Railway app for used wall printer listings, buyer requests, and admin introductions.",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {

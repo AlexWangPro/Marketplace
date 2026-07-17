@@ -1,8 +1,12 @@
 <%- include('../partials/head') %>
 <% const isPreview = typeof previewMode !== 'undefined' && previewMode; %>
+<% const previous = typeof prevMachine !== 'undefined' ? prevMachine : null; %>
+<% const next = typeof nextMachine !== 'undefined' ? nextMachine : null; %>
 <% const locationText = [machine.region, machine.country, machine.city].filter(Boolean).join(' · ') || 'Location TBC'; %>
 <% const priceText = machine.status === 'sold' ? 'Sold' : money(machine.asking_price, machine.currency); %>
+<% const brandModel = [machine.brand, machine.model].filter(Boolean).join(' · ') || 'Not specified'; %>
 <% const headText = [machine.printhead_type, machine.printhead_count ? machine.printhead_count + ' heads' : null].filter(Boolean).join(' · ') || 'Not specified'; %>
+<% const yearText = machine.production_year || machine.purchase_year || 'Not specified'; %>
 <% const videoEmbed = videoEmbedUrl(machine.video_url); %>
 <script type="application/ld+json"><%- JSON.stringify({
   '@context': 'https://schema.org',
@@ -22,10 +26,10 @@
   }
 }) %></script>
 <% if (isPreview) { %>
-  <section class="admin-preview-bar">
+  <section class="admin-preview-bar v34-preview-bar">
     <div>
       <strong>Admin preview</strong>
-      <span>This is how the public listing will appear after approval.</span>
+      <span>Review this public machine page before approval.</span>
     </div>
     <div class="preview-actions">
       <form method="post" action="/admin/machines/<%= machine.id %>/status"><input type="hidden" name="status" value="available"><button class="btn primary" type="submit">Approve listing</button></form>
@@ -35,60 +39,50 @@
   </section>
 <% } %>
 
-<nav class="v29-detail-nav" aria-label="Machine navigation">
-  <a class="v29-nav-pill" href="/">← Back to machines</a>
-  <div class="v29-detail-nextprev">
-    <% if (prevMachine) { %><a class="v29-nav-pill muted" href="/machine/<%= prevMachine.slug %>">Previous</a><% } %>
-    <% if (nextMachine) { %><a class="v29-nav-pill" href="/machine/<%= nextMachine.slug %>">Next machine →</a><% } %>
+<nav class="v34-detail-nav" aria-label="Machine navigation">
+  <a href="/">← Machines</a>
+  <div>
+    <% if (previous) { %><a href="/machine/<%= previous.slug %>">Previous</a><% } %>
+    <% if (next) { %><a href="/machine/<%= next.slug %>">Next →</a><% } %>
   </div>
 </nav>
 
-<section class="v29-machine-stage">
-  <div class="v29-media-column">
-    <div class="v29-gallery-card" aria-label="Machine photos">
-      <div class="v29-main-photo-wrap">
-        <% if (images.length) { %>
-          <button class="v29-main-photo" type="button" data-gallery-main-button data-lightbox-src="/images/<%= images[0].id %>" data-lightbox-alt="<%= machine.title %> photo">
-            <img data-gallery-main src="/images/<%= images[0].id %>" alt="<%= machine.title %> photo" loading="eager">
-          </button>
-        <% } else { %>
-          <div class="placeholder-image v29-no-photo">No images uploaded</div>
+<section class="v34-machine-detail">
+  <div class="v34-detail-media">
+    <div class="v34-gallery-card" aria-label="Machine photos">
+      <% if (images.length) { %>
+        <button class="v34-main-photo" type="button" data-gallery-main-button data-lightbox-src="/images/<%= images[0].id %>" data-lightbox-alt="<%= machine.title %> photo">
+          <img data-gallery-main src="/images/<%= images[0].id %>" alt="<%= machine.title %> photo" loading="eager">
+        </button>
+        <% if (images.length > 1) { %>
+          <div class="v34-thumb-row">
+            <% images.forEach((img, idx) => { %>
+              <button class="v34-thumb <%= idx === 0 ? 'active' : '' %>" type="button" data-gallery-thumb data-src="/images/<%= img.id %>" data-alt="<%= machine.title %> photo <%= idx + 1 %>">
+                <img src="/images/<%= img.id %>" alt="<%= machine.title %> photo <%= idx + 1 %>" loading="lazy">
+              </button>
+            <% }) %>
+          </div>
         <% } %>
-      </div>
-      <% if (images.length > 1) { %>
-        <div class="v29-thumbnail-rail">
-          <% images.forEach((img, idx) => { %>
-            <button class="v29-thumb <%= idx === 0 ? 'active' : '' %>" type="button" data-gallery-thumb data-src="/images/<%= img.id %>" data-alt="<%= machine.title %> photo <%= idx + 1 %>">
-              <img src="/images/<%= img.id %>" alt="<%= machine.title %> photo <%= idx + 1 %>" loading="lazy">
-            </button>
-          <% }) %>
-        </div>
+      <% } else { %>
+        <div class="placeholder-image v34-no-photo">No images uploaded</div>
       <% } %>
     </div>
   </div>
 
-  <aside class="v29-info-column">
-    <div class="v29-info-panel">
-      <div class="v29-status-line">
+  <aside class="v34-detail-summary">
+    <div class="v34-summary-card">
+      <div class="v34-status-row">
         <span class="status-badge <%= machine.status %>"><%= statusLabel(machine.status) %></span>
         <span><%= locationText %></span>
       </div>
       <h1><%= machine.title %></h1>
-      <div class="v29-price-block">
+      <div class="v34-price-line">
         <span>Asking price</span>
         <strong><%= priceText %></strong>
         <% if (machine.price_negotiable && machine.status !== 'sold') { %><small>Negotiable</small><% } %>
       </div>
-      <div class="v29-quick-specs">
-        <div><span>Location</span><strong><%= locationText %></strong></div>
-        <div><span>Brand / Model</span><strong><%= [machine.brand, machine.model].filter(Boolean).join(' · ') || 'Not specified' %></strong></div>
-        <div><span>Year</span><strong><%= machine.production_year || machine.purchase_year || 'Not specified' %></strong></div>
-        <div><span>Printhead</span><strong><%= headText %></strong></div>
-        <div><span>Working status</span><strong><%= machine.working_status || 'Not specified' %></strong></div>
-        <div><span>Seller contact</span><strong>Released after approval</strong></div>
-      </div>
       <% if (!isPreview) { %>
-        <div class="v29-action-stack">
+        <div class="v34-detail-actions">
           <% if (machine.status !== 'sold') { %>
             <a class="btn primary large" href="/machine/<%= machine.slug %>/request-contact">Request Seller Contact</a>
           <% } else { %>
@@ -101,47 +95,51 @@
   </aside>
 </section>
 
-<% if (machine.video_url) { %>
-  <section class="v29-video-section">
-    <div class="v29-section-title">
-      <p class="eyebrow">Video</p>
-      <h2>Seller video</h2>
-    </div>
-    <% if (videoEmbed) { %>
-      <div class="v29-video-frame">
-        <iframe src="<%= videoEmbed %>" title="Seller video for <%= machine.title %>" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-      </div>
-    <% } else { %>
-      <a class="v29-video-link" href="<%= machine.video_url %>" target="_blank" rel="noopener">Open seller video →</a>
-    <% } %>
-  </section>
-<% } %>
-
-<section class="detail-accordion-stack v29-accordion-stack">
-  <details>
-    <summary>Machine description</summary>
-    <div class="detail-prose"><p><%= machine.details || 'No additional description has been published yet.' %></p></div>
-  </details>
-  <% if (machine.accessories) { %>
-    <details>
-      <summary>Included accessories</summary>
-      <div class="detail-prose"><p><%= machine.accessories %></p></div>
-    </details>
-  <% } %>
-  <% if (machine.known_defects) { %>
-    <details>
-      <summary>Known defects</summary>
-      <div class="detail-prose"><p><%= machine.known_defects %></p></div>
-    </details>
-  <% } %>
-  <details>
-    <summary>Buyer verification</summary>
-    <div class="detail-prose"><p>Wall Printer Exchange is a listing and introduction platform only. Buyers verify condition, ownership, payment terms, and logistics directly with the seller before purchase.</p></div>
-  </details>
+<section class="v34-spec-strip" aria-label="Machine highlights">
+  <div><span>Location</span><strong><%= locationText %></strong></div>
+  <div><span>Brand / model</span><strong><%= brandModel %></strong></div>
+  <div><span>Year</span><strong><%= yearText %></strong></div>
+  <div><span>Printhead</span><strong><%= headText %></strong></div>
+  <div><span>Working status</span><strong><%= machine.working_status || 'Not specified' %></strong></div>
 </section>
 
-<nav class="v29-bottom-nav" aria-label="More machines">
-  <a class="v29-nav-pill" href="/">← Back to machines</a>
-  <% if (nextMachine) { %><a class="v29-nav-pill" href="/machine/<%= nextMachine.slug %>">Next machine →</a><% } %>
+<section class="v34-content-grid">
+  <div class="v34-content-main">
+    <section class="v34-info-card">
+      <div class="v34-section-head"><p class="eyebrow">Overview</p><h2>Machine description</h2></div>
+      <p><%= machine.details || 'No additional description has been published yet.' %></p>
+    </section>
+
+    <% if (machine.video_url) { %>
+      <section class="v34-info-card">
+        <div class="v34-section-head"><p class="eyebrow">Video</p><h2>Seller video</h2></div>
+        <% if (videoEmbed) { %>
+          <div class="v34-video-frame">
+            <iframe src="<%= videoEmbed %>" title="Seller video for <%= machine.title %>" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+          </div>
+        <% } else { %>
+          <a class="v34-video-link" href="<%= machine.video_url %>" target="_blank" rel="noopener">Open seller video →</a>
+        <% } %>
+      </section>
+    <% } %>
+
+    <% if (machine.accessories || machine.known_defects) { %>
+      <section class="v34-info-card v34-two-note-card">
+        <% if (machine.accessories) { %><div><h3>Included accessories</h3><p><%= machine.accessories %></p></div><% } %>
+        <% if (machine.known_defects) { %><div><h3>Known defects</h3><p><%= machine.known_defects %></p></div><% } %>
+      </section>
+    <% } %>
+  </div>
+
+  <aside class="v34-buyer-note">
+    <h2>Buyer verification</h2>
+    <p>Wall Printer Exchange introduces buyers and sellers. Buyers should verify machine condition, ownership, payment terms, shipping, customs, and all transaction details directly with the seller before purchase.</p>
+    <a href="/inspection-checklist">Open checklist →</a>
+  </aside>
+</section>
+
+<nav class="v34-bottom-nav" aria-label="More machines">
+  <a href="/">← Back to machines</a>
+  <% if (next) { %><a href="/machine/<%= next.slug %>">Next machine →</a><% } %>
 </nav>
 <%- include('../partials/foot') %>

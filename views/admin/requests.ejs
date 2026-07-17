@@ -1,36 +1,58 @@
 <%- include('../partials/head') %>
-<section class="admin-shell">
-  <div class="admin-hero-clean"><div><p class="eyebrow">Admin</p><h1>Buyer Requests</h1><p>Approve seller contact release or manually match buying requests to up to five machines.</p></div><a class="btn secondary" href="/admin">Dashboard</a></div>
+<% const currentStatus = filters.status || ''; %>
+<section class="admin-shell v34-admin-shell">
+  <div class="admin-hero-clean v34-admin-hero">
+    <div>
+      <p class="eyebrow">Admin</p>
+      <h1>Buyer Requests</h1>
+      <p>Review buyer intent, release contacts, and match suitable machines.</p>
+    </div>
+    <a class="btn secondary" href="/admin">Dashboard</a>
+  </div>
   <nav class="admin-nav clean-admin-nav"><a href="/admin">Dashboard</a><a href="/admin/machines">Machines</a><a href="/admin/requests" class="active">Buyer Requests</a></nav>
 
-  <form class="filters admin-filters apple-admin-filters" method="get" action="/admin/requests">
-    <input type="search" name="q" placeholder="Search buyer, email, listing..." value="<%= filters.q || '' %>">
-    <select name="type"><option value="">All types</option><option value="contact" <%= filters.type === 'contact' ? 'selected' : '' %>>Contact request</option><option value="buying" <%= filters.type === 'buying' ? 'selected' : '' %>>Buying request</option></select>
-    <select name="status"><option value="">All statuses</option><% requestStatuses.forEach(s => { %><option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= statusLabel(s) %></option><% }) %></select>
-    <button class="btn primary" type="submit">Filter</button>
-  </form>
+  <section class="v34-admin-toolbar">
+    <div class="v34-status-tabs" aria-label="Buyer request filters">
+      <a class="<%= !currentStatus && !filters.type ? 'active' : '' %>" href="/admin/requests">All</a>
+      <a class="<%= currentStatus === 'new' ? 'active' : '' %>" href="/admin/requests?status=new">New</a>
+      <a class="<%= filters.type === 'contact' ? 'active' : '' %>" href="/admin/requests?type=contact">Contact requests</a>
+      <a class="<%= filters.type === 'buying' ? 'active' : '' %>" href="/admin/requests?type=buying">Buying requests</a>
+      <a class="<%= currentStatus === 'matched' ? 'active' : '' %>" href="/admin/requests?status=matched">Matched</a>
+    </div>
+    <form class="v34-admin-search" method="get" action="/admin/requests">
+      <input type="search" name="q" placeholder="Search buyer, email, country, machine..." value="<%= filters.q || '' %>">
+      <select name="status"><option value="">Any status</option><% requestStatuses.forEach(s => { %><option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= statusLabel(s) %></option><% }) %></select>
+      <select name="type"><option value="">Any type</option><option value="contact" <%= filters.type === 'contact' ? 'selected' : '' %>>Contact</option><option value="buying" <%= filters.type === 'buying' ? 'selected' : '' %>>Buying</option></select>
+      <button class="btn primary" type="submit">Search</button>
+      <a class="btn secondary" href="/admin/requests">Reset</a>
+    </form>
+  </section>
 
-  <section class="content-card clean-admin-card">
-    <table class="admin-table rich clean-table">
-      <thead><tr><th>Buyer</th><th>Type</th><th>Machine / target</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
-      <tbody>
-        <% requests.forEach(r => { %>
-          <tr>
-            <td><strong><%= r.buyer_name %></strong><br><small><%= r.buyer_email %></small></td>
-            <td><%= r.request_type === 'contact' ? 'Seller contact' : 'Buying request' %></td>
-            <td><%= r.machine_title || r.target_region || 'Any suitable machine' %><br><small><%= [r.machine_region, r.machine_country].filter(Boolean).join(' · ') %></small></td>
-            <td><span class="status-badge <%= r.status %>"><%= statusLabel(r.status) %></span></td>
-            <td><%= formatDate(r.created_at) %></td>
-            <td class="table-actions clean-table-actions">
-              <a class="btn tiny primary" href="/admin/requests/<%= r.id %>">Review</a>
-              <form method="post" action="/admin/requests/<%= r.id %>/delete" data-confirm-delete="Delete this buyer request permanently?">
-                <button class="btn tiny danger soft-danger" type="submit">Delete</button>
-              </form>
-            </td>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
+  <section class="content-card clean-admin-card v34-table-card">
+    <% if (!requests.length) { %>
+      <div class="v34-empty-admin"><h2>No requests found.</h2><p>Try another filter or clear the search.</p></div>
+    <% } else { %>
+      <table class="admin-table rich clean-table v34-admin-table">
+        <thead><tr><th>Buyer</th><th>Request</th><th>Machine / Target</th><th>Status</th><th>Received</th><th>Actions</th></tr></thead>
+        <tbody>
+          <% requests.forEach(r => { %>
+            <tr>
+              <td class="v34-buyer-cell"><strong><%= r.buyer_name %></strong><small><%= r.buyer_email %></small><small><%= r.buyer_country || '' %></small></td>
+              <td><span class="v34-type-pill <%= r.request_type %>"><%= r.request_type === 'contact' ? 'Seller contact' : 'Buying request' %></span></td>
+              <td><strong><%= r.machine_title || r.target_region || 'Any suitable machine' %></strong><br><small><%= [r.machine_region, r.machine_country].filter(Boolean).join(' · ') || [r.budget, r.preferred_brand].filter(Boolean).join(' · ') || 'Requirement details inside' %></small></td>
+              <td><span class="status-badge <%= r.status %>"><%= statusLabel(r.status) %></span></td>
+              <td><%= formatDate(r.created_at) %></td>
+              <td class="v34-action-cell compact">
+                <a class="btn tiny primary" href="/admin/requests/<%= r.id %>">Review</a>
+                <form method="post" action="/admin/requests/<%= r.id %>/delete" data-confirm-delete="Delete this buyer request permanently?">
+                  <button class="btn tiny danger soft-danger" type="submit">Delete</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
   </section>
 </section>
 <%- include('../partials/foot') %>
