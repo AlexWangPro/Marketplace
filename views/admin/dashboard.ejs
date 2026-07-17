@@ -14,6 +14,19 @@
     <a href="/admin/requests">Buyer Requests</a>
   </nav>
 
+  <% if (!mailConfigured) { %>
+    <section class="content-card clean-admin-card v30-admin-alert">
+      <strong>Email is not configured yet.</strong>
+      <span>Add RESEND_API_KEY and MAIL_FROM in Railway Variables before testing contact release and buyer matching emails.</span>
+    </section>
+  <% } %>
+
+  <section class="v30-admin-next">
+    <div><strong>Review flow</strong><span>Preview pending machines, edit details, then approve when ready.</span></div>
+    <div><strong>Buyer matching</strong><span>Open a buying request and match up to five active listings.</span></div>
+    <div><strong>Public launch</strong><span>Confirm domain, APP_URL, and email sender before sharing the site.</span></div>
+  </section>
+
   <section class="admin-card-grid">
     <a class="admin-metric-card primary-metric" href="/admin/machines?status=pending_review">
       <span><%= (machineCounts.find(r => r.status === 'pending_review') || {}).count || 0 %></span>

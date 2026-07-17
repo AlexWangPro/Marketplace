@@ -4,6 +4,23 @@
 <% const priceText = machine.status === 'sold' ? 'Sold' : money(machine.asking_price, machine.currency); %>
 <% const headText = [machine.printhead_type, machine.printhead_count ? machine.printhead_count + ' heads' : null].filter(Boolean).join(' · ') || 'Not specified'; %>
 <% const videoEmbed = videoEmbedUrl(machine.video_url); %>
+<script type="application/ld+json"><%- JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: machine.title,
+  image: images.length ? images.map(img => imageUrl(img.id)) : undefined,
+  brand: machine.brand || undefined,
+  model: machine.model || undefined,
+  description: machine.details || 'Used wall printer listing on Wall Printer Exchange.',
+  offers: {
+    '@type': 'Offer',
+    priceCurrency: machine.currency || 'USD',
+    price: machine.asking_price || undefined,
+    availability: machine.status === 'sold' ? 'https://schema.org/SoldOut' : 'https://schema.org/InStock',
+    url: absoluteUrl('/machine/' + machine.slug),
+    itemCondition: 'https://schema.org/UsedCondition'
+  }
+}) %></script>
 <% if (isPreview) { %>
   <section class="admin-preview-bar">
     <div>
@@ -32,7 +49,7 @@
       <div class="v29-main-photo-wrap">
         <% if (images.length) { %>
           <button class="v29-main-photo" type="button" data-gallery-main-button data-lightbox-src="/images/<%= images[0].id %>" data-lightbox-alt="<%= machine.title %> photo">
-            <img data-gallery-main src="/images/<%= images[0].id %>" alt="<%= machine.title %> photo">
+            <img data-gallery-main src="/images/<%= images[0].id %>" alt="<%= machine.title %> photo" loading="eager">
           </button>
         <% } else { %>
           <div class="placeholder-image v29-no-photo">No images uploaded</div>
@@ -42,7 +59,7 @@
         <div class="v29-thumbnail-rail">
           <% images.forEach((img, idx) => { %>
             <button class="v29-thumb <%= idx === 0 ? 'active' : '' %>" type="button" data-gallery-thumb data-src="/images/<%= img.id %>" data-alt="<%= machine.title %> photo <%= idx + 1 %>">
-              <img src="/images/<%= img.id %>" alt="<%= machine.title %> photo <%= idx + 1 %>">
+              <img src="/images/<%= img.id %>" alt="<%= machine.title %> photo <%= idx + 1 %>" loading="lazy">
             </button>
           <% }) %>
         </div>

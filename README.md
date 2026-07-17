@@ -1,3 +1,22 @@
+# Wall Printer Exchange v3.0 — Railway Prelaunch Polish
+
+This build keeps the Railway Node/Express + PostgreSQL architecture and adds public-site polish, SEO endpoints, image cache headers, and admin readiness reminders.
+
+## Image storage
+
+Machine images are currently stored inside PostgreSQL in the `machine_images.image` BYTEA column and served through `/images/:id`. For a small curated marketplace, this is acceptable for MVP use. No external image storage is required at this stage.
+
+## New in v3.0
+
+- Cleaner Apple-style catalog homepage with search-first UX and collapsible filters.
+- Region chips based on actual listed machines.
+- SEO meta tags, canonical URLs, Open Graph tags, `robots.txt`, and dynamic `sitemap.xml`.
+- Product JSON-LD on machine detail pages.
+- Longer image cache headers with `X-Image-Storage: postgres-bytea` for clarity.
+- Admin dashboard now warns when email is not configured and shows launch-focused next steps.
+
+---
+
 # Wall Printer Exchange
 
 A lightweight Railway-ready MVP for **Wall Printer Exchange**, a used wall printer listing and buyer-request platform.

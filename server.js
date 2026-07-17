@@ -163,6 +163,19 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
+function escapeXml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+function imageUrl(imageId) {
+  return imageId ? absoluteUrl(`/images/${imageId}`) : '';
+}
+
 async function sendContactReleaseEmails(request) {
   if (!request || request.request_type !== 'contact' || !request.buyer_email || !request.machine_title) {
     return { sent: false, reason: 'Request is not an eligible contact release.' };
@@ -382,6 +395,8 @@ app.use((req, res, next) => {
   res.locals.money = money;
   res.locals.truncate = truncate;
   res.locals.videoEmbedUrl = videoEmbedUrl;
+  res.locals.absoluteUrl = absoluteUrl;
+  res.locals.imageUrl = imageUrl;
   res.locals.mailConfigured = mailConfigured();
   next();
 });
@@ -690,7 +705,7 @@ async function getMachineWithPrimaryImage(idOrSlug, bySlug = true) {
   return rows[0];
 }
 
-app.get('/health', (req, res) => res.status(200).send('ok'));
+app.get('/health', (req, res) => res.status(200).json({ ok: true, service: 'Wall Printer Exchange', imageStorage: 'PostgreSQL database', mailConfigured: mailConfigured() }));
 
 app.get('/', async (req, res, next) => {
   try {
@@ -728,7 +743,9 @@ app.get('/', async (req, res, next) => {
     `);
 
     res.render('public/index', {
-      title: 'Wall Printer Exchange',
+      title: 'Used Wall Printer Listings',
+      metaDescription: 'Browse reviewed used wall printer listings by region, price, machine status, brand, model, and printhead configuration.',
+      canonicalUrl: absoluteUrl('/'),
       machines,
       stats,
       filters: { region, status, q }
@@ -752,7 +769,14 @@ app.get('/machine/:slug', async (req, res, next) => {
     const currentIndex = navMachines.findIndex(item => Number(item.id) === Number(machine.id));
     const prevMachine = currentIndex > 0 ? navMachines[currentIndex - 1] : null;
     const nextMachine = currentIndex >= 0 && currentIndex < navMachines.length - 1 ? navMachines[currentIndex + 1] : null;
-    res.render('public/machine', { title: machine.title, machine, images, prevMachine, nextMachine });
+    res.render('public/machine', {
+      title: machine.title,
+      metaDescription: `${machine.title} ${[machine.region, machine.country, machine.city].filter(Boolean).join(' · ')} ${money(machine.asking_price, machine.currency)}. Used wall printer listing with buyer-led verification.`,
+      canonicalUrl: absoluteUrl(`/machine/${machine.slug}`),
+      ogType: 'product',
+      ogImage: images[0] ? imageUrl(images[0].id) : '',
+      machine, images, prevMachine, nextMachine
+    });
   } catch (err) {
     next(err);
   }
@@ -883,7 +907,8 @@ app.get('/images/:id', async (req, res, next) => {
     const { rows } = await pool.query('SELECT image, mime_type FROM machine_images WHERE id=$1', [req.params.id]);
     if (!rows.length) return res.status(404).send('Image not found');
     res.setHeader('Content-Type', rows[0].mime_type);
-    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+    res.setHeader('X-Image-Storage', 'postgres-bytea');
     res.send(rows[0].image);
   } catch (err) {
     next(err);
@@ -891,7 +916,39 @@ app.get('/images/:id', async (req, res, next) => {
 });
 
 app.get('/inspection-checklist', (req, res) => {
-  res.render('public/checklist', { title: 'Buyer Verification Checklist' });
+  res.render('public/checklist', {
+    title: 'Buyer Verification Checklist',
+    metaDescription: 'A practical checklist for buyers to verify used wall printer condition, ownership, accessories, payment terms, and logistics before purchase.',
+    canonicalUrl: absoluteUrl('/inspection-checklist')
+  });
+});
+
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain').send(`User-agent: *\nAllow: /\nSitemap: ${absoluteUrl('/sitemap.xml')}\n`);
+});
+
+app.get('/sitemap.xml', async (req, res, next) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT slug, updated_at
+      FROM machines
+      WHERE status IN ('available','reserved','sold')
+      ORDER BY updated_at DESC
+      LIMIT 500
+    `);
+    const urls = [
+      { loc: absoluteUrl('/'), lastmod: new Date().toISOString() },
+      { loc: absoluteUrl('/inspection-checklist'), lastmod: new Date().toISOString() },
+      ...rows.map(row => ({ loc: absoluteUrl(`/machine/${row.slug}`), lastmod: new Date(row.updated_at || Date.now()).toISOString() }))
+    ];
+    const body = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.map(u => `  <url><loc>${escapeXml(u.loc)}</loc><lastmod>${escapeXml(u.lastmod)}</lastmod></url>`).join('\n')}
+</urlset>`;
+    res.type('application/xml').send(body);
+  } catch (err) {
+    next(err);
+  }
 });
 
 app.get('/admin/login', (req, res) => {

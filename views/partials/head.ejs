@@ -4,8 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><%= title ? title + ' · ' : '' %>Wall Printer Exchange</title>
-  <meta name="description" content="Reviewed used wall printer listings, seller introductions, and buyer-led machine verification.">
-  <link rel="stylesheet" href="/styles.css">
+  <meta name="description" content="<%= typeof metaDescription !== 'undefined' && metaDescription ? metaDescription : 'Reviewed used wall printer listings, seller introductions, and buyer-led machine verification.' %>">
+  <link rel="canonical" href="<%= typeof canonicalUrl !== 'undefined' && canonicalUrl ? canonicalUrl : absoluteUrl(currentPath || '/') %>">
+  <meta property="og:type" content="<%= typeof ogType !== 'undefined' && ogType ? ogType : 'website' %>">
+  <meta property="og:title" content="<%= title ? title + ' · ' : '' %>Wall Printer Exchange">
+  <meta property="og:description" content="<%= typeof metaDescription !== 'undefined' && metaDescription ? metaDescription : 'Reviewed used wall printer listings, seller introductions, and buyer-led machine verification.' %>">
+  <meta property="og:url" content="<%= typeof canonicalUrl !== 'undefined' && canonicalUrl ? canonicalUrl : absoluteUrl(currentPath || '/') %>">
+  <% if (typeof ogImage !== 'undefined' && ogImage) { %><meta property="og:image" content="<%= ogImage %>"><% } %>
+  <meta name="twitter:card" content="<%= typeof ogImage !== 'undefined' && ogImage ? 'summary_large_image' : 'summary' %>">
+  <link rel="stylesheet" href="/styles.css?v=3.0">
 </head>
 <body>
 <header class="site-header minimal-header">
@@ -18,7 +25,7 @@
   </a>
   <% if (admin) { %>
     <div class="admin-mini-nav">
-      <a class="admin-link" href="/admin">Admin</a>
+      <a class="admin-link" href="/admin">Admin Dashboard</a>
       <form method="post" action="/admin/logout"><button class="btn tiny secondary" type="submit">Logout</button></form>
     </div>
   <% } %>
