@@ -50,7 +50,7 @@ const CHECKLIST_ITEMS = [
 ];
 
 function absoluteUrl(pathname = '/') {
-  const base = (process.env.APP_URL || 'https://wallprinter.org').replace(/\/$/, '');
+  const base = (process.env.APP_URL || 'https://www.wallprinter.org').replace(/\/$/, '');
   return `${base}${pathname.startsWith('/') ? pathname : '/' + pathname}`;
 }
 
@@ -113,7 +113,7 @@ function renderChecklistText() {
 }
 
 function renderChecklistHtml() {
-  return `<ol>${CHECKLIST_ITEMS.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ol>`;
+  return `<ol style="padding-left:22px;margin:12px 0 0;color:#374151;">${CHECKLIST_ITEMS.map(item => `<li style="margin:0 0 10px;">${escapeHtml(item)}</li>`).join('')}</ol>`;
 }
 
 function compactContactText(lines) {
@@ -123,8 +123,43 @@ function compactContactText(lines) {
 function compactContactHtml(lines) {
   return lines
     .filter(([, value]) => value)
-    .map(([label, value]) => `<tr><th align="left" style="padding:6px 14px 6px 0;color:#555;white-space:nowrap;">${escapeHtml(label)}</th><td style="padding:6px 0;">${escapeHtml(value)}</td></tr>`)
+    .map(([label, value]) => `<tr><th align="left" style="padding:10px 18px 10px 0;color:#6b7280;font-size:13px;font-weight:600;white-space:nowrap;border-bottom:1px solid #edf0f4;vertical-align:top;">${escapeHtml(label)}</th><td style="padding:10px 0;color:#111827;font-size:14px;border-bottom:1px solid #edf0f4;vertical-align:top;">${escapeHtml(value)}</td></tr>`)
     .join('');
+}
+
+function emailButton(url, label) {
+  if (!url || !label) return '';
+  return `<p style="margin:26px 0 8px;"><a href="${url}" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;font-weight:700;border-radius:999px;padding:12px 18px;">${escapeHtml(label)}</a></p>`;
+}
+
+function emailNotice(message) {
+  return `<div style="background:#fff7ed;border:1px solid #fed7aa;color:#7c2d12;padding:16px 18px;border-radius:16px;margin:24px 0;font-size:14px;line-height:1.6;"><strong>Important:</strong> ${escapeHtml(message)}</div>`;
+}
+
+function emailLayout({ title, eyebrow = 'Wall Printer Exchange', preheader = '', body = '', ctaUrl = '', ctaLabel = '' }) {
+  const homeUrl = absoluteUrl('/');
+  return `<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)}</title></head>
+<body style="margin:0;padding:0;background:#f5f5f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:#111827;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${escapeHtml(preheader || title)}</div>
+  <div style="max-width:760px;margin:0 auto;padding:28px 16px;">
+    <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:28px;overflow:hidden;box-shadow:0 18px 50px rgba(15,23,42,.08);">
+      <div style="padding:26px 30px;border-bottom:1px solid #eef0f3;background:linear-gradient(180deg,#ffffff 0%,#fafafa 100%);">
+        <a href="${homeUrl}" style="display:inline-flex;align-items:center;gap:10px;color:#111827;text-decoration:none;">
+          <span style="display:inline-block;width:36px;height:36px;line-height:36px;text-align:center;border-radius:11px;background:#111827;color:#ffffff;font-size:12px;font-weight:800;letter-spacing:.04em;">WPE</span>
+          <span style="display:inline-block;vertical-align:middle;"><strong style="display:block;font-size:16px;">Wall Printer Exchange</strong><span style="display:block;color:#6b7280;font-size:12px;">Used wall printer introductions</span></span>
+        </a>
+      </div>
+      <div style="padding:32px 30px 34px;">
+        <p style="margin:0 0 10px;color:#2563eb;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;">${escapeHtml(eyebrow)}</p>
+        <h1 style="margin:0 0 18px;font-size:30px;line-height:1.12;letter-spacing:-.04em;color:#111827;">${escapeHtml(title)}</h1>
+        <div style="font-size:15px;line-height:1.65;color:#374151;">${body}</div>
+        ${emailButton(ctaUrl, ctaLabel)}
+      </div>
+    </div>
+    <p style="max-width:680px;margin:18px auto 0;color:#8a8f98;font-size:12px;line-height:1.55;text-align:center;">Wall Printer Exchange is a listing and introduction platform only. Buyers and sellers are responsible for inspection, payment, shipping, customs, installation, and after-sale terms.</p>
+  </div>
+</body></html>`;
 }
 
 function sellerContactLines(request) {
@@ -184,53 +219,63 @@ async function sendContactReleaseEmails(request) {
   const sellerLines = sellerContactLines(request).filter(([, value]) => value);
   const buyerLines = buyerContactLines(request).filter(([, value]) => value);
   const listingUrl = request.machine_slug ? absoluteUrl(`/machine/${request.machine_slug}`) : absoluteUrl('/');
-  const checklistUrl = absoluteUrl('/inspection-checklist');
+  const checklistUrl = absoluteUrl('/verification-checklist');
   const subject = `Seller contact approved: ${request.machine_title}`;
 
   const sellerText = compactContactText(sellerLines);
   const sellerHtml = compactContactHtml(sellerLines);
   const buyerText = compactContactText(buyerLines);
   const buyerHtml = compactContactHtml(buyerLines);
+  const platformNotice = 'Wall Printer Exchange does not inspect, guarantee, sell, warrant, collect payment, ship, install, or provide after-sales service for this machine. Please verify the machine, seller, ownership, payment terms, shipping, customs, and all transaction details before purchase.';
 
   const buyerMail = await sendMail({
     to: request.buyer_email,
     subject,
-    text: `Hello ${request.buyer_name || ''},\n\nYour request to view seller contact information has been approved by Wall Printer Exchange.\n\nMachine: ${request.machine_title}\nListing: ${listingUrl}\n\nSeller contact information:\n${sellerText || 'Seller contact information is currently incomplete. Please contact Wall Printer Exchange for details.'}\n\nImportant: Wall Printer Exchange is a listing and introduction platform only. We do not inspect, guarantee, sell, warrant, collect payment, ship, install, or provide after-sales service for this machine. You are responsible for verifying the machine, seller, ownership, payment terms, shipping, customs, and all transaction details before purchase.\n\nBuyer Verification Checklist:\n${renderChecklistText()}\n\nFull checklist: ${checklistUrl}\n\nWall Printer Exchange`,
-    html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.55;color:#222;max-width:760px;margin:0 auto;">
-        <h2>Seller contact approved</h2>
-        <p>Hello ${escapeHtml(request.buyer_name || '')},</p>
-        <p>Your request to view seller contact information has been approved by <strong>Wall Printer Exchange</strong>.</p>
-        <p><strong>Machine:</strong> ${escapeHtml(request.machine_title)}<br><strong>Listing:</strong> <a href="${listingUrl}">${listingUrl}</a></p>
-        <h3>Seller contact information</h3>
-        <table>${sellerHtml || '<tr><td>Seller contact information is currently incomplete. Please contact Wall Printer Exchange for details.</td></tr>'}</table>
-        <div style="background:#fff7e6;border:1px solid #ead3a6;padding:16px;border-radius:12px;margin:20px 0;">
-          <strong>Important:</strong> Wall Printer Exchange is a listing and introduction platform only. We do not inspect, guarantee, sell, warrant, collect payment, ship, install, or provide after-sales service for this machine. You are responsible for verifying the machine, seller, ownership, payment terms, shipping, customs, and all transaction details before purchase.
+    text: `Hello ${request.buyer_name || ''},\n\nYour request to view seller contact information has been approved by Wall Printer Exchange.\n\nMachine: ${request.machine_title}\nListing: ${listingUrl}\n\nSeller contact information:\n${sellerText || 'Seller contact information is currently incomplete. Please contact Wall Printer Exchange for details.'}\n\nImportant: ${platformNotice}\n\nBuyer Verification Checklist:\n${renderChecklistText()}\n\nFull checklist: ${checklistUrl}\n\nWall Printer Exchange`,
+    html: emailLayout({
+      title: 'Seller contact approved',
+      preheader: `Seller contact details are ready for ${request.machine_title}.`,
+      body: `
+        <p style="margin:0 0 16px;">Hello ${escapeHtml(request.buyer_name || '')},</p>
+        <p style="margin:0 0 16px;">Your request to view seller contact information has been approved.</p>
+        <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:18px;padding:18px;margin:18px 0;">
+          <strong style="display:block;color:#111827;margin-bottom:6px;">${escapeHtml(request.machine_title)}</strong>
+          <a href="${listingUrl}" style="color:#2563eb;text-decoration:none;">View machine listing</a>
         </div>
-        <h3>Buyer Verification Checklist</h3>
+        <h2 style="font-size:18px;margin:24px 0 10px;color:#111827;">Seller contact</h2>
+        <table style="width:100%;border-collapse:collapse;">${sellerHtml || '<tr><td>Seller contact information is currently incomplete. Please contact Wall Printer Exchange for details.</td></tr>'}</table>
+        ${emailNotice(platformNotice)}
+        <h2 style="font-size:18px;margin:24px 0 10px;color:#111827;">Buyer verification checklist</h2>
         ${renderChecklistHtml()}
-        <p><a href="${checklistUrl}">Open the full verification checklist</a></p>
-        <p>Wall Printer Exchange</p>
-      </div>`
+      `,
+      ctaUrl: checklistUrl,
+      ctaLabel: 'Open verification checklist'
+    })
   });
 
   let sellerMail = { sent: false, reason: 'Seller email not available' };
   if (request.seller_email) {
     sellerMail = await sendMail({
       to: request.seller_email,
-      subject: `Buyer introduction: ${request.machine_title}`,
+      subject: `Buyer introduction approved: ${request.machine_title}`,
       text: `Hello ${request.seller_name || ''},\n\nWall Printer Exchange has approved a buyer introduction for your listed machine.\n\nMachine: ${request.machine_title}\nListing: ${listingUrl}\n\nBuyer contact information:\n${buyerText || 'Buyer contact information is incomplete.'}\n\nYou and the buyer may now communicate directly. Wall Printer Exchange does not collect payment, inspect the machine, arrange shipping, or provide warranty for this transaction.\n\nWall Printer Exchange`,
-      html: `
-        <div style="font-family:Arial,sans-serif;line-height:1.55;color:#222;max-width:760px;margin:0 auto;">
-          <h2>Buyer introduction approved</h2>
-          <p>Hello ${escapeHtml(request.seller_name || '')},</p>
-          <p>Wall Printer Exchange has approved a buyer introduction for your listed machine.</p>
-          <p><strong>Machine:</strong> ${escapeHtml(request.machine_title)}<br><strong>Listing:</strong> <a href="${listingUrl}">${listingUrl}</a></p>
-          <h3>Buyer contact information</h3>
-          <table>${buyerHtml || '<tr><td>Buyer contact information is incomplete.</td></tr>'}</table>
-          <p>You and the buyer may now communicate directly. Wall Printer Exchange does not collect payment, inspect the machine, arrange shipping, or provide warranty for this transaction.</p>
-          <p>Wall Printer Exchange</p>
-        </div>`
+      html: emailLayout({
+        title: 'Buyer introduction approved',
+        preheader: `A buyer introduction was approved for ${request.machine_title}.`,
+        body: `
+          <p style="margin:0 0 16px;">Hello ${escapeHtml(request.seller_name || '')},</p>
+          <p style="margin:0 0 16px;">A buyer introduction has been approved for your listed machine.</p>
+          <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:18px;padding:18px;margin:18px 0;">
+            <strong style="display:block;color:#111827;margin-bottom:6px;">${escapeHtml(request.machine_title)}</strong>
+            <a href="${listingUrl}" style="color:#2563eb;text-decoration:none;">View machine listing</a>
+          </div>
+          <h2 style="font-size:18px;margin:24px 0 10px;color:#111827;">Buyer contact</h2>
+          <table style="width:100%;border-collapse:collapse;">${buyerHtml || '<tr><td>Buyer contact information is incomplete.</td></tr>'}</table>
+          <p style="margin:22px 0 0;">You and the buyer may now communicate directly. Wall Printer Exchange does not collect payment, inspect the machine, arrange shipping, or provide warranty for this transaction.</p>
+        `,
+        ctaUrl: listingUrl,
+        ctaLabel: 'Open listing'
+      })
     });
   }
 
@@ -247,7 +292,9 @@ async function sendManualMatchEmails(request, machines) {
     return { sent: false, reason: 'No eligible buying request or matched machines.' };
   }
 
-  const checklistUrl = absoluteUrl('/inspection-checklist');
+  const checklistUrl = absoluteUrl('/verification-checklist');
+  const platformNotice = 'Wall Printer Exchange is a listing and introduction platform only. We do not inspect, guarantee, sell, warrant, collect payment, ship, install, or provide after-sales service for any machine. Please complete independent verification before payment.';
+
   const machineBlocksText = machines.map((m, index) => {
     const listingUrl = m.slug ? absoluteUrl(`/machine/${m.slug}`) : absoluteUrl('/');
     const sellerText = compactContactText([
@@ -271,30 +318,32 @@ async function sendManualMatchEmails(request, machines) {
       ['WhatsApp', m.seller_whatsapp],
       ['Preferred contact', m.seller_preferred_contact]
     ]);
-    return `<div style="border:1px solid #e5e5e5;border-radius:14px;padding:16px;margin:14px 0;">
-      <h3 style="margin:0 0 8px;">${index + 1}. ${escapeHtml(m.title)}</h3>
-      <p style="margin:0 0 8px;"><strong>Location:</strong> ${escapeHtml([m.region, m.country, m.city].filter(Boolean).join(' · ') || 'Not specified')}<br><strong>Price:</strong> ${escapeHtml(money(m.asking_price, m.currency))}<br><strong>Listing:</strong> <a href="${listingUrl}">${listingUrl}</a></p>
-      <table>${sellerHtml || '<tr><td>Seller contact information is incomplete.</td></tr>'}</table>
+    return `<div style="border:1px solid #e5e7eb;border-radius:18px;padding:18px;margin:14px 0;background:#ffffff;">
+      <p style="margin:0 0 6px;color:#2563eb;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;">Match ${index + 1}</p>
+      <h3 style="margin:0 0 10px;font-size:20px;line-height:1.25;color:#111827;">${escapeHtml(m.title)}</h3>
+      <p style="margin:0 0 12px;color:#4b5563;"><strong>Location:</strong> ${escapeHtml([m.region, m.country, m.city].filter(Boolean).join(' · ') || 'Not specified')}<br><strong>Price:</strong> ${escapeHtml(money(m.asking_price, m.currency))}<br><strong>Listing:</strong> <a href="${listingUrl}" style="color:#2563eb;text-decoration:none;">Open listing</a></p>
+      <table style="width:100%;border-collapse:collapse;">${sellerHtml || '<tr><td>Seller contact information is incomplete.</td></tr>'}</table>
     </div>`;
   }).join('');
 
   const buyerMail = await sendMail({
     to: request.buyer_email,
-    subject: `Matched used wall printers for your request`,
-    text: `Hello ${request.buyer_name || ''},\n\nWall Printer Exchange has matched up to ${machines.length} used wall printer listing(s) for your buying request. Please review the options below and contact sellers directly for verification and negotiation.\n\n${machineBlocksText}\n\nImportant: Wall Printer Exchange is a listing and introduction platform only. We do not inspect, guarantee, sell, warrant, collect payment, ship, install, or provide after-sales service for any machine. You are responsible for independent verification before payment.\n\nBuyer Verification Checklist:\n${renderChecklistText()}\n\nFull checklist: ${checklistUrl}\n\nWall Printer Exchange`,
-    html: `<div style="font-family:Arial,sans-serif;line-height:1.55;color:#222;max-width:800px;margin:0 auto;">
-      <h2>Matched used wall printers</h2>
-      <p>Hello ${escapeHtml(request.buyer_name || '')},</p>
-      <p>Wall Printer Exchange has matched up to <strong>${machines.length}</strong> used wall printer listing(s) for your buying request. Please review the options below and contact sellers directly for verification and negotiation.</p>
-      ${machineBlocksHtml}
-      <div style="background:#fff7e6;border:1px solid #ead3a6;padding:16px;border-radius:12px;margin:20px 0;">
-        <strong>Important:</strong> Wall Printer Exchange is a listing and introduction platform only. We do not inspect, guarantee, sell, warrant, collect payment, ship, install, or provide after-sales service for any machine. You are responsible for independent verification before payment.
-      </div>
-      <h3>Buyer Verification Checklist</h3>
-      ${renderChecklistHtml()}
-      <p><a href="${checklistUrl}">Open the full verification checklist</a></p>
-      <p>Wall Printer Exchange</p>
-    </div>`
+    subject: 'Matched used wall printers for your request',
+    text: `Hello ${request.buyer_name || ''},\n\nWall Printer Exchange has matched ${machines.length} used wall printer option(s) for your buying request. Please review the options below and contact sellers directly for verification and negotiation.\n\n${machineBlocksText}\n\nImportant: ${platformNotice}\n\nBuyer Verification Checklist:\n${renderChecklistText()}\n\nFull checklist: ${checklistUrl}\n\nWall Printer Exchange`,
+    html: emailLayout({
+      title: 'Matched used wall printers',
+      preheader: `${machines.length} used wall printer option(s) matched for your request.`,
+      body: `
+        <p style="margin:0 0 16px;">Hello ${escapeHtml(request.buyer_name || '')},</p>
+        <p style="margin:0 0 16px;">We matched <strong>${machines.length}</strong> used wall printer option(s) for your buying request. Please review the options below and contact sellers directly for verification and negotiation.</p>
+        ${machineBlocksHtml}
+        ${emailNotice(platformNotice)}
+        <h2 style="font-size:18px;margin:24px 0 10px;color:#111827;">Buyer verification checklist</h2>
+        ${renderChecklistHtml()}
+      `,
+      ctaUrl: checklistUrl,
+      ctaLabel: 'Open verification checklist'
+    })
   });
 
   const sellerResults = [];
@@ -309,16 +358,23 @@ async function sendManualMatchEmails(request, machines) {
       to: m.seller_email,
       subject: `Buyer match for your listed machine: ${m.title}`,
       text: `Hello ${m.seller_name || ''},\n\nWall Printer Exchange has matched a buyer request with your listed machine.\n\nMachine: ${m.title}\nListing: ${listingUrl}\n\nBuyer contact information:\n${compactContactText(buyerContactLines(request))}\n\nYou and the buyer may now communicate directly. Wall Printer Exchange does not collect payment, inspect the machine, arrange shipping, or provide warranty for this transaction.\n\nWall Printer Exchange`,
-      html: `<div style="font-family:Arial,sans-serif;line-height:1.55;color:#222;max-width:760px;margin:0 auto;">
-        <h2>Buyer match for your listed machine</h2>
-        <p>Hello ${escapeHtml(m.seller_name || '')},</p>
-        <p>Wall Printer Exchange has matched a buyer request with your listed machine.</p>
-        <p><strong>Machine:</strong> ${escapeHtml(m.title)}<br><strong>Listing:</strong> <a href="${listingUrl}">${listingUrl}</a></p>
-        <h3>Buyer contact information</h3>
-        <table>${buyerHtml || '<tr><td>Buyer contact information is incomplete.</td></tr>'}</table>
-        <p>You and the buyer may now communicate directly. Wall Printer Exchange does not collect payment, inspect the machine, arrange shipping, or provide warranty for this transaction.</p>
-        <p>Wall Printer Exchange</p>
-      </div>`
+      html: emailLayout({
+        title: 'Buyer match for your machine',
+        preheader: `A buyer request was matched with ${m.title}.`,
+        body: `
+          <p style="margin:0 0 16px;">Hello ${escapeHtml(m.seller_name || '')},</p>
+          <p style="margin:0 0 16px;">A buyer request has been matched with your listed machine.</p>
+          <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:18px;padding:18px;margin:18px 0;">
+            <strong style="display:block;color:#111827;margin-bottom:6px;">${escapeHtml(m.title)}</strong>
+            <a href="${listingUrl}" style="color:#2563eb;text-decoration:none;">View machine listing</a>
+          </div>
+          <h2 style="font-size:18px;margin:24px 0 10px;color:#111827;">Buyer contact</h2>
+          <table style="width:100%;border-collapse:collapse;">${buyerHtml || '<tr><td>Buyer contact information is incomplete.</td></tr>'}</table>
+          <p style="margin:22px 0 0;">You and the buyer may now communicate directly. Wall Printer Exchange does not collect payment, inspect the machine, arrange shipping, or provide warranty for this transaction.</p>
+        `,
+        ctaUrl: listingUrl,
+        ctaLabel: 'Open listing'
+      })
     });
     sellerResults.push({ machineId: m.id, ...result });
   }
@@ -743,8 +799,8 @@ app.get('/', async (req, res, next) => {
     `);
 
     res.render('public/index', {
-      title: 'Used Wall Printer Listings',
-      metaDescription: 'Browse reviewed used wall printer listings by region, price, machine status, brand, model, and printhead configuration.',
+      title: 'Used Wall Printers for Sale',
+      metaDescription: 'Browse reviewed used wall printers for sale by region, price, status, brand, model, and printhead configuration. Buyer verification and seller introductions are handled with admin review.',
       canonicalUrl: absoluteUrl('/'),
       machines,
       stats,
@@ -758,32 +814,32 @@ app.get('/', async (req, res, next) => {
 
 app.get('/about', (req, res) => {
   res.render('public/about', {
-    title: 'About',
-    metaDescription: 'Learn how Wall Printer Exchange helps sellers present used wall printers clearly and helps buyers request reviewed introductions.',
+    title: 'About Wall Printer Exchange',
+    metaDescription: 'Wall Printer Exchange is a focused used wall printer introduction platform for reviewed machine listings, private seller contact release, and buyer-led verification.',
     canonicalUrl: absoluteUrl('/about')
   });
 });
 
 app.get('/buyer-guide', (req, res) => {
   res.render('public/buyer-guide', {
-    title: 'Buyer Guide',
-    metaDescription: 'A practical guide for buyers reviewing used wall printer machines, seller introductions, inspection, payment, and logistics.',
+    title: 'Used Wall Printer Buyer Guide',
+    metaDescription: 'A practical buyer guide for used wall printer inspection, seller contact requests, ownership checks, printhead verification, payment terms, and logistics planning.',
     canonicalUrl: absoluteUrl('/buyer-guide')
   });
 });
 
 app.get('/seller-guide', (req, res) => {
   res.render('public/seller-guide', {
-    title: 'Seller Guide',
-    metaDescription: 'How sellers can submit used wall printer information, photos, condition details, location, and private contact information for review.',
+    title: 'Used Wall Printer Seller Guide',
+    metaDescription: 'How sellers can submit used wall printer photos, machine condition details, location, asking price, and private contact information for admin review.',
     canonicalUrl: absoluteUrl('/seller-guide')
   });
 });
 
 app.get('/verification-checklist', (req, res) => {
   res.render('public/checklist', {
-    title: 'Verification Checklist',
-    metaDescription: 'A practical checklist for buyers to verify used wall printer condition, ownership, accessories, payment terms, and logistics before purchase.',
+    title: 'Used Wall Printer Verification Checklist',
+    metaDescription: 'Use this checklist to verify used wall printer ownership, printheads, condition, accessories, payment terms, shipping, customs, and logistics before purchase.',
     canonicalUrl: absoluteUrl('/verification-checklist')
   });
 });
@@ -1038,8 +1094,16 @@ app.post('/admin/email/test', requireAdmin, async (req, res, next) => {
     const result = await sendMail({
       to,
       subject: 'Wall Printer Exchange email test',
-      text: `This is a test email from Wall Printer Exchange.\n\nIf you received this, your Railway email configuration is working.`,
-      html: `<div style="font-family:Arial,sans-serif;line-height:1.55;color:#222;max-width:680px;margin:0 auto;"><h2>Email test successful</h2><p>This is a test email from <strong>Wall Printer Exchange</strong>.</p><p>If you received this, your Railway email configuration is working.</p></div>`
+      text: `This is a test email from Wall Printer Exchange.
+
+If you received this, your Railway and Resend email configuration is working.`,
+      html: emailLayout({
+        title: 'Email test successful',
+        preheader: 'Your Railway and Resend email configuration is working.',
+        body: `<p style="margin:0 0 16px;">This is a test email from <strong>Wall Printer Exchange</strong>.</p><p style="margin:0;">If you received this, your Railway and Resend email configuration is working.</p>`,
+        ctaUrl: absoluteUrl('/admin'),
+        ctaLabel: 'Open admin dashboard'
+      })
     });
     if (result.sent) flash(req, 'success', `Test email sent to ${to}.`);
     else flash(req, 'error', `Test email failed: ${result.reason || 'Email provider not configured'}.`);

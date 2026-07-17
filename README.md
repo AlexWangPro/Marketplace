@@ -102,7 +102,7 @@ DATABASE_URL=${{Postgres.DATABASE_URL}}
 SESSION_SECRET=replace-with-a-long-random-string
 ADMIN_EMAIL=your-admin-email@example.com
 ADMIN_PASSWORD=your-strong-admin-password
-APP_URL=https://wallprinter.org
+APP_URL=https://www.wallprinter.org
 NODE_ENV=production
 ```
 
@@ -151,7 +151,7 @@ When Admin opens a buyer contact request and changes status to `Contact Shared`,
 - Machine title and listing link
 - Seller name, email, phone, WhatsApp, preferred contact, location, and exact address if available
 - A clear disclaimer that Wall Printer Exchange does not inspect, guarantee, collect payment, ship, install, or provide after-sales service
-- The buyer verification checklist and a link to `/inspection-checklist`
+- The buyer verification checklist and a link to `/verification-checklist`
 
 If no email provider is configured, the request status is still updated, but the app records that the email was not sent. You can then manually copy seller contact details from Admin.
 
@@ -315,4 +315,8 @@ Added public trust and guide pages:
 - `/seller-guide`
 - `/verification-checklist`
 
-Also added homepage trust cards, public navigation links, footer guide links, sitemap entries, and asset cache version `v=3.5`.
+Also added homepage trust cards, public navigation links, footer guide links, sitemap entries, and asset cache version `v=3.6`.
+
+## v3.6
+
+Added SEO meta refinements, upgraded public asset cache keys to v3.6, and redesigned Resend email templates with branded HTML layouts for test emails, seller contact approvals, buyer introductions, and manual buyer-machine matches.

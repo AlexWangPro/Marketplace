@@ -1,18 +1,27 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <% const pageTitle = title ? title + ' · Wall Printer Exchange' : 'Wall Printer Exchange · Used Wall Printer Listings'; %>
+  <% const pageDescription = typeof metaDescription !== 'undefined' && metaDescription ? metaDescription : 'Browse reviewed used wall printer machines, request private seller introductions, and use buyer-led verification before purchase.'; %>
+  <% const pageUrl = typeof canonicalUrl !== 'undefined' && canonicalUrl ? canonicalUrl : absoluteUrl(currentPath || '/'); %>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title><%= title ? title + ' · ' : '' %>Wall Printer Exchange</title>
-  <meta name="description" content="<%= typeof metaDescription !== 'undefined' && metaDescription ? metaDescription : 'Reviewed used wall printer listings, seller introductions, and buyer-led machine verification.' %>">
-  <link rel="canonical" href="<%= typeof canonicalUrl !== 'undefined' && canonicalUrl ? canonicalUrl : absoluteUrl(currentPath || '/') %>">
+  <title><%= pageTitle %></title>
+  <meta name="description" content="<%= pageDescription %>">
+  <meta name="robots" content="<%= currentPath && currentPath.startsWith('/admin') ? 'noindex,nofollow' : 'index,follow' %>">
+  <meta name="theme-color" content="#111827">
+  <link rel="canonical" href="<%= pageUrl %>">
+  <meta property="og:site_name" content="Wall Printer Exchange">
+  <meta property="og:locale" content="en_US">
   <meta property="og:type" content="<%= typeof ogType !== 'undefined' && ogType ? ogType : 'website' %>">
-  <meta property="og:title" content="<%= title ? title + ' · ' : '' %>Wall Printer Exchange">
-  <meta property="og:description" content="<%= typeof metaDescription !== 'undefined' && metaDescription ? metaDescription : 'Reviewed used wall printer listings, seller introductions, and buyer-led machine verification.' %>">
-  <meta property="og:url" content="<%= typeof canonicalUrl !== 'undefined' && canonicalUrl ? canonicalUrl : absoluteUrl(currentPath || '/') %>">
+  <meta property="og:title" content="<%= pageTitle %>">
+  <meta property="og:description" content="<%= pageDescription %>">
+  <meta property="og:url" content="<%= pageUrl %>">
   <% if (typeof ogImage !== 'undefined' && ogImage) { %><meta property="og:image" content="<%= ogImage %>"><% } %>
   <meta name="twitter:card" content="<%= typeof ogImage !== 'undefined' && ogImage ? 'summary_large_image' : 'summary' %>">
-  <link rel="stylesheet" href="/styles.css?v=3.5">
+  <meta name="twitter:title" content="<%= pageTitle %>">
+  <meta name="twitter:description" content="<%= pageDescription %>">
+  <link rel="stylesheet" href="/styles.css?v=3.6">
 </head>
 <body>
 <header class="site-header minimal-header">
