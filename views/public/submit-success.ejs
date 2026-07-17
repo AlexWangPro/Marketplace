@@ -1,18 +1,24 @@
 <%- include('../partials/head') %>
-<section class="empty-state success-state">
+<section class="launch-state-card success-state-v37">
+  <p class="eyebrow">Received</p>
   <% if (type === 'machine') { %>
     <h1>Machine submission received.</h1>
-    <p>Thank you. Your used wall printer listing is now pending admin review. It will not appear publicly until approved.</p>
+    <p>Your used wall printer is now pending admin review. It will not appear publicly until approved.</p>
   <% } else if (type === 'contact') { %>
     <h1>Contact request received.</h1>
-    <p>Thank you. Admin will review your request before seller contact information is shared.</p>
+    <p>Admin will review the request before seller contact information is released.</p>
   <% } else { %>
     <h1>Buying request received.</h1>
-    <p>Thank you. Your buying request has been submitted for admin review and matching.</p>
+    <p>Your request has been submitted for admin review and matching.</p>
   <% } %>
+  <div class="next-steps-v37">
+    <article><strong>1</strong><span>Admin reviews the information.</span></article>
+    <article><strong>2</strong><span>Qualified parties may be introduced by email.</span></article>
+    <article><strong>3</strong><span>Buyers verify machine condition directly with sellers.</span></article>
+  </div>
   <div class="hero-actions centered">
-    <a class="btn primary" href="/">Back to Listings</a>
-    <a class="btn secondary" href="/verification-checklist">Read Verification Checklist</a>
+    <a class="btn primary" href="/">Back to machines</a>
+    <a class="btn secondary" href="/verification-checklist">Verification checklist</a>
   </div>
 </section>
 <%- include('../partials/foot') %>

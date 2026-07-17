@@ -3,7 +3,7 @@
   <div class="catalog-hero-copy apple-hero-copy">
     <p class="eyebrow">Wall Printer Exchange</p>
     <h1>Used wall printers, presented clearly.</h1>
-    <p class="hero-text">A focused exchange for used wall printer machines, seller introductions, and buyer-led verification.</p>
+    <p class="hero-text">A focused exchange for used wall printer machines, private seller introductions, and buyer-led verification.</p>
   </div>
 </section>
 
@@ -71,9 +71,14 @@
 </section>
 
 <% if (!machines.length) { %>
-  <section class="empty-state clean-empty-state compact-empty-state">
-    <h3>No matching machines.</h3>
-    <p>Try another search or submit a buying request from the floating button.</p>
+  <section class="launch-state-card compact-empty-state-v37">
+    <p class="eyebrow">No results</p>
+    <h1>No matching machines.</h1>
+    <p>Try a broader search, clear the filters, or submit a buying request so admin can match suitable machines manually.</p>
+    <div class="hero-actions centered">
+      <a class="btn primary" href="/">Clear filters</a>
+      <button class="btn secondary" type="button" data-open-modal="buying-request">Submit buying request</button>
+    </div>
   </section>
 <% } else { %>
   <section class="v30-machine-grid refined-machine-grid">
@@ -101,7 +106,7 @@
             <% if (headText) { %><span><%= headText %></span><% } %>
             <% if (machine.working_status) { %><span><%= machine.working_status %></span><% } %>
           </div>
-          <a class="v30-card-link refined-card-link" href="/machine/<%= machine.slug %>">View details</a>
+          <a class="v30-card-link refined-card-link" href="/machine/<%= machine.slug %>">View machine</a>
         </div>
       </article>
     <% }) %>

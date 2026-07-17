@@ -1,91 +1,91 @@
-# Wall Printer Exchange v3.0 — Railway Prelaunch Polish
+# Wall Printer Exchange v3.7 — Launch Cleanup
 
-This build keeps the Railway Node/Express + PostgreSQL architecture and adds public-site polish, SEO endpoints, image cache headers, and admin readiness reminders.
+Railway-ready Node/Express + PostgreSQL build for **Wall Printer Exchange**, a used wall printer listing and buyer-introduction platform.
+
+This version is a launch-cleanup release. It keeps the same database model and business logic, while polishing empty states, error pages, mobile layout details, button wording, and deployment documentation.
+
+## What changed in v3.7
+
+- Polished 404 page and general error page.
+- Polished submission success screens with clear next steps.
+- Cleaner no-results state on the homepage.
+- Mobile refinements for header, navigation, footer, floating action buttons, forms, and cards.
+- Button copy made more consistent across public pages and modals.
+- Added `/healthz` for a simple deployment health check.
+- CSS / JS cache versions updated to `v=3.7`.
+- README rewritten for the current Railway + Resend workflow.
 
 ## Image storage
 
-Machine images are currently stored inside PostgreSQL in the `machine_images.image` BYTEA column and served through `/images/:id`. For a small curated marketplace, this is acceptable for MVP use. No external image storage is required at this stage.
+Uploaded machine images are stored in PostgreSQL in the `machine_images.image` BYTEA column and served through `/images/:id`.
 
-## New in v3.0
+For this curated MVP, this is acceptable if the site only has a small number of machines and images. External image storage can be added later if needed.
 
-- Cleaner Apple-style catalog homepage with search-first UX and collapsible filters.
-- Region chips based on actual listed machines.
-- SEO meta tags, canonical URLs, Open Graph tags, `robots.txt`, and dynamic `sitemap.xml`.
-- Product JSON-LD on machine detail pages.
-- Longer image cache headers with `X-Image-Storage: postgres-bytea` for clarity.
-- Admin dashboard now warns when email is not configured and shows launch-focused next steps.
+Default image limits:
 
----
+```text
+Up to 8 images per machine submission
+2MB maximum per image
+JPG, PNG, WEBP, or GIF
+```
 
-# Wall Printer Exchange
+## Core public flow
 
-A lightweight Railway-ready MVP for **Wall Printer Exchange**, a used wall printer listing and buyer-request platform.
+- Sellers submit used wall printer information, images, location, price, and private contact details.
+- Seller submissions are not published automatically.
+- Admin reviews and approves machines.
+- Public users can browse available, reserved, and sold machines.
+- Seller contact details are hidden publicly.
+- Buyers can request seller contact or submit a general buying request.
+- Admin reviews buyer requests and may release contact details or match machines.
+- Buyers remain responsible for verification, inspection, payment, shipping, customs, and final due diligence.
 
-The platform is designed as a listing and introduction service, not a transaction, escrow, inspection, shipping, or warranty provider.
+## Core admin flow
 
-## Core features
-
-### Public website
-
-- High-end, minimal B2B design
-- Public used wall printer listings
-- Regional filtering:
-  - Europe
-  - North America
-  - South America
-  - Asia
-  - Middle East
-  - Africa
-  - Oceania
-- Machine status shown publicly:
-  - Available
-  - Reserved
-  - Sold
-- Sold machines remain visible for reference and lead capture
-- Machine detail pages with desktop split view, next/previous machine navigation, Apple-style image viewer, and embedded YouTube/Vimeo preview when possible
-- Seller contact details hidden from public pages
-- Buyer verification checklist
-- Floating action buttons for seller machine submission and buyer request
-- Seller machine submission modal with mandatory terms review before the form appears
-- Seller machine submission form with declaration acknowledgement
-- Buyer contact request form for a specific machine
-- General buying request modal and fallback page
-
-### Admin
-
-- Admin login
-- Admin-only dashboard
-- Review pending seller submissions
-- Approve listings by setting status to Available
-- Mark machines Reserved / Sold / Archived / Rejected
-- Edit listing information
-- View private seller contact details and exact address
-- Review buyer requests and contact requests
-- Mark requests as New / Reviewed / Contact Shared / Matched / Closed / Spam / Archived
-- When a machine contact request is changed to Contact Shared, send the buyer seller contact details and the verification checklist by email if SMTP is configured
-- Admin request matching emails for buyers and sellers
-
-## Tech stack
-
-- Node.js
-- Express
-- EJS templates
-- PostgreSQL
-- Railway compatible
+- Admin login.
+- Review pending seller submissions.
+- Preview public machine pages before approval.
+- Edit machine details.
+- Set machine status: Pending Review, Available, Reserved, Sold, Archived, Rejected.
+- Delete machines and buyer requests when needed.
+- Review buyer contact requests and buying requests.
+- Send buyer/seller introduction emails through Resend when configured.
+- Match up to five machines to a buying request.
 
 ## Railway deployment
 
 ### 1. Upload to GitHub
 
-Unzip this project and upload the contents to a GitHub repository.
+Unzip the package and upload the **contents** to the root of a GitHub repository.
 
-### 2. Create Railway project
+The repository root should contain:
 
-Create a Railway project from the GitHub repository.
+```text
+package.json
+package-lock.json
+server.js
+railway.json
+nixpacks.toml
+public/
+views/
+```
+
+Do not upload the parent folder as an extra nested directory.
+
+### 2. Create or update Railway project
+
+Create a Railway project from the GitHub repository, or connect the existing project to the updated repository.
+
+Your Railway project should have:
+
+```text
+Web Service
+PostgreSQL
+```
 
 ### 3. Add PostgreSQL
 
-In the same Railway project:
+In Railway:
 
 ```text
 + New → Database → PostgreSQL
@@ -93,7 +93,7 @@ In the same Railway project:
 
 ### 4. Add variables to the Web Service
 
-Important: add these variables to the **Web Service**, not only the PostgreSQL service.
+Add variables to the **Web Service**, not only the PostgreSQL service.
 
 Required:
 
@@ -106,57 +106,36 @@ APP_URL=https://www.wallprinter.org
 NODE_ENV=production
 ```
 
-If Railway names your database service `PostgreSQL`, use:
+If the database service is named `PostgreSQL`, use:
 
 ```text
 DATABASE_URL=${{PostgreSQL.DATABASE_URL}}
 ```
 
-If Railway names it something else, use that exact service name.
+If it has another name, use that exact Railway service name.
 
-Optional database SSL:
+Optional:
 
 ```text
 PGSSL=false
 ```
 
-Railway internal PostgreSQL usually does not require SSL. If you use an external PostgreSQL provider that requires SSL, set:
+Railway internal PostgreSQL usually does not require SSL.
 
-```text
-PGSSL=true
-```
+### 5. Email through Resend
 
-### Optional email delivery
+Railway Hobby should use Resend API instead of SMTP.
 
-Recommended for Railway Hobby: use Resend API over HTTPS. Add these variables to the **Web Service**:
+Add these Web Service variables after your Resend domain is verified:
 
 ```text
 RESEND_API_KEY=re_xxxxxxxxxxxxxxxxx
 MAIL_FROM=Wall Printer Exchange <noreply@wallprinter.org>
 ```
 
-SMTP is also supported, but Railway only allows outbound SMTP on Pro and above. If you use SMTP, add:
+The `MAIL_FROM` domain must match a verified domain in Resend.
 
-```text
-SMTP_HOST=smtp.your-provider.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=your-smtp-username
-SMTP_PASS=your-smtp-password
-MAIL_FROM=Wall Printer Exchange <noreply@wallprinter.org>
-```
-
-When Admin opens a buyer contact request and changes status to `Contact Shared`, the app sends the buyer an email containing:
-
-- Machine title and listing link
-- Seller name, email, phone, WhatsApp, preferred contact, location, and exact address if available
-- A clear disclaimer that Wall Printer Exchange does not inspect, guarantee, collect payment, ship, install, or provide after-sales service
-- The buyer verification checklist and a link to `/verification-checklist`
-
-If no email provider is configured, the request status is still updated, but the app records that the email was not sent. You can then manually copy seller contact details from Admin.
-
-
-### 5. Deploy
+### 6. Deploy
 
 Railway should run:
 
@@ -164,7 +143,30 @@ Railway should run:
 npm start
 ```
 
-The app automatically creates the database tables and the first admin account from `ADMIN_EMAIL` and `ADMIN_PASSWORD`.
+The app creates tables automatically on startup and creates the first admin account from `ADMIN_EMAIL` and `ADMIN_PASSWORD` if it does not already exist.
+
+## Custom domain
+
+Recommended structure:
+
+```text
+www.wallprinter.org → Railway Web Service
+wallprinter.org → 301 redirect to https://www.wallprinter.org
+```
+
+In Railway:
+
+```text
+Web Service → Settings → Networking → Custom Domain
+```
+
+If Railway asks for a port, use:
+
+```text
+8080
+```
+
+Then copy Railway's DNS records into Namecheap exactly.
 
 ## Admin login
 
@@ -174,9 +176,9 @@ Visit:
 /admin/login
 ```
 
-Use the email and password configured in Railway variables.
+Use the admin email and password configured in Railway variables.
 
-If you do not set `ADMIN_EMAIL` and `ADMIN_PASSWORD`, the app creates this fallback admin account:
+Fallback only if no variables were set:
 
 ```text
 Email: admin@wallprinter.org
@@ -185,138 +187,49 @@ Password: ChangeMe123!
 
 Do not use the fallback password in production.
 
-## Custom domain: wallprinter.org
+## Post-deploy checks
 
-In Railway:
-
-```text
-Web Service → Settings → Networking → Custom Domain
-```
-
-Add:
+After every Railway redeploy, check:
 
 ```text
-wallprinter.org
+/healthz
+/
+/about
+/buyer-guide
+/seller-guide
+/verification-checklist
+/admin/login
+/sitemap.xml
 ```
 
-Railway will show the DNS records you need to add at your domain DNS provider. For `www.wallprinter.org`, this is usually a CNAME plus TXT verification record. For the root/apex `wallprinter.org`, use the record Railway shows; if your DNS provider does not allow a root CNAME, use an ALIAS/ANAME/flattened CNAME option if available, or point `www.wallprinter.org` first and redirect the root domain to `www` at your DNS/domain provider.
-
-## Image storage note
-
-For MVP simplicity, uploaded images are stored in PostgreSQL as `BYTEA`.
-
-Default limits:
-
-- Up to 8 images per submission
-- 2MB maximum per image
-
-For serious production usage, move images to Cloudflare R2, S3, Cloudinary, or Supabase Storage.
-
-## Interaction changes
-
-- Public top navigation has been removed. The homepage focuses on machine browsing and filtering.
-- `List Your Machine` and `Buying Request` are only exposed as right-bottom floating buttons on public pages.
-- Seller submission starts with Terms. The machine form is hidden until the seller checks the confirmation box and clicks Continue.
-- The original `/submit-machine` and `/buying-request` routes remain as fallback direct pages but are not linked from the public header or footer.
-- Admin approval of seller contact release can trigger the buyer email with the verification checklist.
-
-## Business-role disclaimer
-
-The website copy and forms are written around this positioning:
-
-- Wall Printer Exchange is a listing and introduction platform
-- Seller contact information is hidden publicly
-- Admin may share seller contact only with reviewed buyers
-- Buyers must independently verify the machine and seller
-- The platform does not inspect machines
-- The platform does not guarantee machine condition
-- The platform does not collect payment
-- The platform may charge an introduction fee, referral fee, success fee, listing fee, or commission when separately agreed in writing
-
-## Local development
-
-Create a PostgreSQL database and set `.env` values locally, then run:
+Then test the admin workflow:
 
 ```text
-npm install
-npm run dev
+1. Submit a seller machine.
+2. Approve it in Admin.
+3. Confirm it appears publicly.
+4. Submit a buyer contact request.
+5. Change request status to Contact Shared.
+6. Confirm email delivery if Resend is configured.
+7. Submit a general buying request.
+8. Match up to five machines in Admin.
 ```
 
-Or:
+## Business positioning
+
+Wall Printer Exchange is a listing and introduction platform only.
+
+It does not:
 
 ```text
-npm install
-npm start
+inspect machines
+guarantee machine condition
+act as seller or buyer
+collect payment
+hold escrow
+arrange shipping or customs
+install machines
+provide warranty or after-sales service
 ```
 
-
-## Railway build troubleshooting
-
-This package includes a public-registry `package-lock.json`, `.npmrc`, and `nixpacks.toml`. Railway/Nixpacks should install production dependencies from `https://registry.npmjs.org/`.
-
-When uploading to GitHub, make sure `package.json`, `server.js`, `railway.json`, and `nixpacks.toml` are in the repository root. Do not upload the parent folder as an extra nested directory.
-
-If Railway stays on **Building the image** for too long, use **Deployments → View Logs** and confirm it reaches `npm install --omit=dev`. If it cannot fetch packages, clear the Railway build cache and redeploy.
-
-
-## Railway npm registry fix
-
-This package includes a public-registry `package-lock.json`, `.npmrc`, and `nixpacks.toml` so Railway should install dependencies from `https://registry.npmjs.org/`, not from any local/internal registry. If your previous GitHub repository still contains an old `package-lock.json`, replace it with this one or delete all files in the repository before uploading this version.
-
-If Railway still tries to download from an internal OpenAI/Caas registry, clear the build cache and redeploy without cache.
-
-## v2.6 update notes
-
-- Removed public Admin Logs navigation; `/admin/logs` now redirects to the dashboard.
-- Admin machine review now supports previewing the exact front-end listing view, one-click approval, and edit access.
-- Public machine gallery images can be clicked for enlarged preview.
-- Buyer forms no longer ask for shipping support.
-- Buyer inspection plan is now a select field with predefined options.
-- When Admin approves a seller contact request, both buyer and seller receive each other's contact information by email if SMTP is configured.
-- Admin can manually match a buying request with up to 5 available/reserved machines. The buyer receives selected options and seller contacts; matched sellers receive buyer information.
-- Public UI and Admin dashboard have been simplified with a cleaner Apple-inspired catalog layout.
-
-
-
-## v2.9 update notes
-
-- Machine detail pages now include Back to machines, Previous, and Next machine navigation.
-- Desktop machine detail pages use a two-column split: photos on the left, price/details/actions on the right.
-- Mobile detail pages stack the same content with compact Apple-style photo viewing and clearer information cards.
-- Seller videos from YouTube, YouTube Shorts, youtu.be, and Vimeo are embedded directly when possible.
-- Email delivery now supports Resend API via `RESEND_API_KEY`, which is recommended for Railway Hobby because outbound SMTP is restricted.
-
-
-## v3.1 Admin delete and email test update
-
-- Added permanent delete actions for machine listings in Admin → Machines.
-- Added permanent delete actions for buyer requests in Admin → Buyer Requests and request detail pages.
-- Improved buyer information contrast/readability in the request detail page.
-- Added an Admin Dashboard test email form using the existing email provider configuration.
-- Bumped static asset cache versions to v3.1.
-
-
-
-## v3.3 cleanup note
-
-This package removes the public listing-count header from the homepage. The previous `.v30-catalog-head` / `.catalog-listings-head` sections are also hidden in CSS as a cache-safety measure.
-
-
-## v3.4 polish note
-
-This version refines the machine detail page, Admin Machines list, Buyer Requests list, and Buyer Request detail screen. It keeps image storage in PostgreSQL and focuses on cleaner UI, simpler admin actions, and better review flow clarity.
-
-
-## v3.5 trust content release
-
-Added public trust and guide pages:
-- `/about`
-- `/buyer-guide`
-- `/seller-guide`
-- `/verification-checklist`
-
-Also added homepage trust cards, public navigation links, footer guide links, sitemap entries, and asset cache version `v=3.6`.
-
-## v3.6
-
-Added SEO meta refinements, upgraded public asset cache keys to v3.6, and redesigned Resend email templates with branded HTML layouts for test emails, seller contact approvals, buyer introductions, and manual buyer-machine matches.
+Buyers and sellers must agree transaction terms directly.

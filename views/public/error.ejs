@@ -1,7 +1,11 @@
 <%- include('../partials/head') %>
-<section class="empty-state">
-  <h1>Server error</h1>
-  <p><%= message %></p>
-  <a class="btn primary" href="/">Back to home</a>
+<section class="launch-state-card error-state-v37">
+  <p class="eyebrow"><%= title || 'Error' %></p>
+  <h1>Something needs attention.</h1>
+  <p><%= message || 'The request could not be completed. Please review the information and try again.' %></p>
+  <div class="hero-actions centered">
+    <a class="btn primary" href="/">Back to machines</a>
+    <button class="btn secondary" type="button" onclick="window.history.back()">Go back</button>
+  </div>
 </section>
 <%- include('../partials/foot') %>

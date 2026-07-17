@@ -1,6 +1,6 @@
 <div class="floating-actions action-hub" aria-label="Quick actions">
-  <button class="float-btn primary" type="button" data-open-modal="list-machine"><span>Sell</span><strong>List machine</strong></button>
-  <button class="float-btn" type="button" data-open-modal="buying-request"><span>Buy</span><strong>Buying request</strong></button>
+  <button class="float-btn primary" type="button" data-open-modal="list-machine"><span>Sell</span><strong>List a machine</strong></button>
+  <button class="float-btn" type="button" data-open-modal="buying-request"><span>Buy</span><strong>Find a machine</strong></button>
 </div>
 
 <div class="modal-overlay" data-modal="list-machine" aria-hidden="true">
@@ -9,7 +9,7 @@
     <div class="modal-header">
       <p class="eyebrow">Seller submission</p>
       <h2 id="listMachineTitle">List your used wall printer</h2>
-      <p>Confirm the terms, then submit the machine for review.</p>
+      <p>Confirm the terms, then submit the machine for admin review.</p>
     </div>
 
     <form method="post" action="/submit-machine" enctype="multipart/form-data" data-seller-modal-form>
@@ -105,8 +105,8 @@
     <button class="modal-close" type="button" data-close-modal aria-label="Close">×</button>
     <div class="modal-header">
       <p class="eyebrow">Buyer request</p>
-      <h2 id="buyingRequestTitle">Tell us what you need</h2>
-      <p>Submit your target machine. Admin can match up to five suitable listings.</p>
+      <h2 id="buyingRequestTitle">Describe the machine you need</h2>
+      <p>Submit your target machine. Admin can match up to five suitable machines.</p>
     </div>
     <form method="post" action="/buying-request">
       <section class="form-card compact-card">
@@ -149,7 +149,7 @@
         <label class="check-row"><input type="checkbox" name="verification_ack" required> I understand and accept buyer verification responsibility.</label>
       </section>
       <div class="modal-actions sticky-actions">
-        <button class="btn primary" type="submit">Submit Buying Request</button>
+        <button class="btn primary" type="submit">Submit buying request</button>
       </div>
     </form>
   </div>

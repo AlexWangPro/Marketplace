@@ -1008,6 +1008,10 @@ app.get('/images/:id', async (req, res, next) => {
   }
 });
 
+app.get('/healthz', (req, res) => {
+  res.json({ ok: true, service: 'wall-printer-exchange', version: '3.7' });
+});
+
 app.get('/robots.txt', (req, res) => {
   res.type('text/plain').send(`User-agent: *\nAllow: /\nSitemap: ${absoluteUrl('/sitemap.xml')}\n`);
 });
