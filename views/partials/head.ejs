@@ -12,7 +12,7 @@
   <meta property="og:url" content="<%= typeof canonicalUrl !== 'undefined' && canonicalUrl ? canonicalUrl : absoluteUrl(currentPath || '/') %>">
   <% if (typeof ogImage !== 'undefined' && ogImage) { %><meta property="og:image" content="<%= ogImage %>"><% } %>
   <meta name="twitter:card" content="<%= typeof ogImage !== 'undefined' && ogImage ? 'summary_large_image' : 'summary' %>">
-  <link rel="stylesheet" href="/styles.css?v=3.4">
+  <link rel="stylesheet" href="/styles.css?v=3.5">
 </head>
 <body>
 <header class="site-header minimal-header">
@@ -20,9 +20,15 @@
     <span class="brand-mark">WPE</span>
     <span>
       <strong>Wall Printer Exchange</strong>
-      <small>Used wall printer listings</small>
+      <small>Used wall printer exchange</small>
     </span>
   </a>
+  <nav class="site-nav" aria-label="Primary navigation">
+    <a href="/" class="<%= currentPath === '/' ? 'active' : '' %>">Machines</a>
+    <a href="/buyer-guide" class="<%= currentPath === '/buyer-guide' ? 'active' : '' %>">Buyer Guide</a>
+    <a href="/seller-guide" class="<%= currentPath === '/seller-guide' ? 'active' : '' %>">Seller Guide</a>
+    <a href="/about" class="<%= currentPath === '/about' ? 'active' : '' %>">About</a>
+  </nav>
   <% if (admin) { %>
     <div class="admin-mini-nav">
       <a class="admin-link" href="/admin">Admin Dashboard</a>

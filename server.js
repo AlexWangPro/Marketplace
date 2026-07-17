@@ -755,6 +755,43 @@ app.get('/', async (req, res, next) => {
   }
 });
 
+
+app.get('/about', (req, res) => {
+  res.render('public/about', {
+    title: 'About',
+    metaDescription: 'Learn how Wall Printer Exchange helps sellers present used wall printers clearly and helps buyers request reviewed introductions.',
+    canonicalUrl: absoluteUrl('/about')
+  });
+});
+
+app.get('/buyer-guide', (req, res) => {
+  res.render('public/buyer-guide', {
+    title: 'Buyer Guide',
+    metaDescription: 'A practical guide for buyers reviewing used wall printer machines, seller introductions, inspection, payment, and logistics.',
+    canonicalUrl: absoluteUrl('/buyer-guide')
+  });
+});
+
+app.get('/seller-guide', (req, res) => {
+  res.render('public/seller-guide', {
+    title: 'Seller Guide',
+    metaDescription: 'How sellers can submit used wall printer information, photos, condition details, location, and private contact information for review.',
+    canonicalUrl: absoluteUrl('/seller-guide')
+  });
+});
+
+app.get('/verification-checklist', (req, res) => {
+  res.render('public/checklist', {
+    title: 'Verification Checklist',
+    metaDescription: 'A practical checklist for buyers to verify used wall printer condition, ownership, accessories, payment terms, and logistics before purchase.',
+    canonicalUrl: absoluteUrl('/verification-checklist')
+  });
+});
+
+app.get('/inspection-checklist', (req, res) => {
+  res.redirect(301, '/verification-checklist');
+});
+
 app.get('/machine/:slug', async (req, res, next) => {
   try {
     const machine = await getMachineWithPrimaryImage(req.params.slug, true);
@@ -915,14 +952,6 @@ app.get('/images/:id', async (req, res, next) => {
   }
 });
 
-app.get('/inspection-checklist', (req, res) => {
-  res.render('public/checklist', {
-    title: 'Buyer Verification Checklist',
-    metaDescription: 'A practical checklist for buyers to verify used wall printer condition, ownership, accessories, payment terms, and logistics before purchase.',
-    canonicalUrl: absoluteUrl('/inspection-checklist')
-  });
-});
-
 app.get('/robots.txt', (req, res) => {
   res.type('text/plain').send(`User-agent: *\nAllow: /\nSitemap: ${absoluteUrl('/sitemap.xml')}\n`);
 });
@@ -936,9 +965,13 @@ app.get('/sitemap.xml', async (req, res, next) => {
       ORDER BY updated_at DESC
       LIMIT 500
     `);
+    const baseLastmod = new Date().toISOString();
     const urls = [
-      { loc: absoluteUrl('/'), lastmod: new Date().toISOString() },
-      { loc: absoluteUrl('/inspection-checklist'), lastmod: new Date().toISOString() },
+      { loc: absoluteUrl('/'), lastmod: baseLastmod },
+      { loc: absoluteUrl('/about'), lastmod: baseLastmod },
+      { loc: absoluteUrl('/buyer-guide'), lastmod: baseLastmod },
+      { loc: absoluteUrl('/seller-guide'), lastmod: baseLastmod },
+      { loc: absoluteUrl('/verification-checklist'), lastmod: baseLastmod },
       ...rows.map(row => ({ loc: absoluteUrl(`/machine/${row.slug}`), lastmod: new Date(row.updated_at || Date.now()).toISOString() }))
     ];
     const body = `<?xml version="1.0" encoding="UTF-8"?>

@@ -305,3 +305,14 @@ This package removes the public listing-count header from the homepage. The prev
 ## v3.4 polish note
 
 This version refines the machine detail page, Admin Machines list, Buyer Requests list, and Buyer Request detail screen. It keeps image storage in PostgreSQL and focuses on cleaner UI, simpler admin actions, and better review flow clarity.
+
+
+## v3.5 trust content release
+
+Added public trust and guide pages:
+- `/about`
+- `/buyer-guide`
+- `/seller-guide`
+- `/verification-checklist`
+
+Also added homepage trust cards, public navigation links, footer guide links, sitemap entries, and asset cache version `v=3.5`.
