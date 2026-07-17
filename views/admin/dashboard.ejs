@@ -1,12 +1,15 @@
 <%- include('../partials/head') %>
-<section class="admin-shell">
-  <div class="admin-hero-clean">
+<section class="admin-shell admin-shell-clean">
+  <div class="admin-hero-clean compact-admin-hero">
     <div>
       <p class="eyebrow">Admin</p>
       <h1>Dashboard</h1>
-      <p>Review seller submissions, buyer requests, and contact matches.</p>
+      <p>Manage listings, buyer requests, and introductions in one place.</p>
     </div>
-    <form method="post" action="/admin/logout"><button class="btn secondary" type="submit">Logout</button></form>
+    <div class="admin-hero-actions">
+      <span class="mail-pill <%= mailConfigured ? 'ok' : 'warn' %>"><%= mailConfigured ? 'Email ready' : 'Email not configured' %></span>
+      <form method="post" action="/admin/logout"><button class="btn secondary" type="submit">Logout</button></form>
+    </div>
   </div>
   <nav class="admin-nav clean-admin-nav">
     <a href="/admin" class="active">Dashboard</a>
@@ -14,43 +17,26 @@
     <a href="/admin/requests">Buyer Requests</a>
   </nav>
 
-  <section class="content-card clean-admin-card email-status-card">
-    <div>
-      <strong>Email status: <%= mailConfigured ? 'Configured' : 'Not configured' %></strong>
-      <span><%= mailConfigured ? 'Send a test email before releasing seller contacts or matching buyers.' : 'Add RESEND_API_KEY and MAIL_FROM in Railway Variables before testing contact release and buyer matching emails.' %></span>
-    </div>
-    <form method="post" action="/admin/email/test" class="email-test-form">
-      <input type="email" name="to" placeholder="Test recipient email" value="<%= admin && admin.email ? admin.email : '' %>">
-      <button class="btn secondary" type="submit">Send test email</button>
-    </form>
-  </section>
-
-  <section class="v30-admin-next">
-    <div><strong>Review flow</strong><span>Preview pending machines, edit details, then approve when ready.</span></div>
-    <div><strong>Buyer matching</strong><span>Open a buying request and match up to five active listings.</span></div>
-    <div><strong>Public launch</strong><span>Confirm domain, APP_URL, and email sender before sharing the site.</span></div>
-  </section>
-
-  <section class="admin-card-grid">
+  <section class="admin-card-grid tidy-admin-metrics">
     <a class="admin-metric-card primary-metric" href="/admin/machines?status=pending_review">
       <span><%= (machineCounts.find(r => r.status === 'pending_review') || {}).count || 0 %></span>
-      <strong>Pending machines</strong>
-      <small>Preview, edit, and approve listings.</small>
+      <strong>Pending review</strong>
+      <small>Seller submissions waiting for review.</small>
     </a>
     <a class="admin-metric-card" href="/admin/machines?status=available">
       <span><%= (machineCounts.find(r => r.status === 'available') || {}).count || 0 %></span>
-      <strong>Available</strong>
-      <small>Public listings ready for buyers.</small>
+      <strong>Available listings</strong>
+      <small>Machines currently visible to buyers.</small>
     </a>
     <a class="admin-metric-card" href="/admin/requests?status=new">
       <span><%= (requestCounts.find(r => r.status === 'new') || {}).count || 0 %></span>
-      <strong>New buyer requests</strong>
-      <small>Review and match buyers.</small>
+      <strong>New requests</strong>
+      <small>Buyer requests that need attention.</small>
     </a>
     <a class="admin-metric-card" href="/admin/requests?status=matched">
       <span><%= (requestCounts.find(r => r.status === 'matched') || {}).count || 0 %></span>
       <strong>Matched</strong>
-      <small>Introductions sent or ready.</small>
+      <small>Introductions already sent.</small>
     </a>
   </section>
 
@@ -87,6 +73,17 @@
         </tbody>
       </table>
     </div>
+  </section>
+
+  <section class="content-card clean-admin-card email-status-card simple-email-card">
+    <div>
+      <strong>Email</strong>
+      <span><%= mailConfigured ? 'Configured and ready for buyer / seller introductions.' : 'Add RESEND_API_KEY and MAIL_FROM in Railway Variables to enable emails.' %></span>
+    </div>
+    <form method="post" action="/admin/email/test" class="email-test-form compact-email-test">
+      <input type="email" name="to" placeholder="Send test email to" value="<%= admin && admin.email ? admin.email : '' %>">
+      <button class="btn secondary" type="submit">Send test</button>
+    </form>
   </section>
 </section>
 <%- include('../partials/foot') %>

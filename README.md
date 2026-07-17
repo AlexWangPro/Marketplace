@@ -295,3 +295,8 @@ If Railway still tries to download from an internal OpenAI/Caas registry, clear 
 - Added an Admin Dashboard test email form using the existing email provider configuration.
 - Bumped static asset cache versions to v3.1.
 
+
+
+## v3.3 cleanup note
+
+This package removes the public listing-count header from the homepage. The previous `.v30-catalog-head` / `.catalog-listings-head` sections are also hidden in CSS as a cache-safety measure.

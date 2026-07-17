@@ -1,20 +1,32 @@
 <%- include('../partials/head') %>
-<section class="v30-hero">
-  <p class="eyebrow">Wall Printer Exchange</p>
-  <h1>Used wall printers, ready to review.</h1>
-  <p>Browse available, reserved, and sold listings. Sell a machine or submit a buying request from the floating action buttons.</p>
+<section class="catalog-hero apple-catalog-hero">
+  <div class="catalog-hero-copy apple-hero-copy">
+    <p class="eyebrow">Wall Printer Exchange</p>
+    <h1>Used wall printers for serious buyers.</h1>
+    <p class="hero-text">Browse reviewed machines by region, compare key details quickly, and request seller contact after review.</p>
+  </div>
 </section>
 
-<section class="v30-search-panel" aria-label="Machine search">
-  <form method="get" action="/" class="v30-search-form">
-    <div class="v30-search-main">
-      <label class="visually-hidden" for="machineSearch">Search machines</label>
-      <input id="machineSearch" type="search" name="q" placeholder="Search model, country, printhead..." value="<%= filters.q || '' %>" autocomplete="off">
-      <button class="btn primary" type="submit">Search</button>
+<section class="search-drawer-shell" aria-label="Search machines">
+  <div class="search-drawer-head">
+    <div>
+      <p class="eyebrow">Catalog</p>
+      <h2>Available machines</h2>
     </div>
-    <details class="v30-filters" <%= filters.region || filters.status ? 'open' : '' %>>
-      <summary><span>Filters</span><small><%= [filters.region || 'All regions', filters.status ? statusLabel(filters.status) : 'All statuses'].join(' · ') %></small></summary>
-      <div class="v30-filter-grid">
+    <button class="search-toggle-btn" type="button" data-search-toggle aria-expanded="<%= (filters.q || filters.region || filters.status) ? 'true' : 'false' %>" aria-controls="machineSearchDrawer">
+      <span>Search & filters</span>
+      <small><%= [filters.q ? 'Keyword' : null, filters.region || null, filters.status ? statusLabel(filters.status) : null].filter(Boolean).join(' · ') || 'Open' %></small>
+    </button>
+  </div>
+
+  <div id="machineSearchDrawer" class="search-drawer <%= (filters.q || filters.region || filters.status) ? 'open' : '' %>">
+    <form method="get" action="/" class="search-drawer-form">
+      <div class="search-input-row">
+        <label class="visually-hidden" for="machineSearch">Search machines</label>
+        <input id="machineSearch" type="search" name="q" placeholder="Search model, brand, country, printhead..." value="<%= filters.q || '' %>" autocomplete="off">
+        <button class="btn primary" type="submit">Search</button>
+      </div>
+      <div class="search-filter-row">
         <label>Region
           <select name="region">
             <option value="">All regions</option>
@@ -31,44 +43,27 @@
             <option value="sold" <%= filters.status === 'sold' ? 'selected' : '' %>>Sold</option>
           </select>
         </label>
-        <div class="v30-filter-actions">
+        <div class="search-actions">
           <a class="btn secondary" href="/">Reset</a>
-          <button class="btn primary" type="submit">Apply filters</button>
+          <button class="btn primary" type="submit">Apply</button>
         </div>
       </div>
-    </details>
-  </form>
-  <% if (stats && stats.length) { %>
-    <div class="v30-region-chips" aria-label="Regions with listings">
-      <a href="/" class="<%= !filters.region ? 'active' : '' %>">All</a>
-      <% stats.forEach(stat => { %>
-        <a href="/?region=<%= encodeURIComponent(stat.region) %>" class="<%= filters.region === stat.region ? 'active' : '' %>"><%= stat.region %> <span><%= stat.count %></span></a>
-      <% }) %>
-    </div>
-  <% } %>
-</section>
-
-<section class="v30-catalog-head">
-  <div>
-    <p class="eyebrow">Machines</p>
-    <h2><%= machines.length %> listing<%= machines.length === 1 ? '' : 's' %></h2>
+    </form>
   </div>
-  <p>Seller contact details are released only after admin review.</p>
 </section>
 
 <% if (!machines.length) { %>
-  <section class="empty-state clean-empty-state">
+  <section class="empty-state clean-empty-state compact-empty-state">
     <h3>No matching machines.</h3>
-    <p>Use the Buying Request button and admin can match suitable listings.</p>
+    <p>Try another search or submit a buying request from the floating button.</p>
   </section>
 <% } else { %>
-  <section class="v30-machine-grid">
+  <section class="v30-machine-grid refined-machine-grid">
     <% machines.forEach(machine => { %>
       <% const locationText = [machine.region, machine.country, machine.city].filter(Boolean).join(' · ') || 'Location TBC'; %>
-      <% const specParts = [machine.production_year, machine.brand, machine.model].filter(Boolean); %>
       <% const headText = [machine.printhead_type, machine.printhead_count ? machine.printhead_count + ' heads' : null].filter(Boolean).join(' · '); %>
-      <article class="v30-machine-card <%= machine.status === 'sold' ? 'is-sold' : '' %>">
-        <a href="/machine/<%= machine.slug %>" class="v30-card-image" aria-label="View <%= machine.title %>">
+      <article class="v30-machine-card refined-machine-card <%= machine.status === 'sold' ? 'is-sold' : '' %>">
+        <a href="/machine/<%= machine.slug %>" class="v30-card-image refined-card-image" aria-label="View <%= machine.title %>">
           <% if (machine.primary_image_id) { %>
             <img src="/images/<%= machine.primary_image_id %>" alt="<%= machine.title %>" loading="lazy">
           <% } else { %>
@@ -76,23 +71,22 @@
           <% } %>
           <span class="status-badge <%= machine.status %>"><%= statusLabel(machine.status) %></span>
         </a>
-        <div class="v30-card-body">
-          <div class="v30-card-topline"><span><%= locationText %></span></div>
-          <h3><a href="/machine/<%= machine.slug %>"><%= machine.title %></a></h3>
-          <div class="v30-card-price"><%= machine.status === 'sold' ? 'Sold' : money(machine.asking_price, machine.currency) %></div>
-          <div class="v30-card-specs">
-            <% if (specParts.length) { %><span><%= specParts.join(' · ') %></span><% } %>
-            <% if (headText) { %><span><%= headText %></span><% } %>
+        <div class="v30-card-body refined-card-body">
+          <div class="card-kicker">
+            <span class="card-location"><%= locationText %></span>
+            <% if (machine.production_year) { %><span class="card-year"><%= machine.production_year %></span><% } %>
           </div>
-          <a class="v30-card-link" href="/machine/<%= machine.slug %>">View machine →</a>
+          <h3><a href="/machine/<%= machine.slug %>"><%= machine.title %></a></h3>
+          <div class="v30-card-price refined-card-price"><%= machine.status === 'sold' ? 'Sold' : money(machine.asking_price, machine.currency) %></div>
+          <div class="refined-spec-list">
+            <% if (machine.brand || machine.model) { %><span><%= [machine.brand, machine.model].filter(Boolean).join(' · ') %></span><% } %>
+            <% if (headText) { %><span><%= headText %></span><% } %>
+            <% if (machine.working_status) { %><span><%= machine.working_status %></span><% } %>
+          </div>
+          <a class="v30-card-link refined-card-link" href="/machine/<%= machine.slug %>">View details</a>
         </div>
       </article>
     <% }) %>
   </section>
 <% } %>
-
-<section class="v30-platform-note">
-  <span>Introduction platform only.</span>
-  <span>Buyers verify machines directly with sellers before purchase.</span>
-</section>
 <%- include('../partials/foot') %>

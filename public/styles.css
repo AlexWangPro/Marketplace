@@ -1966,3 +1966,82 @@ body { background: var(--v30-bg); color: var(--v30-text); }
   .clean-table-actions { min-width: 0; }
   .buyer-info-panel .spec-list { grid-template-columns: 1fr; }
 }
+
+
+/* v3.2 cleanup */
+.admin-shell-clean { gap: 22px; }
+.compact-admin-hero { margin-bottom: 10px; align-items: flex-start; }
+.admin-hero-actions { display:flex; align-items:center; gap:12px; }
+.mail-pill { display:inline-flex; align-items:center; padding:8px 12px; border-radius:999px; font-size:13px; font-weight:600; }
+.mail-pill.ok { background:#eaf7ee; color:#166534; }
+.mail-pill.warn { background:#fff4e8; color:#9a3412; }
+.tidy-admin-metrics { margin-top: 6px; }
+.simple-email-card { margin-top: 0; }
+.compact-email-test { display:flex; gap:10px; align-items:center; }
+.compact-email-test input { min-width: 260px; }
+
+.apple-catalog-hero { margin-bottom: 18px; }
+.apple-hero-copy { background: linear-gradient(180deg,#ffffff 0%,#f7f7f8 100%); border:1px solid rgba(18,18,18,.06); }
+.apple-hero-copy h1 { max-width: 780px; }
+.apple-hero-copy .hero-text { max-width: 700px; color:#5a5a5f; }
+.search-drawer-shell {
+  margin: 8px 0 26px;
+  padding: 18px 20px;
+  border-radius: 24px;
+  background: rgba(255,255,255,.78);
+  border: 1px solid rgba(18,18,18,.06);
+  box-shadow: 0 10px 32px rgba(15,23,42,.04);
+}
+.search-drawer-head {
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+}
+.search-drawer-head h2 { font-size: clamp(24px, 3vw, 34px); margin:4px 0 0; }
+.search-toggle-btn {
+  border:1px solid rgba(18,18,18,.08); background:#fff; color:#111827; border-radius:16px;
+  padding:12px 16px; display:flex; flex-direction:column; align-items:flex-start; gap:4px; cursor:pointer;
+  min-width: 180px; box-shadow:0 4px 20px rgba(15,23,42,.04);
+}
+.search-toggle-btn span { font-weight:600; }
+.search-toggle-btn small { color:#6b7280; }
+.search-drawer { display:none; margin-top:16px; }
+.search-drawer.open { display:block; }
+.search-drawer-form { display:grid; gap:12px; }
+.search-input-row { display:grid; grid-template-columns: 1fr auto; gap:12px; }
+.search-input-row input, .search-filter-row select {
+  width:100%; border-radius:16px; border:1px solid rgba(18,18,18,.1); background:#fff; padding:14px 16px; font-size:15px;
+}
+.search-filter-row { display:grid; grid-template-columns: 1fr 1fr auto; gap:12px; align-items:end; }
+.search-filter-row label { display:grid; gap:8px; color:#4b5563; font-size:14px; }
+.search-actions { display:flex; gap:10px; align-items:center; }
+.refined-machine-grid { gap:20px; }
+.refined-machine-card { background:#fff; border:1px solid rgba(18,18,18,.06); box-shadow: 0 12px 36px rgba(15,23,42,.05); border-radius: 26px; overflow:hidden; }
+.refined-card-image { aspect-ratio: 4 / 3; background:#f5f5f7; }
+.refined-card-image img { width:100%; height:100%; object-fit:contain; padding:18px; }
+.refined-card-body { padding:20px 20px 22px; }
+.card-kicker { display:flex; justify-content:space-between; gap:10px; color:#6b7280; font-size:13px; margin-bottom:10px; }
+.card-location { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.card-year { flex-shrink:0; }
+.refined-card-price { font-size: 28px; line-height:1.05; margin: 10px 0 12px; letter-spacing:-.03em; }
+.refined-spec-list { display:grid; gap:6px; margin-bottom:16px; color:#4b5563; font-size:14px; }
+.refined-spec-list span { display:block; }
+.refined-card-link { font-weight:600; color:#2563eb; text-decoration:none; }
+.compact-empty-state { margin-top: 18px; }
+.seller-upload-note { margin: 0 0 16px; padding: 12px 14px; border-radius: 14px; background:#f5f7fb; color:#4b5563; font-size:14px; }
+
+@media (max-width: 768px) {
+  .search-drawer-head { flex-direction:column; align-items:flex-start; }
+  .search-toggle-btn { width:100%; }
+  .search-input-row, .search-filter-row { grid-template-columns: 1fr; }
+  .search-actions { justify-content:stretch; }
+  .search-actions .btn { flex:1; }
+  .compact-email-test { flex-direction:column; align-items:stretch; }
+  .compact-email-test input { min-width:0; width:100%; }
+  .card-kicker { flex-direction:column; align-items:flex-start; }
+}
+
+/* v3.3 hard cleanup: hide previous listing-count headers if an older template/CSS remains cached */
+.v30-catalog-head,
+.catalog-listings-head,
+.listing-note {
+  display: none !important;
+}

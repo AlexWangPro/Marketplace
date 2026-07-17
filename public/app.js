@@ -253,3 +253,14 @@
     });
   });
 })();
+
+
+(function () {
+  const toggle = document.querySelector('[data-search-toggle]');
+  const drawer = document.getElementById('machineSearchDrawer');
+  if (!toggle || !drawer) return;
+  toggle.addEventListener('click', () => {
+    const open = drawer.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+})();
