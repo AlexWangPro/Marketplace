@@ -21,7 +21,12 @@
             <td><%= r.machine_title || r.target_region || 'Any suitable machine' %><br><small><%= [r.machine_region, r.machine_country].filter(Boolean).join(' · ') %></small></td>
             <td><span class="status-badge <%= r.status %>"><%= statusLabel(r.status) %></span></td>
             <td><%= formatDate(r.created_at) %></td>
-            <td><a class="btn tiny primary" href="/admin/requests/<%= r.id %>">Review</a></td>
+            <td class="table-actions clean-table-actions">
+              <a class="btn tiny primary" href="/admin/requests/<%= r.id %>">Review</a>
+              <form method="post" action="/admin/requests/<%= r.id %>/delete" data-confirm-delete="Delete this buyer request permanently?">
+                <button class="btn tiny danger soft-danger" type="submit">Delete</button>
+              </form>
+            </td>
           </tr>
         <% }) %>
       </tbody>

@@ -5,9 +5,9 @@
 
   <section class="detail-layout admin-detail-layout clean-request-layout">
     <div>
-      <section class="content-card clean-admin-card">
+      <section class="content-card clean-admin-card buyer-info-panel">
         <div class="card-title-row">
-          <h2>Buyer</h2>
+          <h2>Buyer information</h2>
           <span class="status-badge <%= request.status %>"><%= statusLabel(request.status) %></span>
         </div>
         <dl class="spec-list two-col">
@@ -93,6 +93,9 @@ Machine: <%= request.machine_title %></div>
         <% if (request.request_type === 'contact' && request.machine_title) { %>
           <p class="muted small">Choose “Contact Shared” to email both buyer and seller with each other’s contact information. SMTP: <strong><%= mailConfigured ? 'configured' : 'not configured' %></strong>.</p>
         <% } %>
+      </form>
+      <form method="post" action="/admin/requests/<%= request.id %>/delete" data-confirm-delete="Delete this buyer request permanently? This cannot be undone." class="admin-delete-form">
+        <button class="btn danger soft-danger full" type="submit">Delete Request</button>
       </form>
       <hr>
       <p class="muted small">

@@ -14,12 +14,16 @@
     <a href="/admin/requests">Buyer Requests</a>
   </nav>
 
-  <% if (!mailConfigured) { %>
-    <section class="content-card clean-admin-card v30-admin-alert">
-      <strong>Email is not configured yet.</strong>
-      <span>Add RESEND_API_KEY and MAIL_FROM in Railway Variables before testing contact release and buyer matching emails.</span>
-    </section>
-  <% } %>
+  <section class="content-card clean-admin-card email-status-card">
+    <div>
+      <strong>Email status: <%= mailConfigured ? 'Configured' : 'Not configured' %></strong>
+      <span><%= mailConfigured ? 'Send a test email before releasing seller contacts or matching buyers.' : 'Add RESEND_API_KEY and MAIL_FROM in Railway Variables before testing contact release and buyer matching emails.' %></span>
+    </div>
+    <form method="post" action="/admin/email/test" class="email-test-form">
+      <input type="email" name="to" placeholder="Test recipient email" value="<%= admin && admin.email ? admin.email : '' %>">
+      <button class="btn secondary" type="submit">Send test email</button>
+    </form>
+  </section>
 
   <section class="v30-admin-next">
     <div><strong>Review flow</strong><span>Preview pending machines, edit details, then approve when ready.</span></div>

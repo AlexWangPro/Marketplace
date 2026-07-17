@@ -285,3 +285,13 @@ If Railway still tries to download from an internal OpenAI/Caas registry, clear 
 - Mobile detail pages stack the same content with compact Apple-style photo viewing and clearer information cards.
 - Seller videos from YouTube, YouTube Shorts, youtu.be, and Vimeo are embedded directly when possible.
 - Email delivery now supports Resend API via `RESEND_API_KEY`, which is recommended for Railway Hobby because outbound SMTP is restricted.
+
+
+## v3.1 Admin delete and email test update
+
+- Added permanent delete actions for machine listings in Admin → Machines.
+- Added permanent delete actions for buyer requests in Admin → Buyer Requests and request detail pages.
+- Improved buyer information contrast/readability in the request detail page.
+- Added an Admin Dashboard test email form using the existing email provider configuration.
+- Bumped static asset cache versions to v3.1.
+

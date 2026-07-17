@@ -995,6 +995,27 @@ app.get('/admin', requireAdmin, async (req, res, next) => {
   }
 });
 
+app.post('/admin/email/test', requireAdmin, async (req, res, next) => {
+  try {
+    const to = (req.body && req.body.to) || process.env.ADMIN_EMAIL || (req.session.admin && req.session.admin.email);
+    if (!to) {
+      flash(req, 'error', 'No test recipient is available. Set ADMIN_EMAIL first.');
+      return res.redirect('/admin');
+    }
+    const result = await sendMail({
+      to,
+      subject: 'Wall Printer Exchange email test',
+      text: `This is a test email from Wall Printer Exchange.\n\nIf you received this, your Railway email configuration is working.`,
+      html: `<div style="font-family:Arial,sans-serif;line-height:1.55;color:#222;max-width:680px;margin:0 auto;"><h2>Email test successful</h2><p>This is a test email from <strong>Wall Printer Exchange</strong>.</p><p>If you received this, your Railway email configuration is working.</p></div>`
+    });
+    if (result.sent) flash(req, 'success', `Test email sent to ${to}.`);
+    else flash(req, 'error', `Test email failed: ${result.reason || 'Email provider not configured'}.`);
+    res.redirect('/admin');
+  } catch (err) {
+    next(err);
+  }
+});
+
 app.get('/admin/machines', requireAdmin, async (req, res, next) => {
   try {
     const { status, region, q } = req.query;
@@ -1117,6 +1138,21 @@ app.post('/admin/machines/:id/status', requireAdmin, async (req, res, next) => {
     await logAdmin(req, 'machine_status_changed', 'machine', Number(req.params.id), { status });
     flash(req, 'success', `Machine marked as ${statusLabel(status)}.`);
     res.redirect(req.get('referer') || '/admin/machines');
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/admin/machines/:id/delete', requireAdmin, async (req, res, next) => {
+  try {
+    const { rows } = await pool.query('DELETE FROM machines WHERE id=$1 RETURNING id, title', [req.params.id]);
+    if (!rows.length) {
+      flash(req, 'error', 'Machine not found or already deleted.');
+      return res.redirect('/admin/machines');
+    }
+    await logAdmin(req, 'machine_deleted', 'machine', Number(req.params.id), { title: rows[0].title });
+    flash(req, 'success', `Deleted machine listing: ${rows[0].title}.`);
+    res.redirect('/admin/machines');
   } catch (err) {
     next(err);
   }
@@ -1256,6 +1292,21 @@ app.post('/admin/requests/:id/update', requireAdmin, async (req, res, next) => {
   }
 });
 
+
+app.post('/admin/requests/:id/delete', requireAdmin, async (req, res, next) => {
+  try {
+    const { rows } = await pool.query('DELETE FROM buyer_requests WHERE id=$1 RETURNING id, buyer_name, buyer_email, request_type', [req.params.id]);
+    if (!rows.length) {
+      flash(req, 'error', 'Buyer request not found or already deleted.');
+      return res.redirect('/admin/requests');
+    }
+    await logAdmin(req, 'buyer_request_deleted', 'buyer_request', Number(req.params.id), { buyer: rows[0].buyer_name, email: rows[0].buyer_email, type: rows[0].request_type });
+    flash(req, 'success', `Deleted buyer request from ${rows[0].buyer_name || rows[0].buyer_email}.`);
+    res.redirect('/admin/requests');
+  } catch (err) {
+    next(err);
+  }
+});
 
 app.post('/admin/requests/:id/match', requireAdmin, async (req, res, next) => {
   try {
