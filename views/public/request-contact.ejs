@@ -12,7 +12,7 @@
     <p class="price"><%= money(machine.asking_price, machine.currency) %></p>
   </div>
 </section>
-<form class="form-shell" method="post" action="/machine/<%= machine.slug %>/request-contact">
+<form class="form-shell" method="post" action="<%= localPath('/machine/' + machine.slug + '/request-contact') %>">
   <section class="form-card">
     <h2>Buyer contact</h2>
     <div class="form-grid two">

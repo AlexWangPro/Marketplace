@@ -1,69 +1,51 @@
 <%- include('../partials/head') %>
-<section class="catalog-hero apple-catalog-hero">
+<section class="catalog-hero apple-catalog-hero mobile-first-hero">
   <div class="catalog-hero-copy apple-hero-copy">
     <p class="eyebrow">Wall Printer Exchange</p>
-    <h1>Used wall printers, presented clearly.</h1>
-    <p class="hero-text">A focused exchange for used wall printer machines, private seller introductions, and buyer-led verification.</p>
+    <h1><%= t('home.hero.title') %></h1>
+    <p class="hero-text"><%= t('home.hero.text') %></p>
   </div>
 </section>
 
-<section class="trust-strip-v35" aria-label="Platform approach">
-  <article>
-    <span>01</span>
-    <strong>Reviewed submissions</strong>
-    <p>Seller machines are submitted for admin review before they appear publicly.</p>
-  </article>
-  <article>
-    <span>02</span>
-    <strong>Private seller details</strong>
-    <p>Direct seller contact information is released only through a reviewed introduction flow.</p>
-  </article>
-  <article>
-    <span>03</span>
-    <strong>Buyer-led verification</strong>
-    <p>Buyers remain responsible for inspection, payment terms, shipping, customs, and final due diligence.</p>
-  </article>
-</section>
-
-<section class="search-drawer-shell" aria-label="Search machines">
+<section class="search-drawer-shell mobile-machine-entry" aria-label="Search machines">
   <div class="search-drawer-head">
     <div>
-      <p class="eyebrow">Catalog</p>
-      <h2>Available machines</h2>
+      <p class="eyebrow"><%= t('home.catalog') %></p>
+      <h2><%= t('home.availableMachines') %></h2>
     </div>
     <button class="search-toggle-btn" type="button" data-search-toggle aria-expanded="<%= (filters.q || filters.region || filters.status) ? 'true' : 'false' %>" aria-controls="machineSearchDrawer">
-      <span>Search & filters</span>
-      <small><%= [filters.q ? 'Keyword' : null, filters.region || null, filters.status ? statusLabel(filters.status) : null].filter(Boolean).join(' · ') || 'Open' %></small>
+      <span><%= t('home.searchFilters') %></span>
+      <small><%= [filters.q ? t('home.keyword') : null, filters.region || null, filters.status ? statusLabel(filters.status) : null].filter(Boolean).join(' · ') || t('home.open') %></small>
     </button>
   </div>
 
   <div id="machineSearchDrawer" class="search-drawer <%= (filters.q || filters.region || filters.status) ? 'open' : '' %>">
-    <form method="get" action="/" class="search-drawer-form">
+    <form method="get" action="<%= localPath('/') %>" class="search-drawer-form">
       <div class="search-input-row">
-        <label class="visually-hidden" for="machineSearch">Search machines</label>
-        <input id="machineSearch" type="search" name="q" placeholder="Search model, brand, country, printhead..." value="<%= filters.q || '' %>" autocomplete="off">
-        <button class="btn primary" type="submit">Search</button>
+        <label class="visually-hidden" for="machineSearch"><%= t('home.search') %></label>
+        <input id="machineSearch" type="search" name="q" placeholder="<%= t('home.searchPlaceholder') %>" value="<%= filters.q || '' %>" autocomplete="off">
+        <button class="btn primary" type="submit"><%= t('home.search') %></button>
       </div>
       <div class="search-filter-row">
-        <label>Region
+        <label><%= t('home.region') %>
           <select name="region">
-            <option value="">All regions</option>
+            <option value=""><%= t('home.allRegions') %></option>
             <% regions.forEach(r => { %>
               <option value="<%= r %>" <%= filters.region === r ? 'selected' : '' %>><%= r %></option>
             <% }) %>
           </select>
         </label>
-        <label>Status
+        <label><%= t('home.status') %>
           <select name="status">
-            <option value="">All statuses</option>
-            <option value="available" <%= filters.status === 'available' ? 'selected' : '' %>>Available</option>
-            <option value="reserved" <%= filters.status === 'reserved' ? 'selected' : '' %>>Reserved</option>
-            <option value="sold" <%= filters.status === 'sold' ? 'selected' : '' %>>Sold</option>
+            <option value=""><%= t('home.allStatuses') %></option>
+            <option value="available" <%= filters.status === 'available' ? 'selected' : '' %>><%= t('status.available') %></option>
+            <option value="reserved" <%= filters.status === 'reserved' ? 'selected' : '' %>><%= t('status.reserved') %></option>
+            <option value="sold" <%= filters.status === 'sold' ? 'selected' : '' %>><%= t('status.sold') %></option>
           </select>
         </label>
         <div class="search-actions">
-          <a class="btn secondary" href="/">Reset</a>
-          <button class="btn primary" type="submit">Apply</button>
+          <a class="btn secondary" href="<%= localPath('/') %>"><%= t('home.reset') %></a>
+          <button class="btn primary" type="submit"><%= t('home.apply') %></button>
         </div>
       </div>
     </form>
@@ -71,45 +53,63 @@
 </section>
 
 <% if (!machines.length) { %>
-  <section class="launch-state-card compact-empty-state-v37">
-    <p class="eyebrow">No results</p>
-    <h1>No matching machines.</h1>
-    <p>Try a broader search, clear the filters, or submit a buying request so admin can match suitable machines manually.</p>
+  <section class="launch-state-card compact-empty-state-v37 mobile-empty-state">
+    <p class="eyebrow"><%= t('home.noResultsLabel') %></p>
+    <h1><%= t('home.noResults') %></h1>
+    <p><%= t('home.noResultsText') %></p>
     <div class="hero-actions centered">
-      <a class="btn primary" href="/">Clear filters</a>
-      <button class="btn secondary" type="button" data-open-modal="buying-request">Submit buying request</button>
+      <a class="btn primary" href="<%= localPath('/') %>"><%= t('home.clearFilters') %></a>
+      <button class="btn secondary" type="button" data-open-modal="buying-request"><%= t('home.submitBuyingRequest') %></button>
     </div>
   </section>
 <% } else { %>
-  <section class="v30-machine-grid refined-machine-grid">
+  <section class="v30-machine-grid refined-machine-grid mobile-card-grid">
     <% machines.forEach(machine => { %>
-      <% const locationText = [machine.region, machine.country, machine.city].filter(Boolean).join(' · ') || 'Location TBC'; %>
+      <% const locationText = [machine.region, machine.country, machine.city].filter(Boolean).join(' · ') || t('home.locationTbc'); %>
       <% const headText = [machine.printhead_type, machine.printhead_count ? machine.printhead_count + ' heads' : null].filter(Boolean).join(' · '); %>
-      <article class="v30-machine-card refined-machine-card <%= machine.status === 'sold' ? 'is-sold' : '' %>">
-        <a href="/machine/<%= machine.slug %>" class="v30-card-image refined-card-image" aria-label="View <%= machine.title %>">
+      <article class="v30-machine-card refined-machine-card mobile-machine-card <%= machine.status === 'sold' ? 'is-sold' : '' %>">
+        <a href="<%= localPath('/machine/' + machine.slug) %>" class="v30-card-image refined-card-image" aria-label="<%= t('home.viewMachine') %> <%= machine.title %>">
           <% if (machine.primary_image_id) { %>
             <img src="/images/<%= machine.primary_image_id %>" alt="<%= machine.title %>" loading="lazy">
           <% } else { %>
-            <div class="placeholder-image">Wall Printer</div>
+            <div class="placeholder-image"><%= t('home.wallPrinter') %></div>
           <% } %>
-          <span class="status-badge <%= machine.status %>"><%= statusLabel(machine.status) %></span>
+          <span class="status-badge <%= machine.status %>"><%= t('status.' + machine.status) %></span>
         </a>
         <div class="v30-card-body refined-card-body">
           <div class="card-kicker">
             <span class="card-location"><%= locationText %></span>
             <% if (machine.production_year) { %><span class="card-year"><%= machine.production_year %></span><% } %>
           </div>
-          <h3><a href="/machine/<%= machine.slug %>"><%= machine.title %></a></h3>
-          <div class="v30-card-price refined-card-price"><%= machine.status === 'sold' ? 'Sold' : money(machine.asking_price, machine.currency) %></div>
+          <h3><a href="<%= localPath('/machine/' + machine.slug) %>"><%= machine.title %></a></h3>
+          <div class="v30-card-price refined-card-price"><%= machine.status === 'sold' ? t('status.sold') : money(machine.asking_price, machine.currency) %></div>
           <div class="refined-spec-list">
             <% if (machine.brand || machine.model) { %><span><%= [machine.brand, machine.model].filter(Boolean).join(' · ') %></span><% } %>
             <% if (headText) { %><span><%= headText %></span><% } %>
             <% if (machine.working_status) { %><span><%= machine.working_status %></span><% } %>
           </div>
-          <a class="v30-card-link refined-card-link" href="/machine/<%= machine.slug %>">View machine</a>
+          <a class="v30-card-link refined-card-link" href="<%= localPath('/machine/' + machine.slug) %>"><%= t('home.viewMachine') %></a>
         </div>
       </article>
     <% }) %>
   </section>
 <% } %>
+
+<section class="trust-strip-v35 mobile-trust-after-list" aria-label="<%= t('home.trust.label') %>">
+  <article>
+    <span>01</span>
+    <strong><%= t('home.trust1.title') %></strong>
+    <p><%= t('home.trust1.text') %></p>
+  </article>
+  <article>
+    <span>02</span>
+    <strong><%= t('home.trust2.title') %></strong>
+    <p><%= t('home.trust2.text') %></p>
+  </article>
+  <article>
+    <span>03</span>
+    <strong><%= t('home.trust3.title') %></strong>
+    <p><%= t('home.trust3.text') %></p>
+  </article>
+</section>
 <%- include('../partials/foot') %>

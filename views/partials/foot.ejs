@@ -1,22 +1,22 @@
 </main>
-<footer class="site-footer clean-footer apple-footer site-footer-v37">
+<footer class="site-footer clean-footer apple-footer site-footer-v37 mobile-clean-footer">
   <div>
     <strong>Wall Printer Exchange</strong>
-    <p>Used wall printer exchange and buyer introductions. Transactions are handled directly between buyers and sellers.</p>
+    <p><%= t('footer.text') %></p>
   </div>
   <div class="footer-links footer-quiet-links">
-    <a href="/about">About</a>
-    <a href="/buyer-guide">Buyer Guide</a>
-    <a href="/seller-guide">Seller Guide</a>
-    <a href="/verification-checklist">Verification Checklist</a>
-    <% if (!admin) { %><a href="/admin/login">Admin Login</a><% } %>
+    <a href="<%= localPath('/about') %>"><%= t('nav.about') %></a>
+    <a href="<%= localPath('/buyer-guide') %>"><%= t('nav.buyerGuide') %></a>
+    <a href="<%= localPath('/seller-guide') %>"><%= t('nav.sellerGuide') %></a>
+    <a href="<%= localPath('/verification-checklist') %>"><%= t('footer.verification') %></a>
+    <% if (!admin) { %><a href="/admin/login"><%= t('footer.adminLogin') %></a><% } %>
   </div>
 </footer>
 <% if (!currentPath.startsWith('/admin')) { %>
   <%- include('../public/floating-modals') %>
-  <script src="/app.js?v=3.7" defer></script>
+  <script src="/app.js?v=3.8" defer></script>
 <% } else { %>
-  <script src="/app.js?v=3.7" defer></script>
+  <script src="/app.js?v=3.8" defer></script>
 <% } %>
 </body>
 </html>

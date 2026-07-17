@@ -3,6 +3,7 @@ const session = require('express-session');
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const { Pool } = require('pg');
 const nodemailer = require('nodemailer');
 
@@ -10,6 +11,40 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const REGIONS = ['Europe', 'North America', 'South America', 'Asia', 'Middle East', 'Africa', 'Oceania'];
+
+const LANGUAGES = [
+  { code: 'en', name: 'English', nativeName: 'English', dir: 'ltr' },
+  { code: 'ja', name: 'Japanese', nativeName: '日本語', dir: 'ltr' },
+  { code: 'ko', name: 'Korean', nativeName: '한국어', dir: 'ltr' },
+  { code: 'de', name: 'German', nativeName: 'Deutsch', dir: 'ltr' },
+  { code: 'fr', name: 'French', nativeName: 'Français', dir: 'ltr' },
+  { code: 'es', name: 'Spanish', nativeName: 'Español', dir: 'ltr' },
+  { code: 'it', name: 'Italian', nativeName: 'Italiano', dir: 'ltr' },
+  { code: 'pt', name: 'Portuguese', nativeName: 'Português', dir: 'ltr' },
+  { code: 'ru', name: 'Russian', nativeName: 'Русский', dir: 'ltr' },
+  { code: 'ar', name: 'Arabic', nativeName: 'العربية', dir: 'rtl' }
+];
+const LANGUAGE_CODES = LANGUAGES.map(language => language.code);
+const DEFAULT_LANG = 'en';
+const LOCALES = Object.fromEntries(LANGUAGES.map(language => {
+  const file = path.join(__dirname, 'locales', `${language.code}.json`);
+  return [language.code, JSON.parse(fs.readFileSync(file, 'utf8'))];
+}));
+
+function translate(lang, key) {
+  return (LOCALES[lang] && LOCALES[lang][key]) || LOCALES.en[key] || key;
+}
+
+function localizedPath(pathname = '/', lang = DEFAULT_LANG) {
+  const clean = pathname.startsWith('/') ? pathname : `/${pathname}`;
+  if (!lang || lang === DEFAULT_LANG) return clean;
+  return `/${lang}${clean === '/' ? '' : clean}`;
+}
+
+function localizedAbsolute(pathname = '/', lang = DEFAULT_LANG) {
+  return absoluteUrl(localizedPath(pathname, lang));
+}
+
 const MACHINE_STATUSES = ['pending_review', 'available', 'reserved', 'sold', 'archived', 'rejected'];
 const REQUEST_STATUSES = ['new', 'reviewed', 'contact_shared', 'matched', 'closed', 'spam', 'archived'];
 const INSPECTION_PLANS = [
@@ -438,7 +473,31 @@ app.use(session({
 }));
 
 app.use((req, res, next) => {
+  const match = req.url.match(new RegExp(`^/(${LANGUAGE_CODES.join('|')})(?=/|\?|$)`));
+  req.lang = DEFAULT_LANG;
+  req.langPrefix = '';
+  req.localizedOriginalUrl = req.originalUrl;
+  if (match) {
+    req.lang = match[1];
+    req.langPrefix = req.lang === DEFAULT_LANG ? '' : `/${req.lang}`;
+    let stripped = req.url.slice(match[0].length);
+    if (!stripped) stripped = '/';
+    if (stripped.startsWith('?')) stripped = '/' + stripped;
+    req.url = stripped;
+  }
+  next();
+});
+
+app.use((req, res, next) => {
   res.locals.currentPath = req.path;
+  res.locals.lang = req.lang || DEFAULT_LANG;
+  res.locals.langPrefix = req.langPrefix || '';
+  res.locals.languages = LANGUAGES;
+  res.locals.currentLanguage = LANGUAGES.find(language => language.code === res.locals.lang) || LANGUAGES[0];
+  res.locals.t = (key) => translate(res.locals.lang, key);
+  res.locals.localPath = (pathname) => localizedPath(pathname, res.locals.lang);
+  res.locals.langUrl = (code, pathname = req.path) => localizedPath(pathname, code);
+  res.locals.localizedAbsolute = (pathname) => localizedAbsolute(pathname, res.locals.lang);
   res.locals.admin = req.session.admin || null;
   res.locals.regions = REGIONS;
   res.locals.machineStatuses = MACHINE_STATUSES;
@@ -799,9 +858,9 @@ app.get('/', async (req, res, next) => {
     `);
 
     res.render('public/index', {
-      title: 'Used Wall Printers for Sale',
-      metaDescription: 'Browse reviewed used wall printers for sale by region, price, status, brand, model, and printhead configuration. Buyer verification and seller introductions are handled with admin review.',
-      canonicalUrl: absoluteUrl('/'),
+      title: translate(req.lang, 'seo.home.title'),
+      metaDescription: translate(req.lang, 'seo.home.desc'),
+      canonicalUrl: localizedAbsolute('/', req.lang),
       machines,
       stats,
       filters: { region, status, q }
@@ -814,38 +873,38 @@ app.get('/', async (req, res, next) => {
 
 app.get('/about', (req, res) => {
   res.render('public/about', {
-    title: 'About Wall Printer Exchange',
+    title: translate(req.lang, 'seo.about.title'),
     metaDescription: 'Wall Printer Exchange is a focused used wall printer introduction platform for reviewed machine listings, private seller contact release, and buyer-led verification.',
-    canonicalUrl: absoluteUrl('/about')
+    canonicalUrl: localizedAbsolute('/about', req.lang)
   });
 });
 
 app.get('/buyer-guide', (req, res) => {
   res.render('public/buyer-guide', {
-    title: 'Used Wall Printer Buyer Guide',
+    title: translate(req.lang, 'seo.buyer.title'),
     metaDescription: 'A practical buyer guide for used wall printer inspection, seller contact requests, ownership checks, printhead verification, payment terms, and logistics planning.',
-    canonicalUrl: absoluteUrl('/buyer-guide')
+    canonicalUrl: localizedAbsolute('/buyer-guide', req.lang)
   });
 });
 
 app.get('/seller-guide', (req, res) => {
   res.render('public/seller-guide', {
-    title: 'Used Wall Printer Seller Guide',
+    title: translate(req.lang, 'seo.seller.title'),
     metaDescription: 'How sellers can submit used wall printer photos, machine condition details, location, asking price, and private contact information for admin review.',
-    canonicalUrl: absoluteUrl('/seller-guide')
+    canonicalUrl: localizedAbsolute('/seller-guide', req.lang)
   });
 });
 
 app.get('/verification-checklist', (req, res) => {
   res.render('public/checklist', {
-    title: 'Used Wall Printer Verification Checklist',
+    title: translate(req.lang, 'seo.check.title'),
     metaDescription: 'Use this checklist to verify used wall printer ownership, printheads, condition, accessories, payment terms, shipping, customs, and logistics before purchase.',
-    canonicalUrl: absoluteUrl('/verification-checklist')
+    canonicalUrl: localizedAbsolute('/verification-checklist', req.lang)
   });
 });
 
 app.get('/inspection-checklist', (req, res) => {
-  res.redirect(301, '/verification-checklist');
+  res.redirect(301, localizedPath('/verification-checklist', req.lang));
 });
 
 app.get('/machine/:slug', async (req, res, next) => {
@@ -865,7 +924,7 @@ app.get('/machine/:slug', async (req, res, next) => {
     res.render('public/machine', {
       title: machine.title,
       metaDescription: `${machine.title} ${[machine.region, machine.country, machine.city].filter(Boolean).join(' · ')} ${money(machine.asking_price, machine.currency)}. Used wall printer listing with buyer-led verification.`,
-      canonicalUrl: absoluteUrl(`/machine/${machine.slug}`),
+      canonicalUrl: localizedAbsolute(`/machine/${machine.slug}`, req.lang),
       ogType: 'product',
       ogImage: images[0] ? imageUrl(images[0].id) : '',
       machine, images, prevMachine, nextMachine
@@ -1009,7 +1068,7 @@ app.get('/images/:id', async (req, res, next) => {
 });
 
 app.get('/healthz', (req, res) => {
-  res.json({ ok: true, service: 'wall-printer-exchange', version: '3.7' });
+  res.json({ ok: true, service: 'wall-printer-exchange', version: '3.8' });
 });
 
 app.get('/robots.txt', (req, res) => {
@@ -1026,13 +1085,10 @@ app.get('/sitemap.xml', async (req, res, next) => {
       LIMIT 500
     `);
     const baseLastmod = new Date().toISOString();
+    const staticPaths = ['/', '/about', '/buyer-guide', '/seller-guide', '/verification-checklist'];
     const urls = [
-      { loc: absoluteUrl('/'), lastmod: baseLastmod },
-      { loc: absoluteUrl('/about'), lastmod: baseLastmod },
-      { loc: absoluteUrl('/buyer-guide'), lastmod: baseLastmod },
-      { loc: absoluteUrl('/seller-guide'), lastmod: baseLastmod },
-      { loc: absoluteUrl('/verification-checklist'), lastmod: baseLastmod },
-      ...rows.map(row => ({ loc: absoluteUrl(`/machine/${row.slug}`), lastmod: new Date(row.updated_at || Date.now()).toISOString() }))
+      ...LANGUAGES.flatMap(language => staticPaths.map(pathname => ({ loc: localizedAbsolute(pathname, language.code), lastmod: baseLastmod }))),
+      ...LANGUAGES.flatMap(language => rows.map(row => ({ loc: localizedAbsolute(`/machine/${row.slug}`, language.code), lastmod: new Date(row.updated_at || Date.now()).toISOString() })))
     ];
     const body = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

@@ -1,11 +1,6 @@
 <%- include('../partials/head') %>
-<section class="launch-state-card error-state-v37">
-  <p class="eyebrow"><%= title || 'Error' %></p>
-  <h1>Something needs attention.</h1>
-  <p><%= message || 'The request could not be completed. Please review the information and try again.' %></p>
-  <div class="hero-actions centered">
-    <a class="btn primary" href="/">Back to machines</a>
-    <button class="btn secondary" type="button" onclick="window.history.back()">Go back</button>
-  </div>
+<section class="launch-state-card error-state-v37 mobile-page-hero">
+  <p class="eyebrow"><%= title || 'Error' %></p><h1><%= t('error.h1') %></h1><p><%= message || t('error.text') %></p>
+  <div class="hero-actions centered"><a class="btn primary" href="<%= localPath('/') %>"><%= t('error.back') %></a><button class="btn secondary" type="button" onclick="window.history.back()"><%= t('error.goBack') %></button></div>
 </section>
 <%- include('../partials/foot') %>

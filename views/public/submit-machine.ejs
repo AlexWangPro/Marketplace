@@ -9,7 +9,7 @@
   <div class="form-errors"><% errors.forEach(e => { %><p><%= e %></p><% }) %></div>
 <% } %>
 
-<form class="form-shell" method="post" action="/submit-machine" enctype="multipart/form-data">
+<form class="form-shell" method="post" action="<%= localPath('/submit-machine') %>" enctype="multipart/form-data">
   <section class="declaration-box">
     <h2>Used Wall Printer Listing Declaration</h2>
     <p>WallPrinter.org / Wall Printer Exchange is a used wall printer listing and introduction platform. It is not the seller, buyer, manufacturer, inspection provider, escrow provider, payment processor, shipping company, customs broker, installer, or warranty provider for any used machine listed on the website.</p>

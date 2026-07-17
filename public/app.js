@@ -264,3 +264,12 @@
     toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
   });
 })();
+
+(function () {
+  document.querySelectorAll('[data-language-select]').forEach((select) => {
+    select.addEventListener('change', () => {
+      const value = select.value;
+      if (value) window.location.href = value;
+    });
+  });
+})();

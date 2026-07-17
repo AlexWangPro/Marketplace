@@ -1,38 +1,14 @@
 <%- include('../partials/head') %>
-<section class="guide-hero-v35">
-  <p class="eyebrow">Buyer Guide</p>
-  <h1>How to buy a used wall printer with less risk.</h1>
-  <p>Used wall printers can be good opportunities, but condition, printhead health, accessories, software, and logistics must be verified carefully before payment.</p>
+<section class="guide-hero-v35 mobile-page-hero">
+  <p class="eyebrow"><%= t('buyer.eyebrow') %></p>
+  <h1><%= t('buyer.h1') %></h1>
+  <p><%= t('buyer.text') %></p>
 </section>
-
-<section class="guide-steps-v35">
-  <article>
-    <span>1</span>
-    <h2>Start with the listing</h2>
-    <p>Review price, location, year, brand, model, printhead type, working status, images, and any known defects. Shortlist only machines with enough information to justify a conversation.</p>
-  </article>
-  <article>
-    <span>2</span>
-    <h2>Request seller contact</h2>
-    <p>Use the contact request form on the machine detail page. After admin review, contact details may be released so you can speak directly with the seller.</p>
-  </article>
-  <article>
-    <span>3</span>
-    <h2>Verify before payment</h2>
-    <p>Ask for live video, recent photos, nozzle tests, serial number, proof of ownership, accessory list, software status, and a written agreement before sending money.</p>
-  </article>
-  <article>
-    <span>4</span>
-    <h2>Plan logistics early</h2>
-    <p>Confirm packaging, pickup address, dimensions, weight, export documents, import duties, taxes, insurance, and responsibility for shipping damage.</p>
-  </article>
+<section class="guide-steps-v35 mobile-guide-grid">
+  <article><span>1</span><h2><%= t('buyer.step1.h2') %></h2><p><%= t('buyer.step1.text') %></p></article>
+  <article><span>2</span><h2><%= t('buyer.step2.h2') %></h2><p><%= t('buyer.step2.text') %></p></article>
+  <article><span>3</span><h2><%= t('buyer.step3.h2') %></h2><p><%= t('buyer.step3.text') %></p></article>
+  <article><span>4</span><h2><%= t('buyer.step4.h2') %></h2><p><%= t('buyer.step4.text') %></p></article>
 </section>
-
-<section class="guide-cta-v35">
-  <div>
-    <h2>Need a structured checklist?</h2>
-    <p>Use the verification checklist before making a purchase decision.</p>
-  </div>
-  <a class="btn primary" href="/verification-checklist">Open checklist</a>
-</section>
+<section class="guide-cta-v35"><div><h2><%= t('buyer.cta.h2') %></h2><p><%= t('buyer.cta.text') %></p></div><a class="btn primary" href="<%= localPath('/verification-checklist') %>"><%= t('buyer.cta.button') %></a></section>
 <%- include('../partials/foot') %>

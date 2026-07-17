@@ -1,30 +1,13 @@
 <%- include('../partials/head') %>
-<section class="guide-hero-v35">
-  <p class="eyebrow">About</p>
-  <h1>A focused exchange for used wall printer machines.</h1>
-  <p>Wall Printer Exchange helps sellers present used wall printers clearly and helps buyers discover machines worth reviewing. We are an introduction platform, not a marketplace that holds funds or guarantees machine condition.</p>
+<section class="guide-hero-v35 mobile-page-hero">
+  <p class="eyebrow"><%= t('about.eyebrow') %></p>
+  <h1><%= t('about.h1') %></h1>
+  <p><%= t('about.text') %></p>
 </section>
-
-<section class="guide-grid-v35">
-  <article>
-    <span>Platform role</span>
-    <h2>What we do</h2>
-    <p>We collect seller submissions, organize machine information, publish approved listings, and help serious buyers request seller contact or submit buying requirements.</p>
-  </article>
-  <article>
-    <span>Transaction boundary</span>
-    <h2>What we do not do</h2>
-    <p>We do not inspect machines, provide escrow, process payments, arrange shipping, handle customs, provide installation, or issue warranties for used machines.</p>
-  </article>
-  <article>
-    <span>Best fit</span>
-    <h2>Who it is for</h2>
-    <p>The site is built for commercial buyers, dealers, print-service businesses, and sellers who need a clearer channel for used wall printer opportunities.</p>
-  </article>
+<section class="guide-grid-v35 mobile-guide-grid">
+  <article><span><%= t('about.card1.span') %></span><h2><%= t('about.card1.h2') %></h2><p><%= t('about.card1.text') %></p></article>
+  <article><span><%= t('about.card2.span') %></span><h2><%= t('about.card2.h2') %></h2><p><%= t('about.card2.text') %></p></article>
+  <article><span><%= t('about.card3.span') %></span><h2><%= t('about.card3.h2') %></h2><p><%= t('about.card3.text') %></p></article>
 </section>
-
-<section class="guide-note-v35">
-  <h2>Simple operating principle</h2>
-  <p>We make machine discovery and introductions easier. Buyers and sellers still verify every technical, financial, legal, and logistics detail directly before any deal.</p>
-</section>
+<section class="guide-note-v35"><h2><%= t('about.note.h2') %></h2><p><%= t('about.note.text') %></p></section>
 <%- include('../partials/foot') %>

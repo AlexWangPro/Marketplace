@@ -5,7 +5,7 @@
   <p>Admin can match your request with up to five available or reserved machines.</p>
 </section>
 <% if (errors && errors.length) { %><div class="form-errors"><% errors.forEach(e => { %><p><%= e %></p><% }) %></div><% } %>
-<form class="form-shell" method="post" action="/buying-request">
+<form class="form-shell" method="post" action="<%= localPath('/buying-request') %>">
   <section class="form-card">
     <h2>Buyer contact</h2>
     <div class="form-grid two">

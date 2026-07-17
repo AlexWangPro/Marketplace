@@ -40,10 +40,10 @@
 <% } %>
 
 <nav class="v34-detail-nav" aria-label="Machine navigation">
-  <a href="/">← Machines</a>
+  <a href="<%= localPath('/') %>">← Machines</a>
   <div>
-    <% if (previous) { %><a href="/machine/<%= previous.slug %>">Previous</a><% } %>
-    <% if (next) { %><a href="/machine/<%= next.slug %>">Next →</a><% } %>
+    <% if (previous) { %><a href="<%= localPath('/machine/' + previous.slug) %>"><%= t('detail.previous') %></a><% } %>
+    <% if (next) { %><a href="<%= localPath('/machine/' + next.slug) %>"><%= t('detail.next') %> →</a><% } %>
   </div>
 </nav>
 
@@ -64,7 +64,7 @@
           </div>
         <% } %>
       <% } else { %>
-        <div class="placeholder-image v34-no-photo">No images uploaded</div>
+        <div class="placeholder-image v34-no-photo"><%= t('detail.noImages') %></div>
       <% } %>
     </div>
   </div>
@@ -77,18 +77,18 @@
       </div>
       <h1><%= machine.title %></h1>
       <div class="v34-price-line">
-        <span>Asking price</span>
+        <span><%= t('detail.askingPrice') %></span>
         <strong><%= priceText %></strong>
         <% if (machine.price_negotiable && machine.status !== 'sold') { %><small>Negotiable</small><% } %>
       </div>
       <% if (!isPreview) { %>
         <div class="v34-detail-actions">
           <% if (machine.status !== 'sold') { %>
-            <a class="btn primary large" href="/machine/<%= machine.slug %>/request-contact">Request Seller Contact</a>
+            <a class="btn primary large" href="<%= localPath('/machine/' + machine.slug + '/request-contact') %>"><%= t('detail.requestSellerContact') %></a>
           <% } else { %>
-            <button class="btn primary large" type="button" data-open-modal="buying-request">Request similar machine</button>
+            <button class="btn primary large" type="button" data-open-modal="buying-request"><%= t('detail.requestSimilar') %></button>
           <% } %>
-          <button class="btn secondary large" type="button" data-open-modal="buying-request">Submit buying request</button>
+          <button class="btn secondary large" type="button" data-open-modal="buying-request"><%= t('detail.submitBuyingRequest') %></button>
         </div>
       <% } %>
     </div>
@@ -96,23 +96,23 @@
 </section>
 
 <section class="v34-spec-strip" aria-label="Machine highlights">
-  <div><span>Location</span><strong><%= locationText %></strong></div>
-  <div><span>Brand / model</span><strong><%= brandModel %></strong></div>
-  <div><span>Year</span><strong><%= yearText %></strong></div>
-  <div><span>Printhead</span><strong><%= headText %></strong></div>
-  <div><span>Working status</span><strong><%= machine.working_status || 'Not specified' %></strong></div>
+  <div><span><%= t('detail.location') %></span><strong><%= locationText %></strong></div>
+  <div><span><%= t('detail.brandModel') %></span><strong><%= brandModel %></strong></div>
+  <div><span><%= t('detail.year') %></span><strong><%= yearText %></strong></div>
+  <div><span><%= t('detail.printhead') %></span><strong><%= headText %></strong></div>
+  <div><span><%= t('detail.workingStatus') %></span><strong><%= machine.working_status || 'Not specified' %></strong></div>
 </section>
 
 <section class="v34-content-grid">
   <div class="v34-content-main">
     <section class="v34-info-card">
-      <div class="v34-section-head"><p class="eyebrow">Overview</p><h2>Machine description</h2></div>
+      <div class="v34-section-head"><p class="eyebrow">Overview</p><h2><%= t('detail.description') %></h2></div>
       <p><%= machine.details || 'No additional description has been published yet.' %></p>
     </section>
 
     <% if (machine.video_url) { %>
       <section class="v34-info-card">
-        <div class="v34-section-head"><p class="eyebrow">Video</p><h2>Seller video</h2></div>
+        <div class="v34-section-head"><p class="eyebrow">Video</p><h2><%= t('detail.sellerVideo') %></h2></div>
         <% if (videoEmbed) { %>
           <div class="v34-video-frame">
             <iframe src="<%= videoEmbed %>" title="Seller video for <%= machine.title %>" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
@@ -125,21 +125,21 @@
 
     <% if (machine.accessories || machine.known_defects) { %>
       <section class="v34-info-card v34-two-note-card">
-        <% if (machine.accessories) { %><div><h3>Included accessories</h3><p><%= machine.accessories %></p></div><% } %>
-        <% if (machine.known_defects) { %><div><h3>Known defects</h3><p><%= machine.known_defects %></p></div><% } %>
+        <% if (machine.accessories) { %><div><h3><%= t('detail.accessories') %></h3><p><%= machine.accessories %></p></div><% } %>
+        <% if (machine.known_defects) { %><div><h3><%= t('detail.defects') %></h3><p><%= machine.known_defects %></p></div><% } %>
       </section>
     <% } %>
   </div>
 
   <aside class="v34-buyer-note">
-    <h2>Buyer verification</h2>
+    <h2><%= t('detail.buyerVerification') %></h2>
     <p>Wall Printer Exchange introduces buyers and sellers. Buyers should verify machine condition, ownership, payment terms, shipping, customs, and all transaction details directly with the seller before purchase.</p>
-    <a href="/verification-checklist">Open checklist →</a>
+    <a href="<%= localPath('/verification-checklist') %>"><%= t('buyer.cta.button') %> →</a>
   </aside>
 </section>
 
 <nav class="v34-bottom-nav" aria-label="More machines">
-  <a href="/">← Back to machines</a>
-  <% if (next) { %><a href="/machine/<%= next.slug %>">Next machine →</a><% } %>
+  <a href="<%= localPath('/') %>">← <%= t('detail.back') %></a>
+  <% if (next) { %><a href="<%= localPath('/machine/' + next.slug) %>"><%= t('detail.next') %> →</a><% } %>
 </nav>
 <%- include('../partials/foot') %>

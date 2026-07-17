@@ -1,51 +1,14 @@
 <%- include('../partials/head') %>
-<section class="guide-hero-v35">
-  <p class="eyebrow">Verification Checklist</p>
-  <h1>Buyer checklist for used wall printers.</h1>
-  <p>Wall Printer Exchange is not an inspection, escrow, payment, shipping, or warranty provider. Use this checklist before any purchase decision.</p>
+<section class="guide-hero-v35 mobile-page-hero">
+  <p class="eyebrow"><%= t('check.eyebrow') %></p>
+  <h1><%= t('check.h1') %></h1>
+  <p><%= t('check.text') %></p>
 </section>
-
-<section class="checklist-grid-v35">
-  <article>
-    <span>Identity</span>
-    <h2>Seller and ownership</h2>
-    <ul>
-      <li>Confirm seller name, company, email, phone, WhatsApp, and business details where applicable.</li>
-      <li>Ask for invoice, purchase record, serial number, nameplate, or other ownership documents.</li>
-      <li>Confirm the seller is authorized to sell and that there is no undisclosed lien or ownership dispute.</li>
-    </ul>
-  </article>
-  <article>
-    <span>Condition</span>
-    <h2>Machine and printheads</h2>
-    <ul>
-      <li>Request recent photos of the full machine, printheads, rails, ink system, control box, software screen, and accessories.</li>
-      <li>Arrange a live video demonstration showing startup, movement, nozzle test, and real printing if possible.</li>
-      <li>Check printhead model, number of heads, nozzle condition, ink flow, replacement history, and print quality evidence.</li>
-    </ul>
-  </article>
-  <article>
-    <span>Package</span>
-    <h2>Accessories and history</h2>
-    <ul>
-      <li>Confirm rails, extension poles, computer, software, dongle, ink, spare parts, tools, manuals, and packaging materials.</li>
-      <li>Ask about production year, purchase year, usage frequency, maintenance, repairs, known defects, and storage condition.</li>
-      <li>Clarify whether the machine is currently working, partly working, or requires repair.</li>
-    </ul>
-  </article>
-  <article>
-    <span>Deal terms</span>
-    <h2>Payment and logistics</h2>
-    <ul>
-      <li>Clarify packaging, pickup address, dimensions, weight, export documents, customs, duties, taxes, insurance, and shipping damage responsibility.</li>
-      <li>Use a written agreement covering condition, included items, price, payment terms, delivery terms, inspection rights, refund terms, and after-sale responsibilities.</li>
-      <li>Avoid full payment before verifying seller identity, machine condition, and transaction terms.</li>
-    </ul>
-  </article>
+<section class="checklist-grid-v35 mobile-guide-grid">
+  <article><span><%= t('check.identity') %></span><h2><%= t('check.sellerOwnership') %></h2><ul><li><%= t('check.identity1') %></li><li><%= t('check.identity2') %></li><li><%= t('check.identity3') %></li></ul></article>
+  <article><span><%= t('check.condition') %></span><h2><%= t('check.machinePrintheads') %></h2><ul><li><%= t('check.condition1') %></li><li><%= t('check.condition2') %></li><li><%= t('check.condition3') %></li></ul></article>
+  <article><span><%= t('check.package') %></span><h2><%= t('check.accessoriesHistory') %></h2><ul><li><%= t('check.package1') %></li><li><%= t('check.package2') %></li><li><%= t('check.package3') %></li></ul></article>
+  <article><span><%= t('check.terms') %></span><h2><%= t('check.paymentLogistics') %></h2><ul><li><%= t('check.terms1') %></li><li><%= t('check.terms2') %></li><li><%= t('check.terms3') %></li></ul></article>
 </section>
-
-<section class="guide-note-v35">
-  <h2>Important platform note</h2>
-  <p>Wall Printer Exchange does not hold buyer funds and does not guarantee machine condition, ownership, print quality, shipping outcome, customs clearance, installation, training, or after-sales support.</p>
-</section>
+<section class="guide-note-v35"><h2><%= t('check.note.h2') %></h2><p><%= t('check.note.text') %></p></section>
 <%- include('../partials/foot') %>

@@ -1,11 +1,6 @@
 <%- include('../partials/head') %>
-<section class="launch-state-card not-found-state">
-  <p class="eyebrow">404</p>
-  <h1>Page not found.</h1>
-  <p>The page, request, or machine listing may have been moved, archived, or removed.</p>
-  <div class="hero-actions centered">
-    <a class="btn primary" href="/">Back to machines</a>
-    <a class="btn secondary" href="/buyer-guide">Buyer guide</a>
-  </div>
+<section class="launch-state-card not-found-state mobile-page-hero">
+  <p class="eyebrow">404</p><h1><%= t('404.h1') %></h1><p><%= t('404.text') %></p>
+  <div class="hero-actions centered"><a class="btn primary" href="<%= localPath('/') %>"><%= t('error.back') %></a><a class="btn secondary" href="<%= localPath('/buyer-guide') %>"><%= t('nav.buyerGuide') %></a></div>
 </section>
 <%- include('../partials/foot') %>

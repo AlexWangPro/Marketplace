@@ -1,24 +1,10 @@
 <%- include('../partials/head') %>
-<section class="launch-state-card success-state-v37">
-  <p class="eyebrow">Received</p>
-  <% if (type === 'machine') { %>
-    <h1>Machine submission received.</h1>
-    <p>Your used wall printer is now pending admin review. It will not appear publicly until approved.</p>
-  <% } else if (type === 'contact') { %>
-    <h1>Contact request received.</h1>
-    <p>Admin will review the request before seller contact information is released.</p>
-  <% } else { %>
-    <h1>Buying request received.</h1>
-    <p>Your request has been submitted for admin review and matching.</p>
-  <% } %>
-  <div class="next-steps-v37">
-    <article><strong>1</strong><span>Admin reviews the information.</span></article>
-    <article><strong>2</strong><span>Qualified parties may be introduced by email.</span></article>
-    <article><strong>3</strong><span>Buyers verify machine condition directly with sellers.</span></article>
-  </div>
-  <div class="hero-actions centered">
-    <a class="btn primary" href="/">Back to machines</a>
-    <a class="btn secondary" href="/verification-checklist">Verification checklist</a>
-  </div>
+<section class="launch-state-card success-state-v37 mobile-page-hero">
+  <p class="eyebrow"><%= t('success.received') %></p>
+  <% if (type === 'machine') { %><h1><%= t('success.machine.h1') %></h1><p><%= t('success.machine.text') %></p>
+  <% } else if (type === 'contact') { %><h1><%= t('success.contact.h1') %></h1><p><%= t('success.contact.text') %></p>
+  <% } else { %><h1><%= t('success.buying.h1') %></h1><p><%= t('success.buying.text') %></p><% } %>
+  <div class="next-steps-v37"><article><strong>1</strong><span><%= t('success.step1') %></span></article><article><strong>2</strong><span><%= t('success.step2') %></span></article><article><strong>3</strong><span><%= t('success.step3') %></span></article></div>
+  <div class="hero-actions centered"><a class="btn primary" href="<%= localPath('/') %>"><%= t('success.back') %></a><a class="btn secondary" href="<%= localPath('/verification-checklist') %>"><%= t('footer.verification') %></a></div>
 </section>
 <%- include('../partials/foot') %>

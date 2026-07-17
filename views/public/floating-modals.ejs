@@ -1,18 +1,18 @@
 <div class="floating-actions action-hub" aria-label="Quick actions">
-  <button class="float-btn primary" type="button" data-open-modal="list-machine"><span>Sell</span><strong>List a machine</strong></button>
-  <button class="float-btn" type="button" data-open-modal="buying-request"><span>Buy</span><strong>Find a machine</strong></button>
+  <button class="float-btn primary" type="button" data-open-modal="list-machine"><span><%= t('floating.sell') %></span><strong><%= t('floating.listMachine') %></strong></button>
+  <button class="float-btn" type="button" data-open-modal="buying-request"><span><%= t('floating.buy') %></span><strong><%= t('floating.buyingRequest') %></strong></button>
 </div>
 
 <div class="modal-overlay" data-modal="list-machine" aria-hidden="true">
   <div class="modal-panel wide" role="dialog" aria-modal="true" aria-labelledby="listMachineTitle">
     <button class="modal-close" type="button" data-close-modal aria-label="Close">×</button>
     <div class="modal-header">
-      <p class="eyebrow">Seller submission</p>
-      <h2 id="listMachineTitle">List your used wall printer</h2>
-      <p>Confirm the terms, then submit the machine for admin review.</p>
+      <p class="eyebrow"><%= t('modal.seller.eyebrow') %></p>
+      <h2 id="listMachineTitle"><%= t('modal.seller.title') %></h2>
+      <p><%= t('modal.seller.text') %></p>
     </div>
 
-    <form method="post" action="/submit-machine" enctype="multipart/form-data" data-seller-modal-form>
+    <form method="post" action="<%= localPath('/submit-machine') %>" enctype="multipart/form-data" data-seller-modal-form>
       <section class="modal-step active" data-step="terms">
         <div class="terms-scroll">
           <h3>Used Wall Printer Listing Terms</h3>
@@ -104,11 +104,11 @@
   <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="buyingRequestTitle">
     <button class="modal-close" type="button" data-close-modal aria-label="Close">×</button>
     <div class="modal-header">
-      <p class="eyebrow">Buyer request</p>
-      <h2 id="buyingRequestTitle">Describe the machine you need</h2>
-      <p>Submit your target machine. Admin can match up to five suitable machines.</p>
+      <p class="eyebrow"><%= t('modal.buyer.eyebrow') %></p>
+      <h2 id="buyingRequestTitle"><%= t('modal.buyer.title') %></h2>
+      <p><%= t('modal.buyer.text') %></p>
     </div>
-    <form method="post" action="/buying-request">
+    <form method="post" action="<%= localPath('/buying-request') %>">
       <section class="form-card compact-card">
         <h3>Buyer contact</h3>
         <div class="form-grid two">
