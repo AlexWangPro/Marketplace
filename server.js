@@ -47,7 +47,7 @@ function localizedAbsolute(pathname = '/', lang = DEFAULT_LANG) {
 
 function detectRequestLanguage(req) {
   const original = req && (req.originalUrl || req.url || req.path || '/');
-  const match = String(original).match(new RegExp(`^/(${LANGUAGE_CODES.join('|')})(?=/|\?|$)`));
+  const match = String(original).match(new RegExp(`^/(${LANGUAGE_CODES.join('|')})(?=$|/|\\?)`));
   return match ? match[1] : DEFAULT_LANG;
 }
 
@@ -494,7 +494,7 @@ app.use(session({
 }));
 
 app.use((req, res, next) => {
-  const match = req.url.match(new RegExp(`^/(${LANGUAGE_CODES.join('|')})(?=/|\?|$)`));
+  const match = req.url.match(new RegExp(`^/(${LANGUAGE_CODES.join('|')})(?=$|/|\\?)`));
   req.lang = DEFAULT_LANG;
   req.langPrefix = '';
   req.localizedOriginalUrl = req.originalUrl;
@@ -1081,7 +1081,7 @@ app.get('/images/:id', async (req, res, next) => {
 });
 
 app.get('/healthz', (req, res) => {
-  res.json({ ok: true, service: 'wall-printer-exchange', version: '3.8.1' });
+  res.json({ ok: true, service: 'wall-printer-exchange', version: '3.8.2' });
 });
 
 app.get('/robots.txt', (req, res) => {
