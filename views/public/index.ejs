@@ -70,7 +70,8 @@
       <article class="v30-machine-card refined-machine-card mobile-machine-card <%= machine.status === 'sold' ? 'is-sold' : '' %>">
         <a href="<%= localPath('/machine/' + machine.slug) %>" class="v30-card-image refined-card-image" aria-label="<%= t('home.viewMachine') %> <%= machine.title %>">
           <% if (machine.primary_image_id) { %>
-            <img src="/images/<%= machine.primary_image_id %>" alt="<%= machine.title %>" loading="lazy">
+            <img class="card-photo-bg" src="/images/<%= machine.primary_image_id %>" alt="" aria-hidden="true" loading="lazy">
+            <img class="card-photo-main" src="/images/<%= machine.primary_image_id %>" alt="<%= machine.title %>" loading="lazy">
           <% } else { %>
             <div class="placeholder-image"><%= t('home.wallPrinter') %></div>
           <% } %>

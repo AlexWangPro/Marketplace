@@ -1,17 +1,15 @@
-# Wall Printer Exchange v3.8.8
+# Wall Printer Exchange v3.8.9
 
 Railway + PostgreSQL + Resend deployment package.
 
-## v3.8.8 updates
+## v3.8.9 updates
 
-- Adds admin email notifications for:
-  - New seller listing submissions
-  - New buyer buying requests
-  - New seller contact requests
-- Default notification recipient is `dxonjet@gmail.com`.
-- Optional Railway variable: `ADMIN_NOTIFICATION_EMAIL=dxonjet@gmail.com`.
-- Notification failures are logged in Railway but do not block user submissions.
-- Keeps v3.8.8 email delivery tracking and resend controls.
+- Optimizes homepage listing photos for portrait smartphone uploads.
+- Adds a blurred background layer behind each machine photo so vertical images look intentional instead of tiny inside a landscape frame.
+- Keeps the main machine photo fully visible with `object-fit: contain`; no aggressive cropping.
+- Changes homepage card photo frames to a more portrait-friendly ratio, especially on mobile.
+- Keeps v3.8.8 admin submission email notifications.
+- Keeps all prior admin, buyer request, multilingual, and anti-spam features.
 
 ## Railway variables
 
