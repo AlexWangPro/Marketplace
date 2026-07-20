@@ -13,6 +13,7 @@
     </div>
 
     <form method="post" action="<%= localPath('/submit-machine') %>" enctype="multipart/form-data" data-seller-modal-form>
+      <div class="hp-field" aria-hidden="true"><label>Website<input name="website" tabindex="-1" autocomplete="off"></label></div>
       <section class="modal-step active" data-step="terms">
         <div class="terms-scroll">
           <h3>Used Wall Printer Listing Terms</h3>
@@ -24,7 +25,7 @@
           <p>Payment, refund, shipping, tax, import duty, customs, inspection, installation, training, and after-sale terms must be agreed directly between buyer and seller.</p>
           <p>Wall Printer Exchange may charge a listing fee, introduction fee, referral fee, success fee, commission, or other service fee when applicable.</p>
         </div>
-        <label class="check-row"><input type="checkbox" name="declaration_accepted" data-terms-confirm> I have read, understood, and agree to these listing terms.</label>
+        <label class="check-row"><input type="checkbox" name="declaration_accepted" required data-terms-confirm> I have read, understood, and agree to these listing terms.</label>
         <div class="modal-actions">
           <button class="btn primary" type="button" data-next-seller-step>Continue</button>
         </div>
@@ -37,11 +38,16 @@
             <h3>Seller contact</h3>
             <div class="form-grid two">
               <label>Seller name *<input name="seller_name" required></label>
-              <label>Company<input name="seller_company"></label>
+              <label>Company / seller type *<input name="seller_company" required placeholder="Company name or Individual seller"></label>
               <label>Email *<input type="email" name="seller_email" required></label>
-              <label>Phone<input name="seller_phone"></label>
-              <label>WhatsApp<input name="seller_whatsapp"></label>
-              <label>Preferred contact<input name="seller_preferred_contact" placeholder="Email / WhatsApp / Phone"></label>
+              <label>Phone <small>required if no WhatsApp</small><input name="seller_phone" placeholder="Phone or mobile number"></label>
+              <label>WhatsApp <small>required if no phone</small><input name="seller_whatsapp" placeholder="WhatsApp number"></label>
+              <label>Preferred contact *
+                <select name="seller_preferred_contact" required>
+                  <option value="">Select contact method</option>
+                  <% sellerContactMethods.forEach(method => { %><option value="<%= method %>"><%= method %></option><% }) %>
+                </select>
+              </label>
             </div>
             <label class="check-row"><input type="checkbox" name="seller_contact_release_consent" required> I agree that Wall Printer Exchange may share my contact information with qualified buyers after admin review.</label>
           </div>
@@ -50,17 +56,33 @@
             <h3>Machine basics</h3>
             <div class="form-grid two">
               <label>Listing title *<input name="title" required placeholder="Used DXonJet wall printer, 4 Ricoh heads"></label>
-              <label>Brand<input name="brand" placeholder="DXonJet / WallPen / other"></label>
-              <label>Model<input name="model"></label>
-              <label>Production year<input name="production_year"></label>
-              <label>Purchase year<input name="purchase_year"></label>
-              <label>Printhead type<input name="printhead_type" placeholder="Ricoh GH2220 / Epson / other"></label>
-              <label>Number of printheads<input type="number" min="0" name="printhead_count"></label>
-              <label>Working status<input name="working_status" placeholder="Working / needs repair / unknown"></label>
-              <label>Asking price<input type="number" step="0.01" min="0" name="asking_price"></label>
-              <label>Currency<input name="currency" value="USD"></label>
+              <label>Brand *<input name="brand" required placeholder="DXonJet / WallPen / other"></label>
+              <label>Model *<input name="model" required></label>
+              <label>Production year *<input name="production_year" inputmode="numeric" pattern="[0-9]{4}" required></label>
+              <label>Purchase year *<input name="purchase_year" inputmode="numeric" pattern="[0-9]{4}" required></label>
+              <label>Printhead type *<input name="printhead_type" required placeholder="Ricoh GH2220 / Epson / other"></label>
+              <label>Number of printheads *<input type="number" min="1" name="printhead_count" required></label>
+              <label>Working status *
+                <select name="working_status" required>
+                  <option value="">Select working status</option>
+                  <% workingStatusOptions.forEach(option => { %><option value="<%= option %>"><%= option %></option><% }) %>
+                </select>
+              </label>
+              <label>Asking price *<input type="number" step="0.01" min="0" name="asking_price" required></label>
+              <label>Currency *
+                <select name="currency" required>
+                  <option value="">Select currency</option>
+                  <% currencyOptions.forEach(code => { %><option value="<%= code %>"><%= code %></option><% }) %>
+                </select>
+              </label>
             </div>
-            <label class="check-row"><input type="checkbox" name="price_negotiable"> Price is negotiable</label>
+                        <label>Price negotiable *
+              <select name="price_negotiable" required>
+                <option value="">Select option</option>
+                <option value="true">Yes, negotiable</option>
+                <option value="false">No, fixed price</option>
+              </select>
+            </label>
           </div>
 
           <div class="form-card compact-card">
@@ -75,17 +97,17 @@
               </label>
               <label>Country *<input name="country" required></label>
               <label>City *<input name="city" required></label>
-              <label>Exact address<input name="exact_address" placeholder="Private, not publicly displayed"></label>
+              <label>Exact address *<input name="exact_address" required placeholder="Private, not publicly displayed"></label>
             </div>
           </div>
 
           <div class="form-card compact-card">
             <h3>Condition, details, and media</h3>
-            <label>Machine description and condition<textarea name="details" rows="7" placeholder="Describe condition, usage history, current working status, maintenance, print quality, and important details."></textarea></label>
-            <label>Known defects or problems<textarea name="known_defects" rows="3"></textarea></label>
-            <label>Included accessories<textarea name="accessories" rows="3" placeholder="rails, computer, software, ink, spare parts, tools..."></textarea></label>
+            <label>Machine description and condition *<textarea name="details" rows="7" minlength="80" required placeholder="At least 80 characters. Describe condition, usage history, current working status, maintenance, print quality, and important details."></textarea></label>
+            <label>Known defects or problems *<textarea name="known_defects" rows="3" required placeholder="Write None if there are no known defects."></textarea></label>
+            <label>Included accessories *<textarea name="accessories" rows="3" required placeholder="rails, computer, software, ink, spare parts, tools... Write None if no accessories are included."></textarea></label>
             <label>Video URL<input name="video_url" placeholder="YouTube / Google Drive / Dropbox link"></label>
-            <label>Images<input type="file" name="images" accept="image/jpeg,image/png,image/webp,image/gif" multiple data-image-input></label>
+            <label>Images *<input type="file" name="images" accept="image/jpeg,image/png,image/webp,image/gif" multiple required data-image-input></label>
             <p class="muted small">Up to 8 images. JPG, PNG, WEBP, or GIF only. Each image maximum 2MB.</p>
             <div class="image-upload-error" data-image-error aria-live="polite"></div>
             <div class="image-preview-grid" data-image-preview></div>

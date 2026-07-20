@@ -3080,3 +3080,65 @@ body { background: var(--v30-bg); color: var(--v30-text); }
     font-size: 12px;
   }
 }
+
+/* v3.8.4 admin delete + anti-spam form cleanup */
+.hp-field {
+  position: absolute !important;
+  left: -10000px !important;
+  top: auto !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+.inline-delete-form {
+  display: inline-flex;
+  margin: 0;
+}
+.dashboard-actions-cell {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.preview-actions .inline-delete-form {
+  display: inline-flex;
+}
+.admin-danger-zone {
+  margin-top: 18px;
+}
+.danger-zone-card {
+  border-color: rgba(220, 38, 38, 0.2) !important;
+  background: linear-gradient(180deg, rgba(254, 242, 242, 0.72), #fff) !important;
+}
+.form-grid label small {
+  display: block;
+  margin-top: 3px;
+  color: #8a94a6;
+  font-size: 11px;
+  font-weight: 600;
+}
+.form-shell select:required:invalid,
+.modal-panel select:required:invalid {
+  color: #8a94a6;
+}
+.form-errors p {
+  line-height: 1.45;
+}
+@media (max-width: 720px) {
+  .dashboard-actions-cell {
+    justify-content: flex-start;
+  }
+  .preview-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .preview-actions .inline-delete-form,
+  .preview-actions .inline-delete-form .btn {
+    width: 100%;
+  }
+  .inline-delete-form .btn {
+    justify-content: center;
+  }
+}

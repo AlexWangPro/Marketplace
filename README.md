@@ -1,91 +1,75 @@
-# Wall Printer Exchange v3.8.3
+# Wall Printer Exchange v3.8.4
 
 Railway Node/Express version for Wall Printer Exchange.
 
-## What is new in v3.8.3
+## What is new in v3.8.4
 
-- 10-language public UI, excluding Chinese:
-  - English `/`
-  - Japanese `/ja/`
-  - Korean `/ko/`
-  - German `/de/`
-  - French `/fr/`
-  - Spanish `/es/`
-  - Italian `/it/`
-  - Portuguese `/pt/`
-  - Russian `/ru/`
-  - Arabic `/ar/`
-- Locale JSON files in `locales/`.
-- Language switcher in the header.
-- SEO `hreflang` alternate tags.
-- Multilingual sitemap output.
-- Mobile-first homepage cleanup so users can reach machine cards faster.
-- Stronger mobile layout for header, navigation, forms, modals, listing cards, footer, and floating actions.
-- `/healthz` returns version `3.8`.
+### Admin listing deletion
 
-## Railway deployment
+- Delete button is available in the full Machines admin page.
+- Delete button is now also available in the Dashboard recent machines table, including pending review submissions.
+- Delete button is now available on the Edit Machine page header and in a dedicated danger zone.
+- Deleting a machine permanently removes the listing and uploaded machine images. Buyer requests remain, but their machine reference is set to null by the database.
 
-1. Upload this project to GitHub.
-2. Railway Web Service should point to the GitHub repo.
-3. Add PostgreSQL in Railway.
-4. Add variables to the Web Service:
+### Seller submission anti-spam hardening
+
+Seller listing submission is now stricter on both the frontend and backend.
+
+New required items include:
+
+- Company / seller type
+- Preferred contact method
+- Brand
+- Model
+- Production year
+- Purchase year
+- Printhead type
+- Number of printheads
+- Working status
+- Asking price
+- Currency
+- Price negotiable selection
+- Machine description with at least 80 characters
+- Known defects, or `None`
+- Included accessories, or `None`
+- Exact address, stored privately
+- At least one image
+- At least one direct phone or WhatsApp number
+
+The seller form also includes a hidden honeypot field to reject common bot submissions.
+
+### Version
+
+`/healthz` returns version `3.8.4`.
+
+## Railway variables
+
+Set these on the website Web Service, not the Postgres service:
 
 ```env
 DATABASE_URL=${{Postgres.DATABASE_URL}}
-SESSION_SECRET=replace-with-long-random-string
+SESSION_SECRET=replace-with-a-long-random-secret
 ADMIN_EMAIL=admin@wallprinter.org
-ADMIN_PASSWORD=replace-this-password
+ADMIN_PASSWORD=replace-with-a-strong-password
 APP_URL=https://www.wallprinter.org
 NODE_ENV=production
-RESEND_API_KEY=re_xxxxxxxxxxxxxxxxx
+RESEND_API_KEY=re_xxxxxxxxx
 MAIL_FROM=Wall Printer Exchange <noreply@wallprinter.org>
 ```
 
-If your PostgreSQL service has a different name, adjust the `DATABASE_URL` reference.
+After changing `ADMIN_EMAIL` or `ADMIN_PASSWORD`, redeploy the web service. The app syncs Railway admin credentials into the database on deploy.
 
-## Domain
+## Deployment
 
-Recommended structure:
-
-```text
-www.wallprinter.org -> Railway
-wallprinter.org -> 301 redirect to https://www.wallprinter.org
-```
-
-In Railway, add `www.wallprinter.org` to the Web Service custom domains. If Railway asks for a port, use `8080`.
+1. Replace the repository files with this package.
+2. Commit and push.
+3. Railway → Web Service → Redeploy without cache.
+4. Check `/healthz`.
+5. Check `/admin/login`.
+6. Test a seller submission from `/submit-machine`.
 
 ## Health check
 
-```text
-/healthz
-```
-
-Expected response:
-
 ```json
-{"ok":true,"service":"wall-printer-exchange","version":"3.8"}
+{"ok":true,"service":"wall-printer-exchange","version":"3.8.4"}
 ```
-
-## Image storage
-
-Images are stored in PostgreSQL as `BYTEA` and served through `/images/:id`. This is acceptable for a small used-machine catalog.
-
-## Notes
-
-Admin pages remain English. Public pages, navigation, core platform pages, main CTAs, and mobile browsing UI are multilingual.
-
-
-## v3.8.3 hotfix
-
-Fixes missing i18n locals on error rendering paths so `/public/error.ejs` and shared partials no longer throw `lang is not defined` if an error occurs before normal locale middleware completes.
-
-
-## v3.8.3 Notes
-
-- Browser-language auto redirect is enabled only for the public home page `/`.
-- Language priority: URL prefix → `wpe_lang` cookie → browser `Accept-Language` → English.
-- Admin routes, health checks, sitemap, robots, images, CSS, JS, and POST requests are excluded from auto redirect.
-- Admin credentials are synced from Railway variables on every deploy:
-  - `ADMIN_EMAIL`
-  - `ADMIN_PASSWORD`
-- If admin login fails after changing Railway variables, confirm the variables are set on the web service, not the Postgres service, then use Railway → Redeploy without cache.

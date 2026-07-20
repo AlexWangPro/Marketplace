@@ -44,14 +44,20 @@
     <div class="content-card clean-admin-card">
       <div class="card-title-row"><h2>Recent machines</h2><a class="text-link" href="/admin/machines">View all</a></div>
       <table class="admin-table clean-table">
-        <thead><tr><th>Machine</th><th>Status</th><th>Location</th><th></th></tr></thead>
+        <thead><tr><th>Machine</th><th>Status</th><th>Location</th><th>Actions</th></tr></thead>
         <tbody>
           <% recentMachines.forEach(m => { %>
             <tr>
               <td><strong><%= m.title %></strong><br><small><%= formatDate(m.created_at) %></small></td>
               <td><span class="status-badge <%= m.status %>"><%= statusLabel(m.status) %></span></td>
               <td><%= [m.region,m.country,m.city].filter(Boolean).join(' · ') || '—' %></td>
-              <td><a class="btn tiny" href="/admin/machines/<%= m.id %>/preview">Preview</a></td>
+              <td class="dashboard-actions-cell">
+                <a class="btn tiny" href="/admin/machines/<%= m.id %>/preview">Preview</a>
+                <a class="btn tiny secondary" href="/admin/machines/<%= m.id %>/edit">Edit</a>
+                <form method="post" action="/admin/machines/<%= m.id %>/delete" data-confirm-delete="Delete this machine listing permanently?" class="inline-delete-form">
+                  <button class="btn tiny danger soft-danger" type="submit">Delete</button>
+                </form>
+              </td>
             </tr>
           <% }) %>
         </tbody>

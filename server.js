@@ -139,6 +139,40 @@ const INSPECTION_PLANS = [
 const MAX_UPLOAD_IMAGES = 8;
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 const ALLOWED_IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const SELLER_CONTACT_METHODS = ['Email', 'WhatsApp', 'Phone'];
+const WORKING_STATUS_OPTIONS = [
+  'Working and available for live demo',
+  'Working but needs service',
+  'Needs repair',
+  'Not working',
+  'Unknown / needs verification'
+];
+const CURRENCY_OPTIONS = ['USD', 'EUR', 'GBP', 'JPY', 'KRW', 'CAD', 'AUD', 'MXN', 'BRL', 'AED', 'SAR'];
+const MIN_DETAILS_LENGTH = 80;
+const REQUIRED_MACHINE_SUBMISSION_FIELDS = [
+  ['seller_name', 'Seller name'],
+  ['seller_company', 'Company / seller type'],
+  ['seller_email', 'Seller email'],
+  ['seller_preferred_contact', 'Preferred contact method'],
+  ['title', 'Listing title'],
+  ['brand', 'Brand'],
+  ['model', 'Model'],
+  ['production_year', 'Production year'],
+  ['purchase_year', 'Purchase year'],
+  ['printhead_type', 'Printhead type'],
+  ['printhead_count', 'Number of printheads'],
+  ['working_status', 'Current working status'],
+  ['asking_price', 'Asking price'],
+  ['currency', 'Currency'],
+  ['price_negotiable', 'Price negotiable'],
+  ['details', 'Machine description and condition'],
+  ['known_defects', 'Known defects or problems'],
+  ['accessories', 'Included accessories'],
+  ['region', 'Region'],
+  ['country', 'Country'],
+  ['city', 'City'],
+  ['exact_address', 'Exact address']
+];
 
 if (!process.env.DATABASE_URL) {
   console.error('\nMissing DATABASE_URL. Add a PostgreSQL database and set DATABASE_URL.');
@@ -636,6 +670,9 @@ app.use((req, res, next) => {
   res.locals.machineStatuses = MACHINE_STATUSES;
   res.locals.requestStatuses = REQUEST_STATUSES;
   res.locals.inspectionPlans = INSPECTION_PLANS;
+  res.locals.sellerContactMethods = SELLER_CONTACT_METHODS;
+  res.locals.workingStatusOptions = WORKING_STATUS_OPTIONS;
+  res.locals.currencyOptions = CURRENCY_OPTIONS;
   res.locals.flash = req.session.flash || null;
   delete req.session.flash;
   res.locals.statusLabel = statusLabel;
@@ -750,6 +787,66 @@ function numberOrNull(value) {
   if (value === undefined || value === null || value === '') return null;
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
+}
+
+function validateMachineSubmission(f = {}, files = []) {
+  const errors = [];
+  if (f.website && String(f.website).trim()) {
+    errors.push('Submission rejected. Please leave the website field empty.');
+  }
+  if (!bool(f.declaration_accepted)) {
+    errors.push('You must accept the listing declaration before submitting.');
+  }
+  if (!bool(f.seller_contact_release_consent)) {
+    errors.push('You must allow us to share your contact information with qualified buyers after admin review.');
+  }
+  REQUIRED_MACHINE_SUBMISSION_FIELDS.forEach(([field, label]) => {
+    if (f[field] === undefined || f[field] === null || !String(f[field]).trim()) {
+      errors.push(`${label} is required.`);
+    }
+  });
+  if (!String(f.seller_phone || '').trim() && !String(f.seller_whatsapp || '').trim()) {
+    errors.push('Please provide at least one direct phone number or WhatsApp number.');
+  }
+  if (f.seller_preferred_contact && !SELLER_CONTACT_METHODS.includes(f.seller_preferred_contact)) {
+    errors.push('Please select a valid preferred contact method.');
+  }
+  if (f.working_status && !WORKING_STATUS_OPTIONS.includes(f.working_status)) {
+    errors.push('Please select a valid working status.');
+  }
+  if (f.currency && !CURRENCY_OPTIONS.includes(f.currency)) {
+    errors.push('Please select a valid currency.');
+  }
+  if (f.price_negotiable && !['true', 'false'].includes(String(f.price_negotiable))) {
+    errors.push('Please select whether the price is negotiable.');
+  }
+  if (f.region && !REGIONS.includes(f.region)) {
+    errors.push('Please select a valid region.');
+  }
+  const currentYear = new Date().getFullYear() + 1;
+  ['production_year', 'purchase_year'].forEach(field => {
+    if (f[field]) {
+      const year = Number(f[field]);
+      if (!Number.isInteger(year) || year < 1990 || year > currentYear) {
+        errors.push(`${field.replace(/_/g, ' ')} must be a valid year.`);
+      }
+    }
+  });
+  const printheadCount = numberOrNull(f.printhead_count);
+  if (f.printhead_count && (!Number.isInteger(printheadCount) || printheadCount <= 0)) {
+    errors.push('Number of printheads must be greater than 0.');
+  }
+  const askingPrice = numberOrNull(f.asking_price);
+  if (f.asking_price && (askingPrice === null || askingPrice < 0)) {
+    errors.push('Asking price must be a valid number.');
+  }
+  if (String(f.details || '').trim().length > 0 && String(f.details || '').trim().length < MIN_DETAILS_LENGTH) {
+    errors.push(`Machine description must be at least ${MIN_DETAILS_LENGTH} characters.`);
+  }
+  if (!files.length) {
+    errors.push('Please upload at least one real machine image.');
+  }
+  return errors;
 }
 
 async function logAdmin(req, action, entityType, entityId, details = {}) {
@@ -1065,13 +1162,8 @@ app.get('/submit-machine', (req, res) => {
 
 app.post('/submit-machine', machineUpload, async (req, res, next) => {
   const f = req.body;
-  const errors = [];
-  if (!bool(f.declaration_accepted)) errors.push('You must accept the listing declaration before submitting.');
-  if (!bool(f.seller_contact_release_consent)) errors.push('You must allow us to share your contact information with qualified buyers after admin review.');
-  ['title', 'seller_name', 'seller_email', 'region', 'country', 'city'].forEach(field => {
-    if (!f[field] || !String(f[field]).trim()) errors.push(`${field.replace(/_/g, ' ')} is required.`);
-  });
-  if (f.region && !REGIONS.includes(f.region)) errors.push('Please select a valid region.');
+  const files = req.files || [];
+  const errors = validateMachineSubmission(f, files);
 
   if (errors.length) return res.status(400).render('public/submit-machine', { title: 'Submit Your Machine', form: f, errors });
 
@@ -1097,7 +1189,6 @@ app.post('/submit-machine', machineUpload, async (req, res, next) => {
       f.seller_preferred_contact || null, bool(f.seller_contact_release_consent), bool(f.declaration_accepted)
     ]);
     const machineId = rows[0].id;
-    const files = req.files || [];
     for (let i = 0; i < files.length; i++) {
       await client.query('INSERT INTO machine_images (machine_id, image, mime_type, file_name, is_primary) VALUES ($1,$2,$3,$4,$5)', [machineId, files[i].buffer, files[i].mimetype, files[i].originalname, i === 0]);
     }
@@ -1193,7 +1284,7 @@ app.get('/images/:id', async (req, res, next) => {
 });
 
 app.get('/healthz', (req, res) => {
-  res.json({ ok: true, service: 'wall-printer-exchange', version: '3.8.3' });
+  res.json({ ok: true, service: 'wall-printer-exchange', version: '3.8.4' });
 });
 
 app.get('/robots.txt', (req, res) => {
@@ -1699,6 +1790,9 @@ app.use((err, req, res, next) => {
   res.locals.machineStatuses = MACHINE_STATUSES;
   res.locals.requestStatuses = REQUEST_STATUSES;
   res.locals.inspectionPlans = INSPECTION_PLANS;
+  res.locals.sellerContactMethods = SELLER_CONTACT_METHODS;
+  res.locals.workingStatusOptions = WORKING_STATUS_OPTIONS;
+  res.locals.currencyOptions = CURRENCY_OPTIONS;
   res.locals.flash = (req.session && req.session.flash) || null;
   res.locals.statusLabel = statusLabel;
   res.locals.formatDate = formatDate;

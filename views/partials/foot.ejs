@@ -4,7 +4,7 @@
   const safeFooterLocalPath = typeof localPath !== 'undefined' ? localPath : (pathname) => pathname || '/';
   const safeFooterCurrentPath = typeof currentPath !== 'undefined' ? currentPath : '/';
   const safeFooterAdmin = typeof admin !== 'undefined' ? admin : null;
-  const safeCanIncludeFloating = typeof t !== 'undefined' && typeof regions !== 'undefined' && typeof inspectionPlans !== 'undefined';
+  const safeCanIncludeFloating = typeof t !== 'undefined' && typeof regions !== 'undefined' && typeof inspectionPlans !== 'undefined' && typeof sellerContactMethods !== 'undefined' && typeof workingStatusOptions !== 'undefined' && typeof currencyOptions !== 'undefined';
 %>
 <footer class="site-footer clean-footer apple-footer site-footer-v37 mobile-clean-footer">
   <div>
@@ -22,6 +22,6 @@
 <% if (!safeFooterCurrentPath.startsWith('/admin') && safeCanIncludeFloating) { %>
   <%- include('../public/floating-modals') %>
 <% } %>
-<script src="/app.js?v=3.8.3" defer></script>
+<script src="/app.js?v=3.8.4" defer></script>
 </body>
 </html>

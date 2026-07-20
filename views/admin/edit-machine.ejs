@@ -1,5 +1,11 @@
 <%- include('../partials/head') %>
-<section class="admin-shell"><div class="admin-hero-clean"><div><p class="eyebrow">Admin</p><h1>Edit Machine</h1><p>Update public listing details, private seller contact, images, and status.</p></div><div class="preview-actions"><a class="btn primary" href="/admin/machines/<%= machine.id %>/preview">Preview listing</a><a class="btn secondary" href="/admin/machines">Back</a></div></div>
+<section class="admin-shell"><div class="admin-hero-clean"><div><p class="eyebrow">Admin</p><h1>Edit Machine</h1><p>Update public listing details, private seller contact, images, and status.</p></div><div class="preview-actions">
+  <a class="btn primary" href="/admin/machines/<%= machine.id %>/preview">Preview listing</a>
+  <a class="btn secondary" href="/admin/machines">Back</a>
+  <form method="post" action="/admin/machines/<%= machine.id %>/delete" data-confirm-delete="Delete this machine listing permanently? This cannot be undone." class="inline-delete-form">
+    <button class="btn danger soft-danger" type="submit">Delete Listing</button>
+  </form>
+</div></div>
 <nav class="admin-nav clean-admin-nav"><a href="/admin">Dashboard</a><a href="/admin/machines" class="active">Machines</a><a href="/admin/requests">Buyer Requests</a></nav>
 <% if (errors && errors.length) { %><div class="form-errors"><% errors.forEach(e => { %><p><%= e %></p><% }) %></div><% } %>
 <form class="form-shell admin-edit-shell" method="post" action="/admin/machines/<%= machine.id %>/edit" enctype="multipart/form-data">
@@ -75,5 +81,15 @@
 
   <div class="sticky-save-row"><button class="btn primary large" type="submit">Save Changes</button></div>
 </form>
+
+<section class="form-shell admin-danger-zone">
+  <section class="form-card danger-zone-card">
+    <h2>Delete listing</h2>
+    <p class="muted">Permanently remove this listing and its uploaded images. Buyer requests that referenced this machine will remain but will no longer link to the deleted listing.</p>
+    <form method="post" action="/admin/machines/<%= machine.id %>/delete" data-confirm-delete="Delete this machine listing permanently? This cannot be undone.">
+      <button class="btn danger soft-danger" type="submit">Delete Listing Permanently</button>
+    </form>
+  </section>
+</section>
 </section>
 <%- include('../partials/foot') %>

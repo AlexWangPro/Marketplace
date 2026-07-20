@@ -10,6 +10,7 @@
 <% } %>
 
 <form class="form-shell" method="post" action="<%= localPath('/submit-machine') %>" enctype="multipart/form-data">
+  <div class="hp-field" aria-hidden="true"><label>Website<input name="website" value="<%= form.website || '' %>" tabindex="-1" autocomplete="off"></label></div>
   <section class="declaration-box">
     <h2>Used Wall Printer Listing Declaration</h2>
     <p>WallPrinter.org / Wall Printer Exchange is a used wall printer listing and introduction platform. It is not the seller, buyer, manufacturer, inspection provider, escrow provider, payment processor, shipping company, customs broker, installer, or warranty provider for any used machine listed on the website.</p>
@@ -19,19 +20,24 @@
     <p>Buyers are responsible for their own due diligence. Wall Printer Exchange does not independently verify every technical detail and does not guarantee machine condition, print quality, remaining service life, accessories, software, ownership, shipping condition, customs clearance, installation, training, or after-sales support.</p>
     <p>Wall Printer Exchange does not collect payment on behalf of buyers or sellers unless separately agreed in writing. Payment, refund, shipping, tax, import duty, customs, inspection, installation, training, and after-sale terms must be agreed directly between buyer and seller.</p>
     <p>Wall Printer Exchange may charge a listing fee, introduction fee, referral fee, success fee, commission, or other service fee when applicable. Any such fee should be confirmed separately in writing.</p>
-    <label class="check-row"><input type="checkbox" name="declaration_accepted" <%= form.declaration_accepted ? 'checked' : '' %>> I have read, understood, and agree to this declaration.</label>
-    <label class="check-row"><input type="checkbox" name="seller_contact_release_consent" <%= form.seller_contact_release_consent ? 'checked' : '' %>> I agree that Wall Printer Exchange may share my contact information with qualified buyers after admin review.</label>
+    <label class="check-row"><input type="checkbox" name="declaration_accepted" required <%= form.declaration_accepted ? 'checked' : '' %>> I have read, understood, and agree to this declaration.</label>
+    <label class="check-row"><input type="checkbox" name="seller_contact_release_consent" required <%= form.seller_contact_release_consent ? 'checked' : '' %>> I agree that Wall Printer Exchange may share my contact information with qualified buyers after admin review.</label>
   </section>
 
   <section class="form-card">
     <h2>Seller contact information</h2>
     <div class="form-grid two">
       <label>Seller name *<input name="seller_name" value="<%= form.seller_name || '' %>" required></label>
-      <label>Company<input name="seller_company" value="<%= form.seller_company || '' %>"></label>
+      <label>Company / seller type *<input name="seller_company" value="<%= form.seller_company || '' %>" required placeholder="Company name or Individual seller"></label>
       <label>Email *<input type="email" name="seller_email" value="<%= form.seller_email || '' %>" required></label>
-      <label>Phone<input name="seller_phone" value="<%= form.seller_phone || '' %>"></label>
-      <label>WhatsApp<input name="seller_whatsapp" value="<%= form.seller_whatsapp || '' %>"></label>
-      <label>Preferred contact method<input name="seller_preferred_contact" value="<%= form.seller_preferred_contact || '' %>" placeholder="Email / WhatsApp / Phone"></label>
+      <label>Phone <small>required if no WhatsApp</small><input name="seller_phone" value="<%= form.seller_phone || '' %>" placeholder="Phone or mobile number"></label>
+      <label>WhatsApp <small>required if no phone</small><input name="seller_whatsapp" value="<%= form.seller_whatsapp || '' %>" placeholder="WhatsApp number"></label>
+      <label>Preferred contact method *
+        <select name="seller_preferred_contact" required>
+          <option value="">Select contact method</option>
+          <% sellerContactMethods.forEach(method => { %><option value="<%= method %>" <%= form.seller_preferred_contact === method ? 'selected' : '' %>><%= method %></option><% }) %>
+        </select>
+      </label>
     </div>
   </section>
 
@@ -39,20 +45,36 @@
     <h2>Machine listing information</h2>
     <div class="form-grid two">
       <label>Listing title *<input name="title" value="<%= form.title || '' %>" required placeholder="Used DXonJet wall printer, 4 Ricoh heads"></label>
-      <label>Brand<input name="brand" value="<%= form.brand || '' %>" placeholder="DXonJet / WallPen / other"></label>
-      <label>Model<input name="model" value="<%= form.model || '' %>"></label>
-      <label>Production year<input name="production_year" value="<%= form.production_year || '' %>"></label>
-      <label>Purchase year<input name="purchase_year" value="<%= form.purchase_year || '' %>"></label>
-      <label>Printhead type<input name="printhead_type" value="<%= form.printhead_type || '' %>" placeholder="Ricoh GH2220 / Epson / other"></label>
-      <label>Number of printheads<input type="number" min="0" name="printhead_count" value="<%= form.printhead_count || '' %>"></label>
-      <label>Current working status<input name="working_status" value="<%= form.working_status || '' %>" placeholder="Working / needs repair / unknown"></label>
-      <label>Asking price<input type="number" step="0.01" min="0" name="asking_price" value="<%= form.asking_price || '' %>"></label>
-      <label>Currency<input name="currency" value="<%= form.currency || 'USD' %>"></label>
+      <label>Brand *<input name="brand" value="<%= form.brand || '' %>" required placeholder="DXonJet / WallPen / other"></label>
+      <label>Model *<input name="model" value="<%= form.model || '' %>" required></label>
+      <label>Production year *<input name="production_year" inputmode="numeric" pattern="[0-9]{4}" value="<%= form.production_year || '' %>" required></label>
+      <label>Purchase year *<input name="purchase_year" inputmode="numeric" pattern="[0-9]{4}" value="<%= form.purchase_year || '' %>" required></label>
+      <label>Printhead type *<input name="printhead_type" value="<%= form.printhead_type || '' %>" required placeholder="Ricoh GH2220 / Epson / other"></label>
+      <label>Number of printheads *<input type="number" min="1" name="printhead_count" value="<%= form.printhead_count || '' %>" required></label>
+      <label>Current working status *
+        <select name="working_status" required>
+          <option value="">Select working status</option>
+          <% workingStatusOptions.forEach(option => { %><option value="<%= option %>" <%= form.working_status === option ? 'selected' : '' %>><%= option %></option><% }) %>
+        </select>
+      </label>
+      <label>Asking price *<input type="number" step="0.01" min="0" name="asking_price" value="<%= form.asking_price || '' %>" required></label>
+      <label>Currency *
+        <select name="currency" required>
+          <option value="">Select currency</option>
+          <% currencyOptions.forEach(code => { %><option value="<%= code %>" <%= form.currency === code ? 'selected' : '' %>><%= code %></option><% }) %>
+        </select>
+      </label>
     </div>
-    <label class="check-row"><input type="checkbox" name="price_negotiable" <%= form.price_negotiable ? 'checked' : '' %>> Price is negotiable</label>
-    <label>Machine description and condition<textarea name="details" rows="7" placeholder="Describe the machine condition, usage history, current working status, maintenance, print quality, and any important details."><%= form.details || form.condition_summary || form.usage_history || '' %></textarea></label>
-    <label>Known defects or problems<textarea name="known_defects" rows="3"><%= form.known_defects || '' %></textarea></label>
-    <label>Included accessories<textarea name="accessories" rows="3" placeholder="rails, computer, software, ink, spare parts, tools..."><%= form.accessories || '' %></textarea></label>
+        <label>Price negotiable *
+      <select name="price_negotiable" required>
+        <option value="">Select option</option>
+        <option value="true" <%= String(form.price_negotiable || '') === 'true' || form.price_negotiable === 'on' ? 'selected' : '' %>>Yes, negotiable</option>
+        <option value="false" <%= String(form.price_negotiable || '') === 'false' ? 'selected' : '' %>>No, fixed price</option>
+      </select>
+    </label>
+    <label>Machine description and condition *<textarea name="details" rows="7" minlength="80" required placeholder="At least 80 characters. Describe the machine condition, usage history, current working status, maintenance, print quality, and any important details."><%= form.details || form.condition_summary || form.usage_history || '' %></textarea></label>
+    <label>Known defects or problems *<textarea name="known_defects" rows="3" required placeholder="Write None if there are no known defects."><%= form.known_defects || '' %></textarea></label>
+    <label>Included accessories *<textarea name="accessories" rows="3" required placeholder="rails, computer, software, ink, spare parts, tools... Write None if no accessories are included."><%= form.accessories || '' %></textarea></label>
     <label>Video URL<input name="video_url" value="<%= form.video_url || '' %>" placeholder="YouTube / Google Drive / Dropbox link"></label>
   </section>
 
@@ -68,14 +90,14 @@
       </label>
       <label>Country *<input name="country" value="<%= form.country || '' %>" required></label>
       <label>City *<input name="city" value="<%= form.city || '' %>" required></label>
-      <label>Exact address<input name="exact_address" value="<%= form.exact_address || '' %>" placeholder="Private, not publicly displayed"></label>
+      <label>Exact address *<input name="exact_address" value="<%= form.exact_address || '' %>" required placeholder="Private, not publicly displayed"></label>
     </div>
   </section>
 
   <section class="form-card">
     <h2>Images</h2>
     <p class="muted">Upload up to 8 images. JPG, PNG, WEBP, or GIF only. Each image maximum 2MB. The first image will be used as the primary listing image.</p>
-    <input type="file" name="images" accept="image/jpeg,image/png,image/webp,image/gif" multiple data-image-input>
+    <input type="file" name="images" accept="image/jpeg,image/png,image/webp,image/gif" multiple required data-image-input>
     <div class="image-upload-error" data-image-error aria-live="polite"></div>
     <div class="image-preview-grid" data-image-preview></div>
   </section>
