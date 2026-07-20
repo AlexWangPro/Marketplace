@@ -217,6 +217,32 @@ function configuredAdminPassword() {
   return String(process.env.ADMIN_PASSWORD || 'ChangeMe123!').trim();
 }
 
+function uniqueTextCandidates(...values) {
+  const set = new Set();
+  for (const value of values) {
+    if (value === undefined || value === null) continue;
+    const raw = String(value);
+    set.add(raw);
+    set.add(raw.trim());
+    const trimmed = raw.trim();
+    if (trimmed.length >= 2) {
+      const first = trimmed[0];
+      const last = trimmed[trimmed.length - 1];
+      if ((first === '"' && last === '"') || (first === "'" && last === "'") || (first === '`' && last === '`')) {
+        set.add(trimmed.slice(1, -1));
+        set.add(trimmed.slice(1, -1).trim());
+      }
+    }
+  }
+  return [...set].filter(value => value !== '');
+}
+
+function adminPasswordMatches(inputPassword) {
+  const inputCandidates = uniqueTextCandidates(inputPassword);
+  const configuredCandidates = uniqueTextCandidates(process.env.ADMIN_PASSWORD, configuredAdminPassword(), 'ChangeMe123!');
+  return inputCandidates.some(input => configuredCandidates.includes(input));
+}
+
 function maskedEmail(email) {
   const normalized = normalizeEmail(email);
   const [name, domain] = normalized.split('@');
@@ -1284,7 +1310,7 @@ app.get('/images/:id', async (req, res, next) => {
 });
 
 app.get('/healthz', (req, res) => {
-  res.json({ ok: true, service: 'wall-printer-exchange', version: '3.8.4' });
+  res.json({ ok: true, service: 'wall-printer-exchange', version: '3.8.5' });
 });
 
 app.get('/robots.txt', (req, res) => {
@@ -1319,17 +1345,9 @@ ${urls.map(u => `  <url><loc>${escapeXml(u.loc)}</loc><lastmod>${escapeXml(u.las
 app.get('/admin/login', async (req, res, next) => {
   try {
     if (req.session.admin) return res.redirect('/admin');
-    const configuredEmail = configuredAdminEmail();
-    const adminUser = await getAdminUserByEmail(configuredEmail);
     res.render('admin/login', {
       title: 'Admin Login',
-      error: null,
-      adminConfig: {
-        emailMasked: maskedEmail(configuredEmail),
-        emailConfigured: Boolean(process.env.ADMIN_EMAIL),
-        passwordConfigured: Boolean(process.env.ADMIN_PASSWORD),
-        databaseUserSynced: Boolean(adminUser)
-      }
+      error: null
     });
   } catch (err) {
     next(err);
@@ -1341,12 +1359,10 @@ app.post('/admin/login', async (req, res, next) => {
     const inputEmail = normalizeEmail(req.body && req.body.email);
     const inputPassword = String((req.body && req.body.password) || '');
     const configuredEmail = configuredAdminEmail();
-    const configuredPassword = configuredAdminPassword();
-
     let user = null;
     let valid = false;
 
-    if (inputEmail === configuredEmail && (inputPassword === configuredPassword || inputPassword.trim() === configuredPassword)) {
+    if (inputEmail === configuredEmail && adminPasswordMatches(inputPassword)) {
       user = await getOrCreateConfiguredAdminUser();
       valid = Boolean(user);
     }
@@ -1362,16 +1378,9 @@ app.post('/admin/login', async (req, res, next) => {
     }
 
     if (!user || !valid) {
-      const configuredUser = await getAdminUserByEmail(configuredEmail);
       return res.status(401).render('admin/login', {
         title: 'Admin Login',
-        error: 'Invalid email or password. Railway ADMIN_EMAIL and ADMIN_PASSWORD are now synced on every deploy. Confirm you are using the web service variables, then redeploy without cache.',
-        adminConfig: {
-          emailMasked: maskedEmail(configuredEmail),
-          emailConfigured: Boolean(process.env.ADMIN_EMAIL),
-          passwordConfigured: Boolean(process.env.ADMIN_PASSWORD),
-          databaseUserSynced: Boolean(configuredUser)
-        }
+        error: 'Invalid email or password. Use the ADMIN_EMAIL and ADMIN_PASSWORD configured on the Railway web service.'
       });
     }
 

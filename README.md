@@ -1,75 +1,47 @@
-# Wall Printer Exchange v3.8.4
+# Wall Printer Exchange v3.8.5
 
-Railway Node/Express version for Wall Printer Exchange.
+Railway-ready Node/Express/PostgreSQL application for reviewed used wall printer listings.
 
-## What is new in v3.8.4
+## What is new in v3.8.5
 
-### Admin listing deletion
+This is a hotfix on top of v3.8.4.
 
-- Delete button is available in the full Machines admin page.
-- Delete button is now also available in the Dashboard recent machines table, including pending review submissions.
-- Delete button is now available on the Edit Machine page header and in a dedicated danger zone.
-- Deleting a machine permanently removes the listing and uploaded machine images. Buyer requests remain, but their machine reference is set to null by the database.
+- Removes the public-facing admin configuration hint from the login page.
+- Makes admin login more reliable by checking `ADMIN_EMAIL` and `ADMIN_PASSWORD` directly from Railway web service variables before falling back to the database password hash.
+- Keeps the database admin user synced on deploy, but no longer depends only on the stored hash for current Railway credentials.
+- Accepts trimmed credentials and quoted Railway variable values to avoid login failures caused by accidental spaces or copied quotes.
+- Keeps the v3.8.4 admin delete and required listing submission improvements.
+- Keeps browser-language auto-detection and language cookie behavior from v3.8.3.
 
-### Seller submission anti-spam hardening
+## Required Railway variables
 
-Seller listing submission is now stricter on both the frontend and backend.
-
-New required items include:
-
-- Company / seller type
-- Preferred contact method
-- Brand
-- Model
-- Production year
-- Purchase year
-- Printhead type
-- Number of printheads
-- Working status
-- Asking price
-- Currency
-- Price negotiable selection
-- Machine description with at least 80 characters
-- Known defects, or `None`
-- Included accessories, or `None`
-- Exact address, stored privately
-- At least one image
-- At least one direct phone or WhatsApp number
-
-The seller form also includes a hidden honeypot field to reject common bot submissions.
-
-### Version
-
-`/healthz` returns version `3.8.4`.
-
-## Railway variables
-
-Set these on the website Web Service, not the Postgres service:
+Set these on the web service, not the Postgres service:
 
 ```env
 DATABASE_URL=${{Postgres.DATABASE_URL}}
 SESSION_SECRET=replace-with-a-long-random-secret
-ADMIN_EMAIL=admin@wallprinter.org
-ADMIN_PASSWORD=replace-with-a-strong-password
+ADMIN_EMAIL=your-admin-email@example.com
+ADMIN_PASSWORD=your-strong-password
 APP_URL=https://www.wallprinter.org
 NODE_ENV=production
 RESEND_API_KEY=re_xxxxxxxxx
 MAIL_FROM=Wall Printer Exchange <noreply@wallprinter.org>
 ```
 
-After changing `ADMIN_EMAIL` or `ADMIN_PASSWORD`, redeploy the web service. The app syncs Railway admin credentials into the database on deploy.
-
-## Deployment
-
-1. Replace the repository files with this package.
-2. Commit and push.
-3. Railway → Web Service → Redeploy without cache.
-4. Check `/healthz`.
-5. Check `/admin/login`.
-6. Test a seller submission from `/submit-machine`.
+After changing `ADMIN_EMAIL` or `ADMIN_PASSWORD`, redeploy the web service.
 
 ## Health check
 
+`/healthz` returns version `3.8.5`.
+
 ```json
-{"ok":true,"service":"wall-printer-exchange","version":"3.8.4"}
+{"ok":true,"service":"wall-printer-exchange","version":"3.8.5"}
 ```
+
+## Deploy
+
+1. Replace the repository contents with this package.
+2. Commit and push.
+3. In Railway, redeploy the web service without cache.
+4. Check `/healthz`.
+5. Log in at `/admin/login` using the current Railway `ADMIN_EMAIL` and `ADMIN_PASSWORD`.
