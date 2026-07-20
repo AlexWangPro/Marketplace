@@ -1,24 +1,17 @@
-# Wall Printer Exchange v3.8.7
+# Wall Printer Exchange v3.8.8
 
 Railway + PostgreSQL + Resend deployment package.
 
-## v3.8.7 updates
+## v3.8.8 updates
 
-- Fixes contact release email reporting: buyer and seller email delivery are tracked separately.
-- When seller contact is approved, success now requires the buyer email to be sent successfully.
-- Admin request detail now shows:
-  - Buyer receives seller contact
-  - Seller receives buyer contact
-  - Overall contact release status
-  - Separate error messages for buyer/seller delivery
-- Adds admin resend buttons for contact requests:
-  - Send to Buyer
-  - Send to Seller
-  - Send Both
-- Fixes manual match email reporting so buyer delivery failure is no longer hidden when seller emails succeed.
-- Keeps v3.8.6 buyer phone requirement and 3-machine buyer selection.
-- Keeps v3.8.5 stable admin login.
-- Keeps v3.8.4 listing delete and required seller submission fields.
+- Adds admin email notifications for:
+  - New seller listing submissions
+  - New buyer buying requests
+  - New seller contact requests
+- Default notification recipient is `dxonjet@gmail.com`.
+- Optional Railway variable: `ADMIN_NOTIFICATION_EMAIL=dxonjet@gmail.com`.
+- Notification failures are logged in Railway but do not block user submissions.
+- Keeps v3.8.8 email delivery tracking and resend controls.
 
 ## Railway variables
 
@@ -32,5 +25,6 @@ Set these on the Web Service, not the Postgres service:
 - NODE_ENV=production
 - RESEND_API_KEY=re_xxx
 - MAIL_FROM=Wall Printer Exchange <noreply@wallprinter.org>
+- ADMIN_NOTIFICATION_EMAIL=dxonjet@gmail.com
 
 After changing variables, redeploy without cache.

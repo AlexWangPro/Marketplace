@@ -290,6 +290,10 @@ function mailConfigured() {
   return Boolean(process.env.RESEND_API_KEY || (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS));
 }
 
+function adminNotificationEmail() {
+  return normalizeEmail(process.env.ADMIN_NOTIFICATION_EMAIL || process.env.NOTIFICATION_EMAIL || 'dxonjet@gmail.com');
+}
+
 async function sendMail({ to, subject, text, html }) {
   const from = process.env.MAIL_FROM || process.env.SMTP_USER || 'Wall Printer Exchange <noreply@wallprinter.org>';
 
@@ -514,6 +518,102 @@ function buyerContactLines(request) {
     ['Inspection plan', request.inspection_plan],
     ['Message', request.message]
   ];
+}
+
+function adminNotificationTable(lines) {
+  return `<table style="width:100%;border-collapse:collapse;margin:16px 0;">${compactContactHtml(lines)}</table>`;
+}
+
+async function sendAdminNotification({ subject, title, preheader, lines = [], ctaUrl = '', ctaLabel = 'Open admin' }) {
+  const to = adminNotificationEmail();
+  if (!to) return { sent: false, skipped: true, reason: 'Admin notification email is not configured' };
+  try {
+    const text = `${title}\n\n${lines.filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== '').map(([label, value]) => `${label}: ${value}`).join('\n')}\n\n${ctaUrl || absoluteUrl('/admin')}`;
+    const html = emailLayout({
+      title,
+      eyebrow: 'Admin notification',
+      preheader: preheader || title,
+      body: `
+        <p style="margin:0 0 16px;">A new submission was received on Wall Printer Exchange.</p>
+        ${adminNotificationTable(lines)}
+        <p style="margin:18px 0 0;color:#6b7280;font-size:13px;">This is an internal admin notification. Review the submission before releasing any seller contact details.</p>
+      `,
+      ctaUrl: ctaUrl || absoluteUrl('/admin'),
+      ctaLabel
+    });
+    const result = await sendMail({ to, subject, text, html });
+    if (!result.sent) {
+      console.error('Admin notification failed:', subject, result.reason || 'unknown error');
+    }
+    return result;
+  } catch (err) {
+    console.error('Admin notification failed:', subject, err.message);
+    return { sent: false, reason: err.message || 'Admin notification failed' };
+  }
+}
+
+async function notifyAdminNewListing(machine, filesCount = 0) {
+  if (!machine) return { sent: false, skipped: true, reason: 'Machine data missing' };
+  return sendAdminNotification({
+    subject: `New listing pending review: ${machine.title || 'Untitled machine'}`,
+    title: 'New listing pending review',
+    preheader: `${machine.title || 'A new machine'} was submitted for review.`,
+    ctaUrl: absoluteUrl(`/admin/machines/${machine.id}/edit`),
+    ctaLabel: 'Review listing',
+    lines: [
+      ['Listing title', machine.title],
+      ['Brand / model', [machine.brand, machine.model].filter(Boolean).join(' ')],
+      ['Production year', machine.production_year],
+      ['Seller', [machine.seller_name, machine.seller_company].filter(Boolean).join(' · ')],
+      ['Seller email', machine.seller_email],
+      ['Seller phone', machine.seller_phone],
+      ['Seller WhatsApp', machine.seller_whatsapp],
+      ['Preferred contact', machine.seller_preferred_contact],
+      ['Location', [machine.region, machine.country, machine.city].filter(Boolean).join(' · ')],
+      ['Asking price', [machine.currency, machine.asking_price].filter(Boolean).join(' ')],
+      ['Images uploaded', filesCount],
+      ['Status', machine.status || 'pending_review']
+    ]
+  });
+}
+
+function selectedMachineSummary(machines = []) {
+  if (!machines || !machines.length) return '';
+  return machines.map(machine => `${machine.title} (${machine.region || ''}${machine.country ? ` · ${machine.country}` : ''})`.trim()).join('; ');
+}
+
+async function notifyAdminBuyerRequest(request, selectedMachines = []) {
+  if (!request) return { sent: false, skipped: true, reason: 'Buyer request data missing' };
+  const isContact = request.request_type === 'contact';
+  const title = isContact ? 'New seller contact request' : 'New buying request';
+  const subject = isContact
+    ? `New seller contact request: ${request.machine_title || selectedMachineSummary(selectedMachines) || request.buyer_name || 'Buyer'}`
+    : `New buying request: ${request.buyer_name || request.buyer_email || 'Buyer'}`;
+  return sendAdminNotification({
+    subject,
+    title,
+    preheader: `${request.buyer_name || 'A buyer'} submitted a ${isContact ? 'seller contact request' : 'buying request'}.`,
+    ctaUrl: request.id ? absoluteUrl(`/admin/requests/${request.id}`) : absoluteUrl('/admin/requests?status=new'),
+    ctaLabel: 'Review buyer request',
+    lines: [
+      ['Request type', request.request_type],
+      ['Buyer name', request.buyer_name],
+      ['Company', request.buyer_company],
+      ['Email', request.buyer_email],
+      ['Phone', request.buyer_phone],
+      ['WhatsApp', request.buyer_whatsapp],
+      ['Country', request.buyer_country],
+      ['Timeline', request.timeline],
+      ['Target region', request.target_region],
+      ['Budget', request.budget],
+      ['Preferred brand', request.preferred_brand],
+      ['Preferred printheads', request.preferred_printheads],
+      ['Inspection plan', request.inspection_plan],
+      ['Machine', request.machine_title],
+      ['Selected machines', selectedMachineSummary(selectedMachines)],
+      ['Message', request.message]
+    ]
+  });
 }
 
 function escapeHtml(value) {
@@ -1385,6 +1485,25 @@ app.post('/submit-machine', machineUpload, async (req, res, next) => {
       await client.query('INSERT INTO machine_images (machine_id, image, mime_type, file_name, is_primary) VALUES ($1,$2,$3,$4,$5)', [machineId, files[i].buffer, files[i].mimetype, files[i].originalname, i === 0]);
     }
     await client.query('COMMIT');
+    await notifyAdminNewListing({
+      id: machineId,
+      status: 'pending_review',
+      title: f.title,
+      brand: f.brand,
+      model: f.model,
+      production_year: f.production_year,
+      seller_name: f.seller_name,
+      seller_company: f.seller_company,
+      seller_email: f.seller_email,
+      seller_phone: f.seller_phone,
+      seller_whatsapp: f.seller_whatsapp,
+      seller_preferred_contact: f.seller_preferred_contact,
+      region: f.region,
+      country: f.country,
+      city: f.city,
+      asking_price: f.asking_price,
+      currency: f.currency || 'USD'
+    }, files.length);
     res.render('public/submit-success', { title: 'Submission Received', type: 'machine' });
   } catch (err) {
     await client.query('ROLLBACK');
@@ -1426,16 +1545,34 @@ app.post('/buying-request', async (req, res, next) => {
       return res.status(400).render('public/buying-request', { title: 'Submit Buying Request', form: f, errors, machine: null, machineOptions });
     }
 
-    await pool.query(`
+    const { rows: requestRows } = await pool.query(`
       INSERT INTO buyer_requests (
         request_type,buyer_name,buyer_company,buyer_email,buyer_phone,buyer_whatsapp,buyer_country,
         target_region,budget,preferred_brand,preferred_printheads,timeline,inspection_plan,shipping_help,message,verification_ack,buyer_selected_machine_ids
       ) VALUES ('buying',$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16::int[])
+      RETURNING id
     `, [
       String(f.buyer_name).trim(), f.buyer_company || null, String(f.buyer_email).trim(), String(f.buyer_phone).trim(), f.buyer_whatsapp || null,
       f.buyer_country, f.target_region || null, f.budget || null, f.preferred_brand || null, f.preferred_printheads || null,
       f.timeline || null, f.inspection_plan || null, null, f.message || null, bool(f.verification_ack), selectedMachines.map(m => m.id)
     ]);
+    await notifyAdminBuyerRequest({
+      id: requestRows[0] && requestRows[0].id,
+      request_type: 'buying',
+      buyer_name: String(f.buyer_name).trim(),
+      buyer_company: f.buyer_company || null,
+      buyer_email: String(f.buyer_email).trim(),
+      buyer_phone: String(f.buyer_phone).trim(),
+      buyer_whatsapp: f.buyer_whatsapp || null,
+      buyer_country: f.buyer_country,
+      target_region: f.target_region || null,
+      budget: f.budget || null,
+      preferred_brand: f.preferred_brand || null,
+      preferred_printheads: f.preferred_printheads || null,
+      timeline: f.timeline || null,
+      inspection_plan: f.inspection_plan || null,
+      message: f.message || null
+    }, selectedMachines);
     res.render('public/submit-success', { title: 'Buying Request Received', type: 'buying' });
   } catch (err) {
     next(err);
@@ -1483,18 +1620,35 @@ app.post('/machine/:slug/request-contact', async (req, res, next) => {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
+      let firstRequestId = null;
       for (const selectedMachine of selectedMachines) {
-        await client.query(`
+        const { rows: contactRows } = await client.query(`
           INSERT INTO buyer_requests (
             request_type,machine_id,buyer_name,buyer_company,buyer_email,buyer_phone,buyer_whatsapp,buyer_country,
             timeline,inspection_plan,shipping_help,message,verification_ack,buyer_selected_machine_ids
           ) VALUES ('contact',$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::int[])
+          RETURNING id
         `, [
           selectedMachine.id, String(f.buyer_name).trim(), f.buyer_company || null, String(f.buyer_email).trim(), String(f.buyer_phone).trim(), f.buyer_whatsapp || null,
           f.buyer_country, f.timeline || null, f.inspection_plan || null, null, f.message || null, bool(f.verification_ack), selectedIdsForContext
         ]);
+        if (!firstRequestId && contactRows[0]) firstRequestId = contactRows[0].id;
       }
       await client.query('COMMIT');
+      await notifyAdminBuyerRequest({
+        id: firstRequestId,
+        request_type: 'contact',
+        machine_title: selectedMachines[0] && selectedMachines[0].title,
+        buyer_name: String(f.buyer_name).trim(),
+        buyer_company: f.buyer_company || null,
+        buyer_email: String(f.buyer_email).trim(),
+        buyer_phone: String(f.buyer_phone).trim(),
+        buyer_whatsapp: f.buyer_whatsapp || null,
+        buyer_country: f.buyer_country,
+        timeline: f.timeline || null,
+        inspection_plan: f.inspection_plan || null,
+        message: f.message || null
+      }, selectedMachines);
     } catch (err) {
       await client.query('ROLLBACK');
       throw err;
@@ -1521,7 +1675,7 @@ app.get('/images/:id', async (req, res, next) => {
 });
 
 app.get('/healthz', (req, res) => {
-  res.json({ ok: true, service: 'wall-printer-exchange', version: '3.8.7' });
+  res.json({ ok: true, service: 'wall-printer-exchange', version: '3.8.8' });
 });
 
 app.get('/robots.txt', (req, res) => {

@@ -3312,7 +3312,7 @@ body { background: var(--v30-bg); color: var(--v30-text); }
   }
 }
 
-/* v3.8.7 email delivery diagnostics */
+/* v3.8.8 email delivery diagnostics */
 .email-log-v387 .email-recipient-log {
   padding: 10px 0;
   border-bottom: 1px solid rgba(15, 23, 42, 0.08);
