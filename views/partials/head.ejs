@@ -41,7 +41,7 @@
   <meta name="twitter:card" content="<%= typeof ogImage !== 'undefined' && ogImage ? 'summary_large_image' : 'summary' %>">
   <meta name="twitter:title" content="<%= pageTitle %>">
   <meta name="twitter:description" content="<%= pageDescription %>">
-  <link rel="stylesheet" href="/styles.css?v=3.8.2">
+  <link rel="stylesheet" href="/styles.css?v=3.8.3">
 </head>
 <body class="<%= safeCurrentLanguage && safeCurrentLanguage.dir === 'rtl' ? 'rtl' : '' %>">
 <header class="site-header minimal-header mobile-clean-header">
@@ -61,7 +61,7 @@
   <div class="language-switcher" aria-label="<%= safeT('nav.language') %>">
     <select class="language-select" data-language-select>
       <% safeLanguages.forEach(language => { %>
-        <option value="<%= safeLangUrl(language.code, safeCurrentPath || '/') %>" <%= language.code === safeLang ? 'selected' : '' %>><%= language.nativeName %></option>
+        <option value="<%= safeLangUrl(language.code, safeCurrentPath || '/') %>" data-lang="<%= language.code %>" <%= language.code === safeLang ? 'selected' : '' %>><%= language.nativeName %></option>
       <% }) %>
     </select>
   </div>

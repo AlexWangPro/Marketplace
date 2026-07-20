@@ -1,8 +1,8 @@
-# Wall Printer Exchange v3.8.2
+# Wall Printer Exchange v3.8.3
 
 Railway Node/Express version for Wall Printer Exchange.
 
-## What is new in v3.8.2
+## What is new in v3.8.3
 
 - 10-language public UI, excluding Chinese:
   - English `/`
@@ -75,6 +75,17 @@ Images are stored in PostgreSQL as `BYTEA` and served through `/images/:id`. Thi
 Admin pages remain English. Public pages, navigation, core platform pages, main CTAs, and mobile browsing UI are multilingual.
 
 
-## v3.8.2 hotfix
+## v3.8.3 hotfix
 
 Fixes missing i18n locals on error rendering paths so `/public/error.ejs` and shared partials no longer throw `lang is not defined` if an error occurs before normal locale middleware completes.
+
+
+## v3.8.3 Notes
+
+- Browser-language auto redirect is enabled only for the public home page `/`.
+- Language priority: URL prefix → `wpe_lang` cookie → browser `Accept-Language` → English.
+- Admin routes, health checks, sitemap, robots, images, CSS, JS, and POST requests are excluded from auto redirect.
+- Admin credentials are synced from Railway variables on every deploy:
+  - `ADMIN_EMAIL`
+  - `ADMIN_PASSWORD`
+- If admin login fails after changing Railway variables, confirm the variables are set on the web service, not the Postgres service, then use Railway → Redeploy without cache.

@@ -26,6 +26,11 @@ const LANGUAGES = [
 ];
 const LANGUAGE_CODES = LANGUAGES.map(language => language.code);
 const DEFAULT_LANG = 'en';
+const LANGUAGE_PREFIX_REGEX = new RegExp(`^/(${LANGUAGE_CODES.join('|')})(?=$|/|\\?)`);
+const PUBLIC_AUTO_LANGUAGE_EXCLUDE = [
+  '/admin', '/health', '/healthz', '/sitemap.xml', '/robots.txt',
+  '/images', '/styles.css', '/app.js', '/favicon', '/apple-touch-icon'
+];
 const LOCALES = Object.fromEntries(LANGUAGES.map(language => {
   const file = path.join(__dirname, 'locales', `${language.code}.json`);
   return [language.code, JSON.parse(fs.readFileSync(file, 'utf8'))];
@@ -47,8 +52,64 @@ function localizedAbsolute(pathname = '/', lang = DEFAULT_LANG) {
 
 function detectRequestLanguage(req) {
   const original = req && (req.originalUrl || req.url || req.path || '/');
-  const match = String(original).match(new RegExp(`^/(${LANGUAGE_CODES.join('|')})(?=$|/|\\?)`));
+  const match = String(original).match(LANGUAGE_PREFIX_REGEX);
   return match ? match[1] : DEFAULT_LANG;
+}
+
+function parseCookies(cookieHeader = '') {
+  return String(cookieHeader || '').split(';').reduce((cookies, part) => {
+    const index = part.indexOf('=');
+    if (index === -1) return cookies;
+    const key = part.slice(0, index).trim();
+    const value = part.slice(index + 1).trim();
+    if (!key) return cookies;
+    try {
+      cookies[key] = decodeURIComponent(value);
+    } catch (err) {
+      cookies[key] = value;
+    }
+    return cookies;
+  }, {});
+}
+
+function cookieLanguage(req) {
+  const cookies = parseCookies(req && req.headers ? req.headers.cookie : '');
+  return LANGUAGE_CODES.includes(cookies.wpe_lang) ? cookies.wpe_lang : '';
+}
+
+function browserLanguage(req) {
+  const header = req && req.headers ? String(req.headers['accept-language'] || '') : '';
+  const candidates = header.split(',')
+    .map(part => part.trim().split(';')[0].toLowerCase())
+    .filter(Boolean);
+  for (const candidate of candidates) {
+    const base = candidate.split('-')[0];
+    if (LANGUAGE_CODES.includes(base)) return base;
+  }
+  return DEFAULT_LANG;
+}
+
+function shouldSkipAutoLanguage(req) {
+  if (!req || !['GET', 'HEAD'].includes(req.method)) return true;
+  const pathOnly = String(req.path || req.url || '/').split('?')[0];
+  if (LANGUAGE_PREFIX_REGEX.test(String(req.originalUrl || req.url || ''))) return true;
+  if (PUBLIC_AUTO_LANGUAGE_EXCLUDE.some(prefix => pathOnly === prefix || pathOnly.startsWith(prefix + '/'))) return true;
+  if (pathOnly.includes('.') && pathOnly !== '/') return true;
+  return false;
+}
+
+function preferredLanguage(req) {
+  return cookieLanguage(req) || browserLanguage(req) || DEFAULT_LANG;
+}
+
+function setLanguageCookie(res, lang) {
+  if (!LANGUAGE_CODES.includes(lang)) return;
+  res.cookie('wpe_lang', lang, {
+    httpOnly: false,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 1000 * 60 * 60 * 24 * 365
+  });
 }
 
 function applyLanguageLocals(req, res) {
@@ -108,6 +169,53 @@ const CHECKLIST_ITEMS = [
 function absoluteUrl(pathname = '/') {
   const base = (process.env.APP_URL || 'https://www.wallprinter.org').replace(/\/$/, '');
   return `${base}${pathname.startsWith('/') ? pathname : '/' + pathname}`;
+}
+
+function normalizeEmail(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function configuredAdminEmail() {
+  return normalizeEmail(process.env.ADMIN_EMAIL) || 'admin@wallprinter.org';
+}
+
+function configuredAdminPassword() {
+  return String(process.env.ADMIN_PASSWORD || 'ChangeMe123!').trim();
+}
+
+function maskedEmail(email) {
+  const normalized = normalizeEmail(email);
+  const [name, domain] = normalized.split('@');
+  if (!name || !domain) return normalized ? 'configured' : 'not configured';
+  return `${name.slice(0, 2)}***@${domain}`;
+}
+
+async function syncConfiguredAdminUser() {
+  const adminEmail = configuredAdminEmail();
+  const adminPassword = configuredAdminPassword();
+  const hash = await bcrypt.hash(adminPassword, 12);
+  const { rows } = await pool.query('SELECT id, email FROM admin_users WHERE LOWER(email)=LOWER($1) LIMIT 1', [adminEmail]);
+  if (rows.length) {
+    await pool.query('UPDATE admin_users SET email=$1, password_hash=$2, role=$3 WHERE id=$4', [adminEmail, hash, 'admin', rows[0].id]);
+    console.log(`Synced admin user from Railway variables: ${maskedEmail(adminEmail)}`);
+    return rows[0].id;
+  }
+  const inserted = await pool.query('INSERT INTO admin_users (email, password_hash, role) VALUES ($1,$2,$3) RETURNING id', [adminEmail, hash, 'admin']);
+  console.log(`Created admin user from Railway variables: ${maskedEmail(adminEmail)}`);
+  if (!process.env.ADMIN_PASSWORD) console.log('WARNING: ADMIN_PASSWORD not set. Default password is ChangeMe123! Change it before production use.');
+  return inserted.rows[0].id;
+}
+
+async function getAdminUserByEmail(email) {
+  const normalized = normalizeEmail(email);
+  if (!normalized) return null;
+  const { rows } = await pool.query('SELECT * FROM admin_users WHERE LOWER(email)=LOWER($1) LIMIT 1', [normalized]);
+  return rows[0] || null;
+}
+
+async function getOrCreateConfiguredAdminUser() {
+  await syncConfiguredAdminUser();
+  return getAdminUserByEmail(configuredAdminEmail());
 }
 
 function mailConfigured() {
@@ -494,12 +602,24 @@ app.use(session({
 }));
 
 app.use((req, res, next) => {
-  const match = req.url.match(new RegExp(`^/(${LANGUAGE_CODES.join('|')})(?=$|/|\\?)`));
+  if (shouldSkipAutoLanguage(req)) return next();
+  const pathOnly = String(req.path || '/').split('?')[0];
+  if (pathOnly !== '/') return next();
+  const preferred = preferredLanguage(req);
+  if (!preferred || preferred === DEFAULT_LANG) return next();
+  const queryIndex = req.originalUrl.indexOf('?');
+  const query = queryIndex >= 0 ? req.originalUrl.slice(queryIndex) : '';
+  return res.redirect(302, localizedPath('/', preferred) + query);
+});
+
+app.use((req, res, next) => {
+  const match = req.url.match(LANGUAGE_PREFIX_REGEX);
   req.lang = DEFAULT_LANG;
   req.langPrefix = '';
   req.localizedOriginalUrl = req.originalUrl;
   if (match) {
     req.lang = match[1];
+    setLanguageCookie(res, req.lang);
     req.langPrefix = req.lang === DEFAULT_LANG ? '' : `/${req.lang}`;
     let stripped = req.url.slice(match[0].length);
     if (!stripped) stripped = '/';
@@ -808,15 +928,7 @@ async function initDb() {
     ALTER TABLE buyer_requests ADD COLUMN IF NOT EXISTS match_email_error TEXT;
   `);
 
-  const adminEmail = process.env.ADMIN_EMAIL || 'admin@wallprinter.org';
-  const adminPassword = process.env.ADMIN_PASSWORD || 'ChangeMe123!';
-  const { rows } = await pool.query('SELECT id FROM admin_users WHERE email=$1', [adminEmail]);
-  if (!rows.length) {
-    const hash = await bcrypt.hash(adminPassword, 12);
-    await pool.query('INSERT INTO admin_users (email, password_hash) VALUES ($1,$2)', [adminEmail, hash]);
-    console.log(`Created admin user: ${adminEmail}`);
-    if (!process.env.ADMIN_PASSWORD) console.log('WARNING: ADMIN_PASSWORD not set. Default password is ChangeMe123! Change it before production use.');
-  }
+  await syncConfiguredAdminUser();
 }
 
 async function getMachineWithPrimaryImage(idOrSlug, bySlug = true) {
@@ -1081,7 +1193,7 @@ app.get('/images/:id', async (req, res, next) => {
 });
 
 app.get('/healthz', (req, res) => {
-  res.json({ ok: true, service: 'wall-printer-exchange', version: '3.8.2' });
+  res.json({ ok: true, service: 'wall-printer-exchange', version: '3.8.3' });
 });
 
 app.get('/robots.txt', (req, res) => {
@@ -1113,20 +1225,66 @@ ${urls.map(u => `  <url><loc>${escapeXml(u.loc)}</loc><lastmod>${escapeXml(u.las
   }
 });
 
-app.get('/admin/login', (req, res) => {
-  if (req.session.admin) return res.redirect('/admin');
-  res.render('admin/login', { title: 'Admin Login', error: null });
+app.get('/admin/login', async (req, res, next) => {
+  try {
+    if (req.session.admin) return res.redirect('/admin');
+    const configuredEmail = configuredAdminEmail();
+    const adminUser = await getAdminUserByEmail(configuredEmail);
+    res.render('admin/login', {
+      title: 'Admin Login',
+      error: null,
+      adminConfig: {
+        emailMasked: maskedEmail(configuredEmail),
+        emailConfigured: Boolean(process.env.ADMIN_EMAIL),
+        passwordConfigured: Boolean(process.env.ADMIN_PASSWORD),
+        databaseUserSynced: Boolean(adminUser)
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 app.post('/admin/login', async (req, res, next) => {
   try {
-    const { email, password } = req.body;
-    const { rows } = await pool.query('SELECT * FROM admin_users WHERE email=$1 LIMIT 1', [email]);
-    const user = rows[0];
-    if (!user || !(await bcrypt.compare(password || '', user.password_hash))) {
-      return res.status(401).render('admin/login', { title: 'Admin Login', error: 'Invalid email or password.' });
+    const inputEmail = normalizeEmail(req.body && req.body.email);
+    const inputPassword = String((req.body && req.body.password) || '');
+    const configuredEmail = configuredAdminEmail();
+    const configuredPassword = configuredAdminPassword();
+
+    let user = null;
+    let valid = false;
+
+    if (inputEmail === configuredEmail && (inputPassword === configuredPassword || inputPassword.trim() === configuredPassword)) {
+      user = await getOrCreateConfiguredAdminUser();
+      valid = Boolean(user);
     }
-    req.session.admin = { id: user.id, email: user.email, role: user.role };
+
+    if (!valid) {
+      user = await getAdminUserByEmail(inputEmail);
+      if (user) {
+        valid = await bcrypt.compare(inputPassword, user.password_hash);
+        if (!valid && inputPassword.trim() !== inputPassword) {
+          valid = await bcrypt.compare(inputPassword.trim(), user.password_hash);
+        }
+      }
+    }
+
+    if (!user || !valid) {
+      const configuredUser = await getAdminUserByEmail(configuredEmail);
+      return res.status(401).render('admin/login', {
+        title: 'Admin Login',
+        error: 'Invalid email or password. Railway ADMIN_EMAIL and ADMIN_PASSWORD are now synced on every deploy. Confirm you are using the web service variables, then redeploy without cache.',
+        adminConfig: {
+          emailMasked: maskedEmail(configuredEmail),
+          emailConfigured: Boolean(process.env.ADMIN_EMAIL),
+          passwordConfigured: Boolean(process.env.ADMIN_PASSWORD),
+          databaseUserSynced: Boolean(configuredUser)
+        }
+      });
+    }
+
+    req.session.admin = { id: user.id, email: user.email, role: user.role || 'admin' };
     res.redirect('/admin');
   } catch (err) {
     next(err);

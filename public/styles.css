@@ -3053,3 +3053,30 @@ body { background: var(--v30-bg); color: var(--v30-text); }
     background: rgba(255,255,255,.72);
   }
 }
+
+
+.admin-login-hint {
+  margin: 14px 0 18px;
+  padding: 14px 16px;
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  border-radius: 18px;
+  background: rgba(239, 246, 255, 0.72);
+  color: #334155;
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.admin-login-hint strong {
+  color: #0f172a;
+  font-size: 14px;
+}
+
+@media (max-width: 720px) {
+  .admin-login-hint {
+    padding: 12px;
+    border-radius: 14px;
+    font-size: 12px;
+  }
+}

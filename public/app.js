@@ -268,7 +268,12 @@
 (function () {
   document.querySelectorAll('[data-language-select]').forEach((select) => {
     select.addEventListener('change', () => {
+      const selectedOption = select.options[select.selectedIndex];
+      const lang = selectedOption ? selectedOption.getAttribute('data-lang') : '';
       const value = select.value;
+      if (lang) {
+        document.cookie = `wpe_lang=${encodeURIComponent(lang)}; path=/; max-age=31536000; SameSite=Lax`;
+      }
       if (value) window.location.href = value;
     });
   });
