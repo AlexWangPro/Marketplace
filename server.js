@@ -136,6 +136,14 @@ const INSPECTION_PLANS = [
   'Recent photos and videos first',
   'Not decided yet'
 ];
+const PURCHASE_TIMELINE_OPTIONS = [
+  'Ready to buy immediately',
+  'Within 1 month',
+  '1–3 months',
+  '3–6 months',
+  'Later / researching only'
+];
+const BUYER_MACHINE_SELECTION_LIMIT = 3;
 const MAX_UPLOAD_IMAGES = 8;
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 const ALLOWED_IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -332,6 +340,101 @@ async function sendMail({ to, subject, text, html }) {
   }
 }
 
+
+function emailResultError(result, fallback = 'Email failed') {
+  if (!result || result.skipped) return null;
+  return result.sent ? null : (result.reason || fallback);
+}
+
+function contactReleaseIsComplete(result) {
+  if (!result || !result.buyer || !result.buyer.sent) return false;
+  if (result.sellerRequired && (!result.seller || !result.seller.sent)) return false;
+  return true;
+}
+
+function matchReleaseIsComplete(result) {
+  if (!result || !result.buyer || !result.buyer.sent) return false;
+  const failedRequiredSeller = (result.sellers || []).some(item => item && item.required !== false && !item.sent);
+  return !failedRequiredSeller;
+}
+
+function recipientStatusLabel(result) {
+  if (!result) return 'not attempted';
+  if (result.skipped) return 'skipped';
+  return result.sent ? 'sent' : `failed: ${result.reason || 'unknown error'}`;
+}
+
+function contactReleaseSummary(result) {
+  if (!result) return 'Email not attempted.';
+  return `Buyer email: ${recipientStatusLabel(result.buyer)}. Seller email: ${recipientStatusLabel(result.seller)}.`;
+}
+
+function matchReleaseSummary(result) {
+  if (!result) return 'Email not attempted.';
+  const sellerResults = result.sellers || [];
+  const sellerSent = sellerResults.filter(item => item.sent).length;
+  const sellerFailed = sellerResults.filter(item => !item.sent && item.required !== false).length;
+  const sellerSkipped = sellerResults.filter(item => item.skipped || item.required === false).length;
+  return `Buyer email: ${recipientStatusLabel(result.buyer)}. Seller emails: ${sellerSent} sent, ${sellerFailed} failed, ${sellerSkipped} skipped.`;
+}
+
+async function fetchContactRequestForEmail(id) {
+  const { rows } = await pool.query(`
+    SELECT br.*, m.title AS machine_title, m.slug AS machine_slug, m.seller_name, m.seller_company,
+           m.seller_email, m.seller_phone, m.seller_whatsapp, m.seller_preferred_contact,
+           m.exact_address, m.seller_contact_release_consent, m.region AS machine_region,
+           m.country AS machine_country, m.city AS machine_city
+    FROM buyer_requests br
+    LEFT JOIN machines m ON br.machine_id=m.id
+    WHERE br.id=$1
+  `, [id]);
+  return rows[0];
+}
+
+async function persistContactEmailResult(requestId, result) {
+  const buyerSent = Boolean(result && result.buyer && result.buyer.sent);
+  const sellerSent = Boolean(result && result.seller && result.seller.sent);
+  const complete = contactReleaseIsComplete(result);
+  const buyerError = emailResultError(result && result.buyer, 'Buyer email failed');
+  const sellerError = (result && result.sellerRequired) ? emailResultError(result.seller, 'Seller email failed') : null;
+  const summary = complete ? null : contactReleaseSummary(result);
+  await pool.query(`
+    UPDATE buyer_requests SET
+      contact_buyer_email_sent_at=CASE WHEN $1=true THEN NOW() ELSE contact_buyer_email_sent_at END,
+      contact_seller_email_sent_at=CASE WHEN $2=true THEN NOW() ELSE contact_seller_email_sent_at END,
+      contact_buyer_email_error=$3,
+      contact_seller_email_error=$4,
+      contact_email_sent_at=CASE WHEN $5=true THEN NOW() ELSE contact_email_sent_at END,
+      contact_email_error=$6,
+      updated_at=NOW()
+    WHERE id=$7
+  `, [buyerSent, sellerSent, buyerError, sellerError, complete, summary, requestId]);
+}
+
+async function persistMatchEmailResult(requestId, result) {
+  const buyerSent = Boolean(result && result.buyer && result.buyer.sent);
+  const sellerResults = (result && result.sellers) || [];
+  const sellerSent = sellerResults.some(item => item.sent);
+  const complete = matchReleaseIsComplete(result);
+  const buyerError = emailResultError(result && result.buyer, 'Buyer match email failed');
+  const sellerErrors = sellerResults
+    .filter(item => !item.sent && item.required !== false && item.reason)
+    .map(item => `${item.machineTitle || `Machine ${item.machineId}`}: ${item.reason}`)
+    .join('; ') || null;
+  const summary = complete ? null : matchReleaseSummary(result);
+  await pool.query(`
+    UPDATE buyer_requests SET
+      match_buyer_email_sent_at=CASE WHEN $1=true THEN NOW() ELSE match_buyer_email_sent_at END,
+      match_seller_email_sent_at=CASE WHEN $2=true THEN NOW() ELSE match_seller_email_sent_at END,
+      match_buyer_email_error=$3,
+      match_seller_email_error=$4,
+      match_email_sent_at=CASE WHEN $5=true THEN NOW() ELSE match_email_sent_at END,
+      match_email_error=$6,
+      updated_at=NOW()
+    WHERE id=$7
+  `, [buyerSent, sellerSent, buyerError, sellerErrors, complete, summary, requestId]);
+}
+
 function renderChecklistText() {
   return CHECKLIST_ITEMS.map((item, index) => `${index + 1}. ${item}`).join('\n');
 }
@@ -435,9 +538,13 @@ function imageUrl(imageId) {
   return imageId ? absoluteUrl(`/images/${imageId}`) : '';
 }
 
-async function sendContactReleaseEmails(request) {
+async function sendContactReleaseEmails(request, options = {}) {
+  const recipient = ['buyer', 'seller', 'both'].includes(options.recipient) ? options.recipient : 'both';
+  const sendBuyer = recipient === 'buyer' || recipient === 'both';
+  const sendSeller = recipient === 'seller' || recipient === 'both';
+
   if (!request || request.request_type !== 'contact' || !request.buyer_email || !request.machine_title) {
-    return { sent: false, reason: 'Request is not an eligible contact release.' };
+    return { sent: false, anySent: false, buyer: { sent: false, reason: 'Request is not an eligible contact release.' }, seller: { sent: false, skipped: true, reason: 'Request is not an eligible contact release.' }, sellerRequired: false, recipient, reason: 'Request is not an eligible contact release.' };
   }
 
   const sellerLines = sellerContactLines(request).filter(([, value]) => value);
@@ -452,33 +559,40 @@ async function sendContactReleaseEmails(request) {
   const buyerHtml = compactContactHtml(buyerLines);
   const platformNotice = 'Wall Printer Exchange does not inspect, guarantee, sell, warrant, collect payment, ship, install, or provide after-sales service for this machine. Please verify the machine, seller, ownership, payment terms, shipping, customs, and all transaction details before purchase.';
 
-  const buyerMail = await sendMail({
-    to: request.buyer_email,
-    subject,
-    text: `Hello ${request.buyer_name || ''},\n\nYour request to view seller contact information has been approved by Wall Printer Exchange.\n\nMachine: ${request.machine_title}\nListing: ${listingUrl}\n\nSeller contact information:\n${sellerText || 'Seller contact information is currently incomplete. Please contact Wall Printer Exchange for details.'}\n\nImportant: ${platformNotice}\n\nBuyer Verification Checklist:\n${renderChecklistText()}\n\nFull checklist: ${checklistUrl}\n\nWall Printer Exchange`,
-    html: emailLayout({
-      title: 'Seller contact approved',
-      preheader: `Seller contact details are ready for ${request.machine_title}.`,
-      body: `
-        <p style="margin:0 0 16px;">Hello ${escapeHtml(request.buyer_name || '')},</p>
-        <p style="margin:0 0 16px;">Your request to view seller contact information has been approved.</p>
-        <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:18px;padding:18px;margin:18px 0;">
-          <strong style="display:block;color:#111827;margin-bottom:6px;">${escapeHtml(request.machine_title)}</strong>
-          <a href="${listingUrl}" style="color:#2563eb;text-decoration:none;">View machine listing</a>
-        </div>
-        <h2 style="font-size:18px;margin:24px 0 10px;color:#111827;">Seller contact</h2>
-        <table style="width:100%;border-collapse:collapse;">${sellerHtml || '<tr><td>Seller contact information is currently incomplete. Please contact Wall Printer Exchange for details.</td></tr>'}</table>
-        ${emailNotice(platformNotice)}
-        <h2 style="font-size:18px;margin:24px 0 10px;color:#111827;">Buyer verification checklist</h2>
-        ${renderChecklistHtml()}
-      `,
-      ctaUrl: checklistUrl,
-      ctaLabel: 'Open verification checklist'
-    })
-  });
+  let buyerMail = { sent: false, skipped: true, reason: 'Buyer email not requested' };
+  if (sendBuyer) {
+    buyerMail = await sendMail({
+      to: request.buyer_email,
+      subject,
+      text: `Hello ${request.buyer_name || ''},\n\nYour request to view seller contact information has been approved by Wall Printer Exchange.\n\nMachine: ${request.machine_title}\nListing: ${listingUrl}\n\nSeller contact information:\n${sellerText || 'Seller contact information is currently incomplete. Please contact Wall Printer Exchange for details.'}\n\nImportant: ${platformNotice}\n\nBuyer Verification Checklist:\n${renderChecklistText()}\n\nFull checklist: ${checklistUrl}\n\nWall Printer Exchange`,
+      html: emailLayout({
+        title: 'Seller contact approved',
+        preheader: `Seller contact details are ready for ${request.machine_title}.`,
+        body: `
+          <p style="margin:0 0 16px;">Hello ${escapeHtml(request.buyer_name || '')},</p>
+          <p style="margin:0 0 16px;">Your request to view seller contact information has been approved.</p>
+          <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:18px;padding:18px;margin:18px 0;">
+            <strong style="display:block;color:#111827;margin-bottom:6px;">${escapeHtml(request.machine_title)}</strong>
+            <a href="${listingUrl}" style="color:#2563eb;text-decoration:none;">View machine listing</a>
+          </div>
+          <h2 style="font-size:18px;margin:24px 0 10px;color:#111827;">Seller contact</h2>
+          <table style="width:100%;border-collapse:collapse;">${sellerHtml || '<tr><td>Seller contact information is currently incomplete. Please contact Wall Printer Exchange for details.</td></tr>'}</table>
+          ${emailNotice(platformNotice)}
+          <h2 style="font-size:18px;margin:24px 0 10px;color:#111827;">Buyer verification checklist</h2>
+          ${renderChecklistHtml()}
+        `,
+        ctaUrl: checklistUrl,
+        ctaLabel: 'Open verification checklist'
+      })
+    });
+  }
 
-  let sellerMail = { sent: false, reason: 'Seller email not available' };
-  if (request.seller_email) {
+  const sellerRequired = Boolean(request.seller_email);
+  let sellerMail = sellerRequired
+    ? { sent: false, reason: 'Seller email not sent yet' }
+    : { sent: false, skipped: true, reason: 'Seller email not available' };
+
+  if (sendSeller && request.seller_email) {
     sellerMail = await sendMail({
       to: request.seller_email,
       subject: `Buyer introduction approved: ${request.machine_title}`,
@@ -503,12 +617,16 @@ async function sendContactReleaseEmails(request) {
     });
   }
 
-  return {
-    sent: Boolean(buyerMail.sent || sellerMail.sent),
+  const result = {
     buyer: buyerMail,
     seller: sellerMail,
-    reason: [buyerMail, sellerMail].filter(r => !r.sent && r.reason).map(r => r.reason).join('; ')
+    sellerRequired,
+    recipient
   };
+  result.anySent = Boolean((buyerMail && buyerMail.sent) || (sellerMail && sellerMail.sent));
+  result.sent = contactReleaseIsComplete(result);
+  result.reason = contactReleaseSummary(result);
+  return result;
 }
 
 async function sendManualMatchEmails(request, machines) {
@@ -573,7 +691,7 @@ async function sendManualMatchEmails(request, machines) {
   const sellerResults = [];
   for (const m of machines) {
     if (!m.seller_email) {
-      sellerResults.push({ machineId: m.id, sent: false, reason: 'Seller email not available' });
+      sellerResults.push({ machineId: m.id, machineTitle: m.title, sent: false, skipped: true, required: false, reason: 'Seller email not available' });
       continue;
     }
     const buyerHtml = compactContactHtml(buyerContactLines(request));
@@ -600,15 +718,17 @@ async function sendManualMatchEmails(request, machines) {
         ctaLabel: 'Open listing'
       })
     });
-    sellerResults.push({ machineId: m.id, ...result });
+    sellerResults.push({ machineId: m.id, machineTitle: m.title, required: true, ...result });
   }
 
-  return {
-    sent: Boolean(buyerMail.sent || sellerResults.some(r => r.sent)),
+  const result = {
     buyer: buyerMail,
-    sellers: sellerResults,
-    reason: [buyerMail, ...sellerResults].filter(r => !r.sent && r.reason).map(r => r.reason).join('; ')
+    sellers: sellerResults
   };
+  result.anySent = Boolean((buyerMail && buyerMail.sent) || sellerResults.some(r => r.sent));
+  result.sent = matchReleaseIsComplete(result);
+  result.reason = matchReleaseSummary(result);
+  return result;
 }
 
 const upload = multer({
@@ -696,6 +816,8 @@ app.use((req, res, next) => {
   res.locals.machineStatuses = MACHINE_STATUSES;
   res.locals.requestStatuses = REQUEST_STATUSES;
   res.locals.inspectionPlans = INSPECTION_PLANS;
+  res.locals.purchaseTimelineOptions = PURCHASE_TIMELINE_OPTIONS;
+  res.locals.buyerMachineSelectionLimit = BUYER_MACHINE_SELECTION_LIMIT;
   res.locals.sellerContactMethods = SELLER_CONTACT_METHODS;
   res.locals.workingStatusOptions = WORKING_STATUS_OPTIONS;
   res.locals.currencyOptions = CURRENCY_OPTIONS;
@@ -1045,10 +1167,19 @@ async function initDb() {
     ALTER TABLE buyer_requests ADD COLUMN IF NOT EXISTS contact_shared_at TIMESTAMPTZ;
     ALTER TABLE buyer_requests ADD COLUMN IF NOT EXISTS contact_email_sent_at TIMESTAMPTZ;
     ALTER TABLE buyer_requests ADD COLUMN IF NOT EXISTS contact_email_error TEXT;
+    ALTER TABLE buyer_requests ADD COLUMN IF NOT EXISTS contact_buyer_email_sent_at TIMESTAMPTZ;
+    ALTER TABLE buyer_requests ADD COLUMN IF NOT EXISTS contact_seller_email_sent_at TIMESTAMPTZ;
+    ALTER TABLE buyer_requests ADD COLUMN IF NOT EXISTS contact_buyer_email_error TEXT;
+    ALTER TABLE buyer_requests ADD COLUMN IF NOT EXISTS contact_seller_email_error TEXT;
     ALTER TABLE buyer_requests ADD COLUMN IF NOT EXISTS matched_machine_ids INTEGER[] DEFAULT '{}'::INTEGER[];
+    ALTER TABLE buyer_requests ADD COLUMN IF NOT EXISTS buyer_selected_machine_ids INTEGER[] DEFAULT '{}'::INTEGER[];
     ALTER TABLE buyer_requests ADD COLUMN IF NOT EXISTS match_shared_at TIMESTAMPTZ;
     ALTER TABLE buyer_requests ADD COLUMN IF NOT EXISTS match_email_sent_at TIMESTAMPTZ;
     ALTER TABLE buyer_requests ADD COLUMN IF NOT EXISTS match_email_error TEXT;
+    ALTER TABLE buyer_requests ADD COLUMN IF NOT EXISTS match_buyer_email_sent_at TIMESTAMPTZ;
+    ALTER TABLE buyer_requests ADD COLUMN IF NOT EXISTS match_seller_email_sent_at TIMESTAMPTZ;
+    ALTER TABLE buyer_requests ADD COLUMN IF NOT EXISTS match_buyer_email_error TEXT;
+    ALTER TABLE buyer_requests ADD COLUMN IF NOT EXISTS match_seller_email_error TEXT;
   `);
 
   await syncConfiguredAdminUser();
@@ -1066,6 +1197,41 @@ async function getMachineWithPrimaryImage(idOrSlug, bySlug = true) {
     LIMIT 1
   `, [idOrSlug]);
   return rows[0];
+}
+
+function selectedMachineIdsFromBody(body) {
+  let raw = body ? body.selected_machine_ids : [];
+  if (!Array.isArray(raw)) raw = raw ? [raw] : [];
+  return [...new Set(raw.map(id => Number(id)).filter(Number.isInteger))];
+}
+
+async function getSelectableMachineOptions(limit = 80) {
+  const { rows } = await pool.query(`
+    SELECT m.id, m.slug, m.title, m.region, m.country, m.city, m.asking_price, m.currency, m.status, img.id AS primary_image_id
+    FROM machines m
+    LEFT JOIN LATERAL (
+      SELECT id FROM machine_images WHERE machine_id=m.id ORDER BY is_primary DESC, id ASC LIMIT 1
+    ) img ON true
+    WHERE m.status IN ('available','reserved')
+    ORDER BY m.featured DESC, CASE m.status WHEN 'available' THEN 1 ELSE 2 END, m.created_at DESC
+    LIMIT $1
+  `, [limit]);
+  return rows;
+}
+
+async function getSelectableMachinesByIds(machineIds) {
+  const ids = [...new Set((machineIds || []).map(id => Number(id)).filter(Number.isInteger))].slice(0, BUYER_MACHINE_SELECTION_LIMIT);
+  if (!ids.length) return [];
+  const { rows } = await pool.query(`
+    SELECT m.*, img.id AS primary_image_id
+    FROM machines m
+    LEFT JOIN LATERAL (
+      SELECT id FROM machine_images WHERE machine_id=m.id ORDER BY is_primary DESC, id ASC LIMIT 1
+    ) img ON true
+    WHERE m.id = ANY($1::int[]) AND m.status IN ('available','reserved')
+    ORDER BY array_position($1::int[], m.id)
+  `, [ids]);
+  return rows;
 }
 
 app.get('/health', (req, res) => res.status(200).json({ ok: true, service: 'Wall Printer Exchange', imageStorage: 'PostgreSQL database', mailConfigured: mailConfigured() }));
@@ -1228,30 +1394,47 @@ app.post('/submit-machine', machineUpload, async (req, res, next) => {
   }
 });
 
-app.get('/buying-request', (req, res) => {
-  res.render('public/buying-request', { title: 'Submit Buying Request', form: {}, errors: [], machine: null });
+app.get('/buying-request', async (req, res, next) => {
+  try {
+    const machineOptions = await getSelectableMachineOptions();
+    res.render('public/buying-request', { title: 'Submit Buying Request', form: {}, errors: [], machine: null, machineOptions });
+  } catch (err) {
+    next(err);
+  }
 });
 
 app.post('/buying-request', async (req, res, next) => {
   try {
     const f = req.body;
     const errors = [];
-    ['buyer_name', 'buyer_email', 'buyer_country'].forEach(field => {
+    ['buyer_name', 'buyer_email', 'buyer_phone', 'buyer_country', 'timeline'].forEach(field => {
       if (!f[field] || !String(f[field]).trim()) errors.push(`${field.replace(/_/g, ' ')} is required.`);
     });
+    if (f.timeline && !PURCHASE_TIMELINE_OPTIONS.includes(f.timeline)) errors.push('Please select a valid purchase timeline.');
     if (!bool(f.verification_ack)) errors.push('You must acknowledge that buyers are responsible for verification.');
     if (f.target_region && !REGIONS.includes(f.target_region)) errors.push('Please select a valid target region.');
-    if (errors.length) return res.status(400).render('public/buying-request', { title: 'Submit Buying Request', form: f, errors, machine: null });
+
+    const selectedMachineIds = selectedMachineIdsFromBody(f);
+    if (selectedMachineIds.length > BUYER_MACHINE_SELECTION_LIMIT) errors.push(`You can select up to ${BUYER_MACHINE_SELECTION_LIMIT} machines only.`);
+    const selectedMachines = await getSelectableMachinesByIds(selectedMachineIds);
+    if (selectedMachineIds.length && selectedMachines.length !== selectedMachineIds.slice(0, BUYER_MACHINE_SELECTION_LIMIT).length) {
+      errors.push('One or more selected machines are no longer available for buyer requests.');
+    }
+
+    if (errors.length) {
+      const machineOptions = await getSelectableMachineOptions();
+      return res.status(400).render('public/buying-request', { title: 'Submit Buying Request', form: f, errors, machine: null, machineOptions });
+    }
 
     await pool.query(`
       INSERT INTO buyer_requests (
         request_type,buyer_name,buyer_company,buyer_email,buyer_phone,buyer_whatsapp,buyer_country,
-        target_region,budget,preferred_brand,preferred_printheads,timeline,inspection_plan,shipping_help,message,verification_ack
-      ) VALUES ('buying',$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+        target_region,budget,preferred_brand,preferred_printheads,timeline,inspection_plan,shipping_help,message,verification_ack,buyer_selected_machine_ids
+      ) VALUES ('buying',$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16::int[])
     `, [
-      f.buyer_name, f.buyer_company || null, f.buyer_email, f.buyer_phone || null, f.buyer_whatsapp || null,
+      String(f.buyer_name).trim(), f.buyer_company || null, String(f.buyer_email).trim(), String(f.buyer_phone).trim(), f.buyer_whatsapp || null,
       f.buyer_country, f.target_region || null, f.budget || null, f.preferred_brand || null, f.preferred_printheads || null,
-      f.timeline || null, f.inspection_plan || null, null, f.message || null, bool(f.verification_ack)
+      f.timeline || null, f.inspection_plan || null, null, f.message || null, bool(f.verification_ack), selectedMachines.map(m => m.id)
     ]);
     res.render('public/submit-success', { title: 'Buying Request Received', type: 'buying' });
   } catch (err) {
@@ -1263,7 +1446,8 @@ app.get('/machine/:slug/request-contact', async (req, res, next) => {
   try {
     const machine = await getMachineWithPrimaryImage(req.params.slug, true);
     if (!machine || !['available', 'reserved'].includes(machine.status)) return res.status(404).render('public/404', { title: 'Listing not available' });
-    res.render('public/request-contact', { title: 'Request Seller Contact', machine, form: {}, errors: [] });
+    const machineOptions = await getSelectableMachineOptions();
+    res.render('public/request-contact', { title: 'Request Seller Contact', machine, form: {}, errors: [], machineOptions });
   } catch (err) {
     next(err);
   }
@@ -1275,22 +1459,49 @@ app.post('/machine/:slug/request-contact', async (req, res, next) => {
     if (!machine || !['available', 'reserved'].includes(machine.status)) return res.status(404).render('public/404', { title: 'Listing not available' });
     const f = req.body;
     const errors = [];
-    ['buyer_name', 'buyer_email', 'buyer_country'].forEach(field => {
+    ['buyer_name', 'buyer_email', 'buyer_phone', 'buyer_country', 'timeline'].forEach(field => {
       if (!f[field] || !String(f[field]).trim()) errors.push(`${field.replace(/_/g, ' ')} is required.`);
     });
+    if (f.timeline && !PURCHASE_TIMELINE_OPTIONS.includes(f.timeline)) errors.push('Please select a valid purchase timeline.');
     if (!bool(f.verification_ack)) errors.push('You must acknowledge the buyer verification responsibility.');
-    if (errors.length) return res.status(400).render('public/request-contact', { title: 'Request Seller Contact', machine, form: f, errors });
 
-    await pool.query(`
-      INSERT INTO buyer_requests (
-        request_type,machine_id,buyer_name,buyer_company,buyer_email,buyer_phone,buyer_whatsapp,buyer_country,
-        timeline,inspection_plan,shipping_help,message,verification_ack
-      ) VALUES ('contact',$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
-    `, [
-      machine.id, f.buyer_name, f.buyer_company || null, f.buyer_email, f.buyer_phone || null, f.buyer_whatsapp || null,
-      f.buyer_country, f.timeline || null, f.inspection_plan || null, null, f.message || null, bool(f.verification_ack)
-    ]);
-    res.render('public/submit-success', { title: 'Contact Request Received', type: 'contact', machine });
+    let selectedMachineIds = selectedMachineIdsFromBody(f);
+    if (!selectedMachineIds.length) selectedMachineIds = [machine.id];
+    if (selectedMachineIds.length > BUYER_MACHINE_SELECTION_LIMIT) errors.push(`You can select up to ${BUYER_MACHINE_SELECTION_LIMIT} machines only.`);
+    const selectedMachines = await getSelectableMachinesByIds(selectedMachineIds);
+    if (!selectedMachines.length) errors.push('Please select at least one available or reserved machine.');
+    if (selectedMachineIds.length && selectedMachines.length !== selectedMachineIds.slice(0, BUYER_MACHINE_SELECTION_LIMIT).length) {
+      errors.push('One or more selected machines are no longer available for seller contact requests.');
+    }
+
+    if (errors.length) {
+      const machineOptions = await getSelectableMachineOptions();
+      return res.status(400).render('public/request-contact', { title: 'Request Seller Contact', machine, form: f, errors, machineOptions });
+    }
+
+    const selectedIdsForContext = selectedMachines.map(m => m.id);
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      for (const selectedMachine of selectedMachines) {
+        await client.query(`
+          INSERT INTO buyer_requests (
+            request_type,machine_id,buyer_name,buyer_company,buyer_email,buyer_phone,buyer_whatsapp,buyer_country,
+            timeline,inspection_plan,shipping_help,message,verification_ack,buyer_selected_machine_ids
+          ) VALUES ('contact',$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::int[])
+        `, [
+          selectedMachine.id, String(f.buyer_name).trim(), f.buyer_company || null, String(f.buyer_email).trim(), String(f.buyer_phone).trim(), f.buyer_whatsapp || null,
+          f.buyer_country, f.timeline || null, f.inspection_plan || null, null, f.message || null, bool(f.verification_ack), selectedIdsForContext
+        ]);
+      }
+      await client.query('COMMIT');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+    res.render('public/submit-success', { title: 'Contact Request Received', type: 'contact', machine, selectedMachines });
   } catch (err) {
     next(err);
   }
@@ -1310,7 +1521,7 @@ app.get('/images/:id', async (req, res, next) => {
 });
 
 app.get('/healthz', (req, res) => {
-  res.json({ ok: true, service: 'wall-printer-exchange', version: '3.8.5' });
+  res.json({ ok: true, service: 'wall-printer-exchange', version: '3.8.7' });
 });
 
 app.get('/robots.txt', (req, res) => {
@@ -1636,6 +1847,19 @@ app.get('/admin/requests/:id', requireAdmin, async (req, res, next) => {
     const request = rows[0];
     let candidateMachines = [];
     let matchedMachines = [];
+    let buyerSelectedMachines = [];
+    if (request.buyer_selected_machine_ids && request.buyer_selected_machine_ids.length) {
+      const { rows: selected } = await pool.query(`
+        SELECT m.*, img.id AS primary_image_id
+        FROM machines m
+        LEFT JOIN LATERAL (
+          SELECT id FROM machine_images WHERE machine_id=m.id ORDER BY is_primary DESC, id ASC LIMIT 1
+        ) img ON true
+        WHERE m.id = ANY($1::int[])
+        ORDER BY array_position($1::int[], m.id)
+      `, [request.buyer_selected_machine_ids]);
+      buyerSelectedMachines = selected;
+    }
     if (request.request_type === 'buying') {
       const { rows: candidates } = await pool.query(`
         SELECT m.*, img.id AS primary_image_id
@@ -1661,7 +1885,7 @@ app.get('/admin/requests/:id', requireAdmin, async (req, res, next) => {
         matchedMachines = matched;
       }
     }
-    res.render('admin/request-detail', { title: 'Buyer Request Detail', request, candidateMachines, matchedMachines });
+    res.render('admin/request-detail', { title: 'Buyer Request Detail', request, candidateMachines, matchedMachines, buyerSelectedMachines });
   } catch (err) {
     next(err);
   }
@@ -1696,23 +1920,58 @@ app.post('/admin/requests/:id/update', requireAdmin, async (req, res, next) => {
     `, [status, admin_notes || null, req.params.id]);
 
     if (status === 'contact_shared' && requestBefore.status !== 'contact_shared' && requestBefore.request_type === 'contact') {
-      emailResult = await sendContactReleaseEmails({ ...requestBefore, status });
-      await pool.query(`
-        UPDATE buyer_requests SET
-          contact_email_sent_at=CASE WHEN $1=true THEN NOW() ELSE contact_email_sent_at END,
-          contact_email_error=$2
-        WHERE id=$3
-      `, [Boolean(emailResult.sent), emailResult.sent ? null : emailResult.reason || 'Email not sent', req.params.id]);
+      emailResult = await sendContactReleaseEmails({ ...requestBefore, status }, { recipient: 'both' });
+      await persistContactEmailResult(req.params.id, emailResult);
     }
 
     await logAdmin(req, 'buyer_request_updated', 'buyer_request', Number(req.params.id), { status, emailResult });
 
     if (emailResult && emailResult.sent) {
-      flash(req, 'success', 'Buyer request updated and seller contact email sent with the verification checklist.');
+      flash(req, 'success', 'Buyer request updated. Buyer and seller emails were sent successfully.');
+    } else if (emailResult && emailResult.anySent) {
+      flash(req, 'error', `Buyer request updated, but email delivery was only partial. ${contactReleaseSummary(emailResult)}`);
     } else if (emailResult && !emailResult.sent) {
-      flash(req, 'success', `Buyer request updated. Email was not sent: ${emailResult.reason || 'SMTP not configured'}.`);
+      flash(req, 'error', `Buyer request updated, but emails were not sent. ${contactReleaseSummary(emailResult)}`);
     } else {
       flash(req, 'success', 'Buyer request updated.');
+    }
+    res.redirect(`/admin/requests/${req.params.id}`);
+  } catch (err) {
+    next(err);
+  }
+});
+
+
+app.post('/admin/requests/:id/send-contact-email', requireAdmin, async (req, res, next) => {
+  try {
+    const recipient = ['buyer', 'seller', 'both'].includes(req.body.recipient) ? req.body.recipient : 'both';
+    const request = await fetchContactRequestForEmail(req.params.id);
+    if (!request || request.request_type !== 'contact') {
+      flash(req, 'error', 'Contact request not found.');
+      return res.redirect('/admin/requests');
+    }
+    if (!request.machine_title) {
+      flash(req, 'error', 'This contact request is not linked to an active machine listing.');
+      return res.redirect(`/admin/requests/${req.params.id}`);
+    }
+    const emailResult = await sendContactReleaseEmails({ ...request, status: 'contact_shared' }, { recipient });
+    await persistContactEmailResult(req.params.id, emailResult);
+    if (emailResult.anySent) {
+      await pool.query(`
+        UPDATE buyer_requests SET
+          status=CASE WHEN status='contact_shared' THEN status ELSE 'contact_shared' END,
+          contact_shared_at=CASE WHEN contact_shared_at IS NULL THEN NOW() ELSE contact_shared_at END,
+          updated_at=NOW()
+        WHERE id=$1
+      `, [req.params.id]);
+    }
+    await logAdmin(req, 'contact_release_email_resent', 'buyer_request', Number(req.params.id), { recipient, emailResult });
+    if (emailResult.sent || (recipient !== 'both' && emailResult.anySent)) {
+      flash(req, 'success', `Contact release email sent. ${contactReleaseSummary(emailResult)}`);
+    } else if (emailResult.anySent) {
+      flash(req, 'error', `Contact release email was only partially sent. ${contactReleaseSummary(emailResult)}`);
+    } else {
+      flash(req, 'error', `Contact release email failed. ${contactReleaseSummary(emailResult)}`);
     }
     res.redirect(`/admin/requests/${req.params.id}`);
   } catch (err) {
@@ -1770,15 +2029,15 @@ app.post('/admin/requests/:id/match', requireAdmin, async (req, res, next) => {
         status='matched',
         matched_machine_ids=$1::int[],
         match_shared_at=NOW(),
-        match_email_sent_at=CASE WHEN $2=true THEN NOW() ELSE match_email_sent_at END,
-        match_email_error=$3,
         updated_at=NOW()
-      WHERE id=$4
-    `, [machines.map(m => m.id), Boolean(emailResult.sent), emailResult.sent ? null : emailResult.reason || 'Email not sent', req.params.id]);
+      WHERE id=$2
+    `, [machines.map(m => m.id), req.params.id]);
+    await persistMatchEmailResult(req.params.id, emailResult);
 
     await logAdmin(req, 'machines_matched_to_buyer', 'buyer_request', Number(req.params.id), { machineIds: machines.map(m => m.id), emailResult });
-    if (emailResult.sent) flash(req, 'success', `Matched ${machines.length} machine(s) and sent introduction email(s).`);
-    else flash(req, 'success', `Matched ${machines.length} machine(s). Email was not sent: ${emailResult.reason || 'SMTP not configured'}.`);
+    if (emailResult.sent) flash(req, 'success', `Matched ${machines.length} machine(s). Buyer and seller emails were sent successfully.`);
+    else if (emailResult.anySent) flash(req, 'error', `Matched ${machines.length} machine(s), but email delivery was only partial. ${matchReleaseSummary(emailResult)}`);
+    else flash(req, 'error', `Matched ${machines.length} machine(s), but emails were not sent. ${matchReleaseSummary(emailResult)}`);
     res.redirect(`/admin/requests/${req.params.id}`);
   } catch (err) {
     next(err);
@@ -1799,6 +2058,8 @@ app.use((err, req, res, next) => {
   res.locals.machineStatuses = MACHINE_STATUSES;
   res.locals.requestStatuses = REQUEST_STATUSES;
   res.locals.inspectionPlans = INSPECTION_PLANS;
+  res.locals.purchaseTimelineOptions = PURCHASE_TIMELINE_OPTIONS;
+  res.locals.buyerMachineSelectionLimit = BUYER_MACHINE_SELECTION_LIMIT;
   res.locals.sellerContactMethods = SELLER_CONTACT_METHODS;
   res.locals.workingStatusOptions = WORKING_STATUS_OPTIONS;
   res.locals.currencyOptions = CURRENCY_OPTIONS;

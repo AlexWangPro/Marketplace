@@ -32,6 +32,26 @@
         <div class="v34-message-box"><span>Message</span><p><%= request.message || '—' %></p></div>
       </section>
 
+      <% if (buyerSelectedMachines && buyerSelectedMachines.length) { %>
+        <section class="content-card clean-admin-card v34-request-card">
+          <div class="v34-request-title-row">
+            <div><p class="eyebrow">Buyer selected</p><h2>Interested machines</h2></div>
+            <small><%= buyerSelectedMachines.length %> selected</small>
+          </div>
+          <div class="buyer-selected-admin-list">
+            <% buyerSelectedMachines.forEach(m => { %>
+              <a class="buyer-selected-admin-item" href="/admin/machines/<%= m.id %>/preview">
+                <% if (m.primary_image_id) { %><img src="/images/<%= m.primary_image_id %>" alt=""><% } else { %><span class="admin-mini-placeholder">No image</span><% } %>
+                <span>
+                  <strong><%= m.title %></strong>
+                  <small><%= [m.region, m.country, m.city].filter(Boolean).join(' · ') || 'Location not specified' %> · <%= money(m.asking_price, m.currency) %></small>
+                </span>
+              </a>
+            <% }) %>
+          </div>
+        </section>
+      <% } %>
+
       <% if (isContact && request.machine_title) { %>
         <section class="content-card clean-admin-card v34-request-card">
           <div class="v34-request-title-row">
@@ -110,11 +130,37 @@ Machine: <%= request.machine_title %></div>
         </form>
       </section>
 
-      <section class="sidebar-card apple-sidebar-card v34-email-log">
+      <section class="sidebar-card apple-sidebar-card v34-email-log email-log-v387">
         <h2>Email log</h2>
-        <p><span>Contact release</span><strong><%= request.contact_email_sent_at ? formatDate(request.contact_email_sent_at) : 'Not sent' %></strong></p>
-        <p><span>Match email</span><strong><%= request.match_email_sent_at ? formatDate(request.match_email_sent_at) : 'Not sent' %></strong></p>
-        <p><span>Last error</span><strong><%= request.contact_email_error || request.match_email_error || '—' %></strong></p>
+        <% if (isContact) { %>
+          <div class="email-recipient-log">
+            <p><span>Buyer receives seller contact</span><strong><%= request.contact_buyer_email_sent_at ? formatDate(request.contact_buyer_email_sent_at) : 'Not sent' %></strong></p>
+            <% if (request.contact_buyer_email_error) { %><small class="email-error"><%= request.contact_buyer_email_error %></small><% } %>
+          </div>
+          <div class="email-recipient-log">
+            <p><span>Seller receives buyer contact</span><strong><%= request.contact_seller_email_sent_at ? formatDate(request.contact_seller_email_sent_at) : 'Not sent' %></strong></p>
+            <% if (request.contact_seller_email_error) { %><small class="email-error"><%= request.contact_seller_email_error %></small><% } %>
+          </div>
+          <p><span>Overall contact release</span><strong><%= request.contact_email_sent_at ? formatDate(request.contact_email_sent_at) : 'Incomplete' %></strong></p>
+          <% if (request.contact_email_error) { %><p><span>Summary</span><strong><%= request.contact_email_error %></strong></p><% } %>
+          <div class="email-resend-actions">
+            <form method="post" action="/admin/requests/<%= request.id %>/send-contact-email"><input type="hidden" name="recipient" value="buyer"><button class="btn secondary small" type="submit">Send to Buyer</button></form>
+            <form method="post" action="/admin/requests/<%= request.id %>/send-contact-email"><input type="hidden" name="recipient" value="seller"><button class="btn secondary small" type="submit">Send to Seller</button></form>
+            <form method="post" action="/admin/requests/<%= request.id %>/send-contact-email"><input type="hidden" name="recipient" value="both"><button class="btn primary small" type="submit">Send Both</button></form>
+          </div>
+        <% } %>
+        <% if (isBuying) { %>
+          <div class="email-recipient-log">
+            <p><span>Buyer receives matched sellers</span><strong><%= request.match_buyer_email_sent_at ? formatDate(request.match_buyer_email_sent_at) : 'Not sent' %></strong></p>
+            <% if (request.match_buyer_email_error) { %><small class="email-error"><%= request.match_buyer_email_error %></small><% } %>
+          </div>
+          <div class="email-recipient-log">
+            <p><span>Sellers receive buyer contact</span><strong><%= request.match_seller_email_sent_at ? formatDate(request.match_seller_email_sent_at) : 'Not sent' %></strong></p>
+            <% if (request.match_seller_email_error) { %><small class="email-error"><%= request.match_seller_email_error %></small><% } %>
+          </div>
+          <p><span>Overall match email</span><strong><%= request.match_email_sent_at ? formatDate(request.match_email_sent_at) : 'Incomplete' %></strong></p>
+          <% if (request.match_email_error) { %><p><span>Summary</span><strong><%= request.match_email_error %></strong></p><% } %>
+        <% } %>
       </section>
     </aside>
   </section>

@@ -1,8 +1,9 @@
 <%- include('../partials/head') %>
+<% const selectedMachineIds = Array.isArray(form.selected_machine_ids) ? form.selected_machine_ids.map(String) : (form.selected_machine_ids ? [String(form.selected_machine_ids)] : [String(machine.id)]); %>
 <section class="page-hero narrow apple-page-hero">
   <p class="eyebrow">Request Seller Contact</p>
   <h1><%= machine.title %></h1>
-  <p>Admin reviews buyer requests before releasing seller contact information.</p>
+  <p>Admin reviews buyer requests before releasing seller contact information. You may select up to <%= buyerMachineSelectionLimit %> machines in one request.</p>
 </section>
 <% if (errors && errors.length) { %><div class="form-errors"><% errors.forEach(e => { %><p><%= e %></p><% }) %></div><% } %>
 <section class="mini-listing machine-card apple-machine-card">
@@ -19,14 +20,42 @@
       <label>Your name *<input name="buyer_name" value="<%= form.buyer_name || '' %>" required></label>
       <label>Company<input name="buyer_company" value="<%= form.buyer_company || '' %>"></label>
       <label>Email *<input type="email" name="buyer_email" value="<%= form.buyer_email || '' %>" required></label>
-      <label>Phone<input name="buyer_phone" value="<%= form.buyer_phone || '' %>"></label>
+      <label>Phone *<input name="buyer_phone" value="<%= form.buyer_phone || '' %>" required></label>
       <label>WhatsApp<input name="buyer_whatsapp" value="<%= form.buyer_whatsapp || '' %>"></label>
       <label>Your country *<input name="buyer_country" value="<%= form.buyer_country || '' %>" required></label>
-      <label>Purchase timeline<input name="timeline" value="<%= form.timeline || '' %>"></label>
+      <label>Purchase timeline *<select name="timeline" required><option value="">Select timeline</option><% purchaseTimelineOptions.forEach(item => { %><option value="<%= item %>" <%= form.timeline === item ? 'selected' : '' %>><%= item %></option><% }) %></select></label>
       <label>Inspection plan<select name="inspection_plan"><option value="">Select option</option><% inspectionPlans.forEach(plan => { %><option value="<%= plan %>" <%= form.inspection_plan === plan ? 'selected' : '' %>><%= plan %></option><% }) %></select></label>
     </div>
     <label>Message<textarea name="message" rows="4"><%= form.message || '' %></textarea></label>
   </section>
+
+  <% if (machineOptions && machineOptions.length) { %>
+    <section class="form-card buyer-machine-select-card">
+      <div class="form-section-head">
+        <div>
+          <h2>Machines to request</h2>
+          <p>Select the listing above, or include up to <%= buyerMachineSelectionLimit %> machines you want seller contact for.</p>
+        </div>
+        <span class="select-limit-pill">Max <%= buyerMachineSelectionLimit %></span>
+      </div>
+      <div class="buyer-machine-select-grid" data-selection-limit="<%= buyerMachineSelectionLimit %>" data-selection-message="You can select up to <%= buyerMachineSelectionLimit %> machines only.">
+        <% machineOptions.forEach(m => { %>
+          <label class="buyer-machine-option <%= m.id === machine.id ? 'featured-option' : '' %>">
+            <input type="checkbox" name="selected_machine_ids" value="<%= m.id %>" <%= selectedMachineIds.includes(String(m.id)) ? 'checked' : '' %> data-selection-checkbox>
+            <span class="option-media">
+              <% if (m.primary_image_id) { %><img src="/images/<%= m.primary_image_id %>" alt="<%= m.title %>"><% } else { %><span>No image</span><% } %>
+            </span>
+            <span class="option-copy">
+              <strong><%= m.title %></strong>
+              <small><%= [m.region, m.country, m.city].filter(Boolean).join(' · ') || 'Location not specified' %></small>
+              <em><%= money(m.asking_price, m.currency) %> · <%= statusLabel(m.status) %></em>
+            </span>
+          </label>
+        <% }) %>
+      </div>
+    </section>
+  <% } %>
+
   <section class="declaration-box compact">
     <p>I understand that Wall Printer Exchange does not inspect, guarantee, sell, warrant, collect payment, ship, install, or provide after-sales service for this machine. I am responsible for verifying the machine, seller, ownership, payment terms, shipping, customs, and all transaction details before purchase.</p>
     <label class="check-row"><input type="checkbox" name="verification_ack" <%= form.verification_ack ? 'checked' : '' %> required> I understand and accept buyer verification responsibility.</label>

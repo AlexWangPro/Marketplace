@@ -278,3 +278,20 @@
     });
   });
 })();
+
+(function () {
+  document.querySelectorAll('[data-selection-limit]').forEach((container) => {
+    const limit = Number(container.getAttribute('data-selection-limit') || 3);
+    const message = container.getAttribute('data-selection-message') || `You can select up to ${limit} options only.`;
+    const boxes = Array.from(container.querySelectorAll('[data-selection-checkbox]'));
+    boxes.forEach((box) => {
+      box.addEventListener('change', () => {
+        const checked = boxes.filter(item => item.checked);
+        if (checked.length > limit) {
+          box.checked = false;
+          window.alert(message);
+        }
+      });
+    });
+  });
+})();

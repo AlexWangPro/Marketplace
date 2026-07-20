@@ -1,8 +1,9 @@
 <%- include('../partials/head') %>
+<% const selectedMachineIds = Array.isArray(form.selected_machine_ids) ? form.selected_machine_ids.map(String) : (form.selected_machine_ids ? [String(form.selected_machine_ids)] : []); %>
 <section class="page-hero narrow apple-page-hero">
   <p class="eyebrow">Buyer Request</p>
   <h1>Tell us what used wall printer you need.</h1>
-  <p>Admin can match your request with up to five available or reserved machines.</p>
+  <p>Share your buying requirement and optionally select up to <%= buyerMachineSelectionLimit %> machines you are interested in.</p>
 </section>
 <% if (errors && errors.length) { %><div class="form-errors"><% errors.forEach(e => { %><p><%= e %></p><% }) %></div><% } %>
 <form class="form-shell" method="post" action="<%= localPath('/buying-request') %>">
@@ -12,11 +13,39 @@
       <label>Your name *<input name="buyer_name" value="<%= form.buyer_name || '' %>" required></label>
       <label>Company<input name="buyer_company" value="<%= form.buyer_company || '' %>"></label>
       <label>Email *<input type="email" name="buyer_email" value="<%= form.buyer_email || '' %>" required></label>
-      <label>Phone<input name="buyer_phone" value="<%= form.buyer_phone || '' %>"></label>
+      <label>Phone *<input name="buyer_phone" value="<%= form.buyer_phone || '' %>" required></label>
       <label>WhatsApp<input name="buyer_whatsapp" value="<%= form.buyer_whatsapp || '' %>"></label>
       <label>Your country *<input name="buyer_country" value="<%= form.buyer_country || '' %>" required></label>
     </div>
   </section>
+
+  <% if (machineOptions && machineOptions.length) { %>
+    <section class="form-card buyer-machine-select-card">
+      <div class="form-section-head">
+        <div>
+          <h2>Interested machines</h2>
+          <p>Select up to <%= buyerMachineSelectionLimit %> machines. This helps admin understand your preference faster.</p>
+        </div>
+        <span class="select-limit-pill">Max <%= buyerMachineSelectionLimit %></span>
+      </div>
+      <div class="buyer-machine-select-grid" data-selection-limit="<%= buyerMachineSelectionLimit %>" data-selection-message="You can select up to <%= buyerMachineSelectionLimit %> machines only.">
+        <% machineOptions.forEach(m => { %>
+          <label class="buyer-machine-option">
+            <input type="checkbox" name="selected_machine_ids" value="<%= m.id %>" <%= selectedMachineIds.includes(String(m.id)) ? 'checked' : '' %> data-selection-checkbox>
+            <span class="option-media">
+              <% if (m.primary_image_id) { %><img src="/images/<%= m.primary_image_id %>" alt="<%= m.title %>"><% } else { %><span>No image</span><% } %>
+            </span>
+            <span class="option-copy">
+              <strong><%= m.title %></strong>
+              <small><%= [m.region, m.country, m.city].filter(Boolean).join(' · ') || 'Location not specified' %></small>
+              <em><%= money(m.asking_price, m.currency) %> · <%= statusLabel(m.status) %></em>
+            </span>
+          </label>
+        <% }) %>
+      </div>
+    </section>
+  <% } %>
+
   <section class="form-card">
     <h2>Machine requirement</h2>
     <div class="form-grid two">
@@ -24,7 +53,7 @@
       <label>Budget range<input name="budget" value="<%= form.budget || '' %>"></label>
       <label>Preferred brand<input name="preferred_brand" value="<%= form.preferred_brand || '' %>"></label>
       <label>Preferred printheads<input name="preferred_printheads" value="<%= form.preferred_printheads || '' %>"></label>
-      <label>Purchase timeline<input name="timeline" value="<%= form.timeline || '' %>"></label>
+      <label>Purchase timeline *<select name="timeline" required><option value="">Select timeline</option><% purchaseTimelineOptions.forEach(item => { %><option value="<%= item %>" <%= form.timeline === item ? 'selected' : '' %>><%= item %></option><% }) %></select></label>
       <label>Inspection plan<select name="inspection_plan"><option value="">Select option</option><% inspectionPlans.forEach(plan => { %><option value="<%= plan %>" <%= form.inspection_plan === plan ? 'selected' : '' %>><%= plan %></option><% }) %></select></label>
     </div>
     <label>Message<textarea name="message" rows="4"><%= form.message || '' %></textarea></label>
