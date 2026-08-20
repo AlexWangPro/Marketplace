@@ -1,14 +1,24 @@
 <%- include('../partials/head') %>
-<section class="guide-hero-v35 mobile-page-hero">
-  <p class="eyebrow"><%= t('buyer.eyebrow') %></p>
-  <h1><%= t('buyer.h1') %></h1>
-  <p><%= t('buyer.text') %></p>
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-20">
+  <div class="max-w-3xl">
+    <p class="text-brand-600 font-black tracking-[.2em] uppercase text-xs mb-4"><%= t('buyer.eyebrow') %></p>
+    <h1 class="text-4xl md:text-6xl font-black tracking-tight text-gray-950 mb-6"><%= t('buyer.h1') %></h1>
+    <p class="text-lg text-gray-600 leading-8"><%= t('buyer.text') %></p>
+  </div>
 </section>
-<section class="guide-steps-v35 mobile-guide-grid">
-  <article><span>1</span><h2><%= t('buyer.step1.h2') %></h2><p><%= t('buyer.step1.text') %></p></article>
-  <article><span>2</span><h2><%= t('buyer.step2.h2') %></h2><p><%= t('buyer.step2.text') %></p></article>
-  <article><span>3</span><h2><%= t('buyer.step3.h2') %></h2><p><%= t('buyer.step3.text') %></p></article>
-  <article><span>4</span><h2><%= t('buyer.step4.h2') %></h2><p><%= t('buyer.step4.text') %></p></article>
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 grid md:grid-cols-4 gap-5">
+  <% [1,2,3,4].forEach(i => { %>
+    <article class="bg-white p-7 rounded-[2rem] border border-gray-100 shadow-sm">
+      <span class="w-11 h-11 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center font-black mb-5"><%= i %></span>
+      <h2 class="text-xl font-black mb-3"><%= t('buyer.step' + i + '.h2') %></h2>
+      <p class="text-gray-600 leading-7 text-sm"><%= t('buyer.step' + i + '.text') %></p>
+    </article>
+  <% }) %>
 </section>
-<section class="guide-cta-v35"><div><h2><%= t('buyer.cta.h2') %></h2><p><%= t('buyer.cta.text') %></p></div><a class="btn primary" href="<%= localPath('/verification-checklist') %>"><%= t('buyer.cta.button') %></a></section>
+<section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+  <div class="bg-gray-950 text-white rounded-[2rem] p-8 md:p-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+    <div><h2 class="text-3xl font-black mb-3"><%= t('buyer.cta.h2') %></h2><p class="text-gray-300 leading-7"><%= t('buyer.cta.text') %></p></div>
+    <a class="inline-flex justify-center rounded-full bg-brand-600 px-6 py-3 text-white font-black hover:bg-brand-700 transition" href="<%= localPath('/verification-checklist') %>"><%= t('buyer.cta.button') %></a>
+  </div>
+</section>
 <%- include('../partials/foot') %>

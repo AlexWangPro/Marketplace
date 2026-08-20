@@ -1,72 +1,67 @@
 <%- include('../partials/head') %>
-<% const currentStatus = filters.status || ''; %>
-<section class="admin-shell v34-admin-shell">
-  <div class="admin-hero-clean v34-admin-hero">
-    <div>
-      <p class="eyebrow">Admin</p>
-      <h1>Machines</h1>
-      <p>Review seller submissions, manage public status, and keep listings clean.</p>
-    </div>
-    <a class="btn secondary" href="/admin">Dashboard</a>
+<% const activeAdmin = 'machines'; const currentStatus = filters.status || ''; %>
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
+  <div class="rounded-[2rem] bg-gray-950 text-white p-7 md:p-10 mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+    <div><p class="text-brand-300 font-black tracking-[.2em] uppercase text-xs mb-3">Admin</p><h1 class="text-4xl md:text-5xl font-black tracking-tight mb-3">Machines</h1><p class="text-gray-300">Review seller submissions, manage public status, and keep listings clean.</p></div>
+    <a class="px-5 py-3 rounded-full bg-white text-gray-950 font-black hover:bg-gray-100 transition" href="/admin">Dashboard</a>
   </div>
-  <nav class="admin-nav clean-admin-nav"><a href="/admin">Dashboard</a><a href="/admin/machines" class="active">Machines</a><a href="/admin/requests">Buyer Requests</a></nav>
+  
+  <nav class="flex flex-wrap gap-2 mb-8">
+    <a class="px-4 py-2 rounded-full text-sm font-black <%= activeAdmin === 'dashboard' ? 'bg-brand-600 text-white' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50' %>" href="/admin">Dashboard</a>
+    <a class="px-4 py-2 rounded-full text-sm font-black <%= activeAdmin === 'machines' ? 'bg-brand-600 text-white' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50' %>" href="/admin/machines">Machines</a>
+    <a class="px-4 py-2 rounded-full text-sm font-black <%= activeAdmin === 'requests' ? 'bg-brand-600 text-white' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50' %>" href="/admin/requests">Buyer Requests</a>
+  </nav>
 
-  <section class="v34-admin-toolbar">
-    <div class="v34-status-tabs" aria-label="Machine status filters">
-      <a class="<%= !currentStatus ? 'active' : '' %>" href="/admin/machines">All</a>
+
+  <section class="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-5 mb-6">
+    <div class="flex flex-wrap gap-2 mb-5" aria-label="Machine status filters">
+      <a class="px-4 py-2 rounded-full text-sm font-black <%= !currentStatus ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' %>" href="/admin/machines">All</a>
       <% ['pending_review','available','reserved','sold','archived','rejected'].forEach(s => { %>
-        <a class="<%= currentStatus === s ? 'active' : '' %>" href="/admin/machines?status=<%= s %>"><%= statusLabel(s) %></a>
+        <a class="px-4 py-2 rounded-full text-sm font-black <%= currentStatus === s ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' %>" href="/admin/machines?status=<%= s %>"><%= statusLabel(s) %></a>
       <% }) %>
     </div>
-    <form class="v34-admin-search" method="get" action="/admin/machines">
-      <input type="search" name="q" placeholder="Search machine, seller, email, country..." value="<%= filters.q || '' %>">
-      <select name="region"><option value="">All regions</option><% regions.forEach(r => { %><option value="<%= r %>" <%= filters.region === r ? 'selected' : '' %>><%= r %></option><% }) %></select>
+    <form class="grid md:grid-cols-12 gap-3" method="get" action="/admin/machines">
+      <input class="wpe-input md:col-span-5" type="search" name="q" placeholder="Search machine, seller, email, country..." value="<%= filters.q || '' %>">
+      <select class="wpe-input md:col-span-3" name="region"><option value="">All regions</option><% regions.forEach(r => { %><option value="<%= r %>" <%= filters.region === r ? 'selected' : '' %>><%= r %></option><% }) %></select>
       <% if (filters.status) { %><input type="hidden" name="status" value="<%= filters.status %>"><% } %>
-      <button class="btn primary" type="submit">Search</button>
-      <a class="btn secondary" href="/admin/machines">Reset</a>
+      <button class="md:col-span-2 rounded-2xl bg-brand-600 text-white font-black hover:bg-brand-700 transition" type="submit">Search</button>
+      <a class="md:col-span-2 rounded-2xl bg-gray-100 text-gray-700 font-black hover:bg-gray-200 transition flex items-center justify-center" href="/admin/machines">Reset</a>
     </form>
   </section>
 
-  <section class="content-card clean-admin-card v34-table-card">
+  <section class="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
     <% if (!machines.length) { %>
-      <div class="v34-empty-admin"><h2>No machines found.</h2><p>Try another filter or clear the search.</p></div>
+      <div class="p-10 text-center"><h2 class="text-2xl font-black">No machines found.</h2><p class="text-gray-500 mt-2">Try another filter or clear the search.</p></div>
     <% } else { %>
-      <table class="admin-table rich clean-table v34-admin-table">
-        <thead><tr><th>Machine</th><th>Seller</th><th>Location</th><th>Price</th><th>Status</th><th>Actions</th></tr></thead>
-        <tbody>
+      <div class="overflow-x-auto"><table class="w-full text-sm">
+        <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider text-xs"><tr><th class="text-left p-4">Machine</th><th class="text-left p-4">Seller</th><th class="text-left p-4">Location</th><th class="text-left p-4">Price</th><th class="text-left p-4">Status</th><th class="text-left p-4">Actions</th></tr></thead>
+        <tbody class="divide-y divide-gray-100">
           <% machines.forEach(m => { %>
-            <tr>
-              <td class="machine-cell v34-machine-cell">
-                <% if (m.primary_image_id) { %><img src="/images/<%= m.primary_image_id %>" alt=""><% } else { %><div class="v34-admin-thumb">WPE</div><% } %>
-                <div>
-                  <strong><%= m.title %></strong>
-                  <small><%= [m.brand,m.model,m.printhead_type].filter(Boolean).join(' · ') || 'Specs pending' %></small>
-                  <small>Submitted <%= formatDate(m.created_at) %></small>
+            <tr class="align-top">
+              <td class="p-4 min-w-[320px]">
+                <div class="flex gap-4">
+                  <% if (m.primary_image_id) { %><img class="w-16 h-20 rounded-2xl object-contain bg-gray-100 border border-gray-100" src="/images/<%= m.primary_image_id %>" alt=""><% } else { %><div class="w-16 h-20 rounded-2xl bg-gray-100 flex items-center justify-center text-xs font-black text-gray-400">WPE</div><% } %>
+                  <div><strong class="block text-gray-950"><%= m.title %></strong><small class="block text-gray-500"><%= [m.brand,m.model,m.printhead_type].filter(Boolean).join(' · ') || 'Specs pending' %></small><small class="block text-gray-400">Submitted <%= formatDate(m.created_at) %></small></div>
                 </div>
               </td>
-              <td><strong><%= m.seller_name || '—' %></strong><br><small><%= m.seller_email || '' %></small></td>
-              <td><%= [m.region,m.country,m.city].filter(Boolean).join(' · ') || '—' %></td>
-              <td><%= money(m.asking_price, m.currency) %></td>
-              <td><span class="status-badge <%= m.status %>"><%= statusLabel(m.status) %></span></td>
-              <td class="v34-action-cell">
-                <div class="v34-action-row">
-                  <a class="btn tiny primary" href="/admin/machines/<%= m.id %>/preview">Preview</a>
-                  <a class="btn tiny secondary" href="/admin/machines/<%= m.id %>/edit">Edit</a>
-                </div>
-                <form class="v34-status-form" method="post" action="/admin/machines/<%= m.id %>/status">
-                  <select name="status" aria-label="Change machine status">
-                    <% machineStatuses.forEach(s => { %><option value="<%= s %>" <%= m.status === s ? 'selected' : '' %>><%= statusLabel(s) %></option><% }) %>
-                  </select>
-                  <button class="btn tiny secondary" type="submit">Update</button>
+              <td class="p-4"><strong class="block"><%= m.seller_name || '—' %></strong><small class="text-gray-500"><%= m.seller_email || '' %></small></td>
+              <td class="p-4"><%= [m.region,m.country,m.city].filter(Boolean).join(' · ') || '—' %></td>
+              <td class="p-4"><%= money(m.asking_price, m.currency) %></td>
+              <td class="p-4"><span class="status-badge <%= m.status %>"><%= statusLabel(m.status) %></span></td>
+              <td class="p-4 min-w-[260px]">
+                <div class="flex flex-wrap gap-2 mb-2"><a class="wpe-admin-btn" href="/admin/machines/<%= m.id %>/preview">Preview</a><a class="wpe-admin-btn secondary" href="/admin/machines/<%= m.id %>/edit">Edit</a></div>
+                <form class="flex gap-2 mb-2" method="post" action="/admin/machines/<%= m.id %>/status">
+                  <select class="wpe-input compact" name="status" aria-label="Change machine status"><% machineStatuses.forEach(s => { %><option value="<%= s %>" <%= m.status === s ? 'selected' : '' %>><%= statusLabel(s) %></option><% }) %></select>
+                  <button class="wpe-admin-btn secondary" type="submit">Update</button>
                 </form>
-                <form method="post" action="/admin/machines/<%= m.id %>/delete" data-confirm-delete="Delete this machine listing permanently? Buyer requests linked to it will remain, but the listing will be removed.">
-                  <button class="btn tiny danger soft-danger" type="submit">Delete</button>
+                <form method="post" action="/admin/machines/<%= m.id %>/delete" data-confirm-delete="Delete this machine listing permanently? This cannot be undone.">
+                  <button class="wpe-admin-btn danger" type="submit">Delete</button>
                 </form>
               </td>
             </tr>
           <% }) %>
         </tbody>
-      </table>
+      </table></div>
     <% } %>
   </section>
 </section>

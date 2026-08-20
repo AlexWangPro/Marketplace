@@ -12,7 +12,7 @@
   const safeAdmin = typeof admin !== 'undefined' ? admin : null;
   const safeFlash = typeof flash !== 'undefined' ? flash : null;
 %>
-<html lang="<%= safeLang %>" dir="<%= safeCurrentLanguage && safeCurrentLanguage.dir ? safeCurrentLanguage.dir : 'ltr' %>">
+<html lang="<%= safeLang %>" dir="<%= safeCurrentLanguage && safeCurrentLanguage.dir ? safeCurrentLanguage.dir : 'ltr' %>" class="scroll-smooth">
 <head>
   <% const safeTitle = typeof title !== 'undefined' && title ? title : ''; %>
   <% const pageTitle = safeTitle ? safeTitle + ' · Wall Printer Exchange' : 'Wall Printer Exchange · Used Wall Printer Listings'; %>
@@ -23,7 +23,7 @@
   <title><%= pageTitle %></title>
   <meta name="description" content="<%= pageDescription %>">
   <meta name="robots" content="<%= safeCurrentPath && safeCurrentPath.startsWith('/admin') ? 'noindex,nofollow' : 'index,follow' %>">
-  <meta name="theme-color" content="#111827">
+  <meta name="theme-color" content="#ffffff">
   <link rel="canonical" href="<%= pageUrl %>">
   <% if (!safeCurrentPath.startsWith('/admin')) { %>
     <% safeLanguages.forEach(language => { %>
@@ -41,38 +41,82 @@
   <meta name="twitter:card" content="<%= typeof ogImage !== 'undefined' && ogImage ? 'summary_large_image' : 'summary' %>">
   <meta name="twitter:title" content="<%= pageTitle %>">
   <meta name="twitter:description" content="<%= pageDescription %>">
-  <link rel="stylesheet" href="/styles.css?v=3.8.9">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { brand: { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 900: '#1e3a8a' } },
+          boxShadow: { soft: '0 22px 70px rgba(15,23,42,.10)' }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="/styles.css?v=3.9.0">
 </head>
-<body class="<%= safeCurrentLanguage && safeCurrentLanguage.dir === 'rtl' ? 'rtl' : '' %>">
-<header class="site-header minimal-header mobile-clean-header">
-  <a class="brand" href="<%= safeLocalPath('/') %>">
-    <span class="brand-mark">WPE</span>
-    <span>
-      <strong>Wall Printer Exchange</strong>
-      <small><%= safeT('brand.subtitle') %></small>
-    </span>
-  </a>
-  <nav class="site-nav" aria-label="Primary navigation">
-    <a href="<%= safeLocalPath('/') %>" class="<%= safeCurrentPath === '/' ? 'active' : '' %>"><%= safeT('nav.machines') %></a>
-    <a href="<%= safeLocalPath('/buyer-guide') %>" class="<%= safeCurrentPath === '/buyer-guide' ? 'active' : '' %>"><%= safeT('nav.buyerGuide') %></a>
-    <a href="<%= safeLocalPath('/seller-guide') %>" class="<%= safeCurrentPath === '/seller-guide' ? 'active' : '' %>"><%= safeT('nav.sellerGuide') %></a>
-    <a href="<%= safeLocalPath('/about') %>" class="<%= safeCurrentPath === '/about' ? 'active' : '' %>"><%= safeT('nav.about') %></a>
-  </nav>
-  <div class="language-switcher" aria-label="<%= safeT('nav.language') %>">
-    <select class="language-select" data-language-select>
-      <% safeLanguages.forEach(language => { %>
-        <option value="<%= safeLangUrl(language.code, safeCurrentPath || '/') %>" data-lang="<%= language.code %>" <%= language.code === safeLang ? 'selected' : '' %>><%= language.nativeName %></option>
-      <% }) %>
-    </select>
-  </div>
-  <% if (safeAdmin) { %>
-    <div class="admin-mini-nav">
-      <a class="admin-link" href="/admin"><%= safeT('nav.adminDashboard') %></a>
-      <form method="post" action="/admin/logout"><button class="btn tiny secondary" type="submit">Logout</button></form>
+<body class="min-h-screen bg-gray-50 text-gray-900 antialiased font-sans flex flex-col <%= safeCurrentLanguage && safeCurrentLanguage.dir === 'rtl' ? 'rtl' : '' %>">
+<header class="fixed top-0 left-0 right-0 z-50 bg-white/88 backdrop-blur-xl border-b border-gray-100 shadow-sm" id="site-header">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="h-16 md:h-20 flex items-center justify-between gap-4">
+      <a href="<%= safeLocalPath('/') %>" class="flex items-center gap-3 group min-w-0">
+        <span class="w-10 h-10 rounded-2xl bg-brand-600 text-white flex items-center justify-center font-black shadow-md group-hover:scale-105 transition-transform">W</span>
+        <span class="hidden sm:block min-w-0">
+          <strong class="block text-base md:text-lg leading-tight tracking-tight">Wall Printer <span class="text-brand-600">Exchange</span></strong>
+          <small class="block text-[10px] md:text-xs uppercase tracking-[.18em] text-gray-500 truncate"><%= safeT('brand.subtitle') %></small>
+        </span>
+      </a>
+
+      <nav class="hidden lg:flex items-center gap-8" aria-label="Primary navigation">
+        <a href="<%= safeLocalPath('/') %>" class="text-sm font-semibold transition <%= safeCurrentPath === '/' ? 'text-brand-600' : 'text-gray-600 hover:text-brand-600' %>"><%= safeT('nav.machines') %></a>
+        <a href="<%= safeLocalPath('/buyer-guide') %>" class="text-sm font-semibold transition <%= safeCurrentPath === '/buyer-guide' ? 'text-brand-600' : 'text-gray-600 hover:text-brand-600' %>"><%= safeT('nav.buyerGuide') %></a>
+        <a href="<%= safeLocalPath('/seller-guide') %>" class="text-sm font-semibold transition <%= safeCurrentPath === '/seller-guide' ? 'text-brand-600' : 'text-gray-600 hover:text-brand-600' %>"><%= safeT('nav.sellerGuide') %></a>
+        <a href="<%= safeLocalPath('/about') %>" class="text-sm font-semibold transition <%= safeCurrentPath === '/about' ? 'text-brand-600' : 'text-gray-600 hover:text-brand-600' %>"><%= safeT('nav.about') %></a>
+      </nav>
+
+      <div class="hidden md:flex items-center gap-3">
+        <div class="relative">
+          <select class="appearance-none bg-gray-50 border border-gray-200 text-gray-700 py-2 pl-4 pr-9 rounded-full text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer hover:bg-gray-100 transition" data-language-select aria-label="<%= safeT('nav.language') %>">
+            <% safeLanguages.forEach(language => { %>
+              <option value="<%= safeLangUrl(language.code, safeCurrentPath || '/') %>" data-lang="<%= language.code %>" <%= language.code === safeLang ? 'selected' : '' %>><%= language.nativeName %></option>
+            <% }) %>
+          </select>
+          <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500">⌄</span>
+        </div>
+        <% if (safeAdmin) { %>
+          <a href="/admin" class="px-4 py-2 rounded-full bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition"><%= safeT('nav.adminDashboard') %></a>
+          <form method="post" action="/admin/logout"><button class="px-3 py-2 rounded-full border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition" type="submit">Logout</button></form>
+        <% } %>
+      </div>
+
+      <button class="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl border border-gray-200 bg-white text-gray-700" type="button" data-mobile-menu-toggle aria-controls="mobileMenu" aria-expanded="false" aria-label="Open menu">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h16"></path></svg>
+      </button>
     </div>
-  <% } %>
+
+    <div id="mobileMenu" class="hidden lg:hidden pb-4" data-mobile-menu>
+      <div class="rounded-3xl border border-gray-100 bg-white shadow-soft p-3 space-y-2">
+        <a href="<%= safeLocalPath('/') %>" class="block px-4 py-3 rounded-2xl text-sm font-semibold <%= safeCurrentPath === '/' ? 'bg-brand-50 text-brand-600' : 'text-gray-700 hover:bg-gray-50' %>"><%= safeT('nav.machines') %></a>
+        <a href="<%= safeLocalPath('/buyer-guide') %>" class="block px-4 py-3 rounded-2xl text-sm font-semibold <%= safeCurrentPath === '/buyer-guide' ? 'bg-brand-50 text-brand-600' : 'text-gray-700 hover:bg-gray-50' %>"><%= safeT('nav.buyerGuide') %></a>
+        <a href="<%= safeLocalPath('/seller-guide') %>" class="block px-4 py-3 rounded-2xl text-sm font-semibold <%= safeCurrentPath === '/seller-guide' ? 'bg-brand-50 text-brand-600' : 'text-gray-700 hover:bg-gray-50' %>"><%= safeT('nav.sellerGuide') %></a>
+        <a href="<%= safeLocalPath('/about') %>" class="block px-4 py-3 rounded-2xl text-sm font-semibold <%= safeCurrentPath === '/about' ? 'bg-brand-50 text-brand-600' : 'text-gray-700 hover:bg-gray-50' %>"><%= safeT('nav.about') %></a>
+        <div class="pt-2 px-2">
+          <select class="w-full bg-gray-50 border border-gray-200 text-gray-700 py-3 px-4 rounded-2xl text-sm font-semibold" data-language-select aria-label="<%= safeT('nav.language') %>">
+            <% safeLanguages.forEach(language => { %>
+              <option value="<%= safeLangUrl(language.code, safeCurrentPath || '/') %>" data-lang="<%= language.code %>" <%= language.code === safeLang ? 'selected' : '' %>><%= language.nativeName %></option>
+            <% }) %>
+          </select>
+        </div>
+        <% if (safeAdmin) { %>
+          <a href="/admin" class="block px-4 py-3 rounded-2xl text-sm font-semibold bg-gray-900 text-white"><%= safeT('nav.adminDashboard') %></a>
+        <% } %>
+      </div>
+    </div>
+  </div>
 </header>
+<div class="h-16 md:h-20"></div>
 <% if (safeFlash) { %>
-  <div class="flash <%= safeFlash.type %>"><%= safeFlash.message %></div>
+  <div class="max-w-3xl mx-auto mt-6 px-4 w-full">
+    <div class="rounded-2xl px-5 py-4 text-sm font-semibold shadow-sm <%= safeFlash.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200' %>"><%= safeFlash.message %></div>
+  </div>
 <% } %>
-<main>
+<main class="flex-grow">

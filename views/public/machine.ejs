@@ -8,6 +8,7 @@
 <% const headText = [machine.printhead_type, machine.printhead_count ? machine.printhead_count + ' heads' : null].filter(Boolean).join(' · ') || 'Not specified'; %>
 <% const yearText = machine.production_year || machine.purchase_year || 'Not specified'; %>
 <% const videoEmbed = videoEmbedUrl(machine.video_url); %>
+
 <script type="application/ld+json"><%- JSON.stringify({
   '@context': 'https://schema.org',
   '@type': 'Product',
@@ -25,121 +26,123 @@
     itemCondition: 'https://schema.org/UsedCondition'
   }
 }) %></script>
+
 <% if (isPreview) { %>
-  <section class="admin-preview-bar v34-preview-bar">
-    <div>
-      <strong>Admin preview</strong>
-      <span>Review this public machine page before approval.</span>
-    </div>
-    <div class="preview-actions">
-      <form method="post" action="/admin/machines/<%= machine.id %>/status"><input type="hidden" name="status" value="available"><button class="btn primary" type="submit">Approve listing</button></form>
-      <a class="btn secondary" href="/admin/machines/<%= machine.id %>/edit">Edit</a>
-      <a class="btn secondary" href="/admin/machines">Back</a>
+  <section class="bg-amber-100 border-b border-amber-200 px-4 py-3 sm:flex sm:items-center sm:justify-between text-sm">
+    <div class="mb-3 sm:mb-0 text-amber-900"><strong class="font-black uppercase tracking-wider mr-2">Admin preview</strong><span>Review this public machine page before approval.</span></div>
+    <div class="flex flex-wrap gap-2">
+      <form method="post" action="/admin/machines/<%= machine.id %>/status"><input type="hidden" name="status" value="available"><button class="px-4 py-2 bg-amber-600 text-white rounded-xl font-bold hover:bg-amber-700 transition" type="submit">Approve listing</button></form>
+      <a class="px-4 py-2 bg-white text-amber-900 border border-amber-300 rounded-xl font-bold hover:bg-amber-50 transition" href="/admin/machines/<%= machine.id %>/edit">Edit</a>
+      <a class="px-4 py-2 bg-transparent text-amber-900 font-bold hover:underline" href="/admin/machines">Back</a>
     </div>
   </section>
 <% } %>
 
-<nav class="v34-detail-nav" aria-label="Machine navigation">
-  <a href="<%= localPath('/') %>">← Machines</a>
-  <div>
-    <% if (previous) { %><a href="<%= localPath('/machine/' + previous.slug) %>"><%= t('detail.previous') %></a><% } %>
-    <% if (next) { %><a href="<%= localPath('/machine/' + next.slug) %>"><%= t('detail.next') %> →</a><% } %>
+<nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex justify-between items-center text-sm font-bold text-gray-500" aria-label="Machine navigation">
+  <a href="<%= localPath('/') %>" class="hover:text-brand-600 transition flex items-center gap-2">← Machines</a>
+  <div class="flex gap-4">
+    <% if (previous) { %><a href="<%= localPath('/machine/' + previous.slug) %>" class="hover:text-brand-600 transition"><%= t('detail.previous') %></a><% } %>
+    <% if (next) { %><a href="<%= localPath('/machine/' + next.slug) %>" class="hover:text-brand-600 transition"><%= t('detail.next') %> →</a><% } %>
   </div>
 </nav>
 
-<section class="v34-machine-detail">
-  <div class="v34-detail-media">
-    <div class="v34-gallery-card" aria-label="Machine photos">
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
+  <div class="lg:col-span-7 space-y-6">
+    <div class="bg-white rounded-[2rem] overflow-hidden border border-gray-100 shadow-sm" aria-label="Machine photos">
       <% if (images.length) { %>
-        <button class="v34-main-photo" type="button" data-gallery-main-button data-lightbox-src="/images/<%= images[0].id %>" data-lightbox-alt="<%= machine.title %> photo">
-          <img data-gallery-main src="/images/<%= images[0].id %>" alt="<%= machine.title %> photo" loading="eager">
+        <button class="w-full aspect-[4/5] sm:aspect-[4/3] bg-gray-100 relative group cursor-zoom-in overflow-hidden" type="button" data-gallery-main-button data-lightbox-src="/images/<%= images[0].id %>" data-lightbox-alt="<%= machine.title %> photo">
+          <img data-gallery-bg src="/images/<%= images[0].id %>" alt="" class="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-30">
+          <img data-gallery-main src="/images/<%= images[0].id %>" alt="<%= machine.title %> photo" loading="eager" class="relative z-10 w-full h-full object-contain p-3 sm:p-5 group-hover:scale-[1.02] transition-transform duration-500">
         </button>
         <% if (images.length > 1) { %>
-          <div class="v34-thumb-row">
+          <div class="flex overflow-x-auto gap-3 p-4 hide-scrollbar bg-white border-t border-gray-100">
             <% images.forEach((img, idx) => { %>
-              <button class="v34-thumb <%= idx === 0 ? 'active' : '' %>" type="button" data-gallery-thumb data-src="/images/<%= img.id %>" data-alt="<%= machine.title %> photo <%= idx + 1 %>">
-                <img src="/images/<%= img.id %>" alt="<%= machine.title %> photo <%= idx + 1 %>" loading="lazy">
+              <button class="shrink-0 w-20 h-20 rounded-2xl overflow-hidden border-2 <%= idx === 0 ? 'border-brand-500 opacity-100 active' : 'border-transparent opacity-60 hover:opacity-100' %> transition-all bg-gray-100" type="button" data-gallery-thumb data-src="/images/<%= img.id %>" data-alt="<%= machine.title %> photo <%= idx + 1 %>">
+                <img src="/images/<%= img.id %>" alt="<%= machine.title %> photo <%= idx + 1 %>" loading="lazy" class="w-full h-full object-cover">
               </button>
             <% }) %>
           </div>
         <% } %>
       <% } else { %>
-        <div class="placeholder-image v34-no-photo"><%= t('detail.noImages') %></div>
+        <div class="w-full aspect-[4/3] flex flex-col items-center justify-center text-gray-400 bg-gray-100 font-bold"><span class="text-4xl mb-3">WPE</span><%= t('detail.noImages') %></div>
       <% } %>
     </div>
-  </div>
 
-  <aside class="v34-detail-summary">
-    <div class="v34-summary-card">
-      <div class="v34-status-row">
-        <span class="status-badge <%= machine.status %>"><%= statusLabel(machine.status) %></span>
-        <span><%= locationText %></span>
-      </div>
-      <h1><%= machine.title %></h1>
-      <div class="v34-price-line">
-        <span><%= t('detail.askingPrice') %></span>
-        <strong><%= priceText %></strong>
-        <% if (machine.price_negotiable && machine.status !== 'sold') { %><small>Negotiable</small><% } %>
-      </div>
-      <% if (!isPreview) { %>
-        <div class="v34-detail-actions">
-          <% if (machine.status !== 'sold') { %>
-            <a class="btn primary large" href="<%= localPath('/machine/' + machine.slug + '/request-contact') %>"><%= t('detail.requestSellerContact') %></a>
-          <% } else { %>
-            <button class="btn primary large" type="button" data-open-modal="buying-request"><%= t('detail.requestSimilar') %></button>
-          <% } %>
-          <button class="btn secondary large" type="button" data-open-modal="buying-request"><%= t('detail.submitBuyingRequest') %></button>
-        </div>
-      <% } %>
-    </div>
-  </aside>
-</section>
-
-<section class="v34-spec-strip" aria-label="Machine highlights">
-  <div><span><%= t('detail.location') %></span><strong><%= locationText %></strong></div>
-  <div><span><%= t('detail.brandModel') %></span><strong><%= brandModel %></strong></div>
-  <div><span><%= t('detail.year') %></span><strong><%= yearText %></strong></div>
-  <div><span><%= t('detail.printhead') %></span><strong><%= headText %></strong></div>
-  <div><span><%= t('detail.workingStatus') %></span><strong><%= machine.working_status || 'Not specified' %></strong></div>
-</section>
-
-<section class="v34-content-grid">
-  <div class="v34-content-main">
-    <section class="v34-info-card">
-      <div class="v34-section-head"><p class="eyebrow">Overview</p><h2><%= t('detail.description') %></h2></div>
-      <p><%= machine.details || 'No additional description has been published yet.' %></p>
+    <section class="grid grid-cols-2 md:grid-cols-3 gap-4 bg-white p-5 md:p-6 rounded-[2rem] border border-gray-100 shadow-sm" aria-label="Machine highlights">
+      <div><span class="text-[11px] text-gray-400 uppercase tracking-wider font-black block mb-1"><%= t('detail.brandModel') %></span><strong class="text-sm text-gray-950"><%= brandModel %></strong></div>
+      <div><span class="text-[11px] text-gray-400 uppercase tracking-wider font-black block mb-1"><%= t('detail.year') %></span><strong class="text-sm text-gray-950"><%= yearText %></strong></div>
+      <div><span class="text-[11px] text-gray-400 uppercase tracking-wider font-black block mb-1"><%= t('detail.printhead') %></span><strong class="text-sm text-gray-950"><%= headText %></strong></div>
+      <div><span class="text-[11px] text-gray-400 uppercase tracking-wider font-black block mb-1"><%= t('detail.workingStatus') %></span><strong class="text-sm text-gray-950"><%= machine.working_status || 'Not specified' %></strong></div>
+      <div class="col-span-2 md:col-span-2"><span class="text-[11px] text-gray-400 uppercase tracking-wider font-black block mb-1"><%= t('detail.location') %></span><strong class="text-sm text-gray-950"><%= locationText %></strong></div>
     </section>
 
-    <% if (machine.video_url) { %>
-      <section class="v34-info-card">
-        <div class="v34-section-head"><p class="eyebrow">Video</p><h2><%= t('detail.sellerVideo') %></h2></div>
-        <% if (videoEmbed) { %>
-          <div class="v34-video-frame">
-            <iframe src="<%= videoEmbed %>" title="Seller video for <%= machine.title %>" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-          </div>
-        <% } else { %>
-          <a class="v34-video-link" href="<%= machine.video_url %>" target="_blank" rel="noopener">Open seller video →</a>
-        <% } %>
+    <div class="space-y-8 mt-8">
+      <section class="bg-white rounded-[2rem] p-6 md:p-8 border border-gray-100 shadow-sm">
+        <h2 class="text-2xl font-black text-gray-950 mb-4"><%= t('detail.description') %></h2>
+        <p class="text-gray-600 leading-8 whitespace-pre-line"><%= machine.details || 'No additional description has been published yet.' %></p>
       </section>
-    <% } %>
 
-    <% if (machine.accessories || machine.known_defects) { %>
-      <section class="v34-info-card v34-two-note-card">
-        <% if (machine.accessories) { %><div><h3><%= t('detail.accessories') %></h3><p><%= machine.accessories %></p></div><% } %>
-        <% if (machine.known_defects) { %><div><h3><%= t('detail.defects') %></h3><p><%= machine.known_defects %></p></div><% } %>
-      </section>
-    <% } %>
+      <% if (machine.video_url) { %>
+        <section class="bg-white rounded-[2rem] p-6 md:p-8 border border-gray-100 shadow-sm">
+          <h2 class="text-2xl font-black text-gray-950 mb-5"><%= t('detail.sellerVideo') %></h2>
+          <% if (videoEmbed) { %>
+            <div class="aspect-video rounded-3xl overflow-hidden bg-gray-900 shadow-md">
+              <iframe class="w-full h-full" src="<%= videoEmbed %>" title="Seller video for <%= machine.title %>" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+            </div>
+          <% } else { %>
+            <a class="inline-flex items-center gap-2 px-5 py-3 bg-gray-100 text-gray-900 rounded-2xl font-bold hover:bg-gray-200 transition" href="<%= machine.video_url %>" target="_blank" rel="noopener">Open seller video</a>
+          <% } %>
+        </section>
+      <% } %>
+
+      <% if (machine.accessories || machine.known_defects) { %>
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <% if (machine.accessories) { %>
+            <div class="bg-blue-50 p-6 rounded-[2rem] border border-blue-100">
+              <h3 class="text-lg font-black text-blue-950 mb-2"><%= t('detail.accessories') %></h3>
+              <p class="text-blue-900 text-sm leading-7 whitespace-pre-line"><%= machine.accessories %></p>
+            </div>
+          <% } %>
+          <% if (machine.known_defects) { %>
+            <div class="bg-red-50 p-6 rounded-[2rem] border border-red-100">
+              <h3 class="text-lg font-black text-red-950 mb-2"><%= t('detail.defects') %></h3>
+              <p class="text-red-900 text-sm leading-7 whitespace-pre-line"><%= machine.known_defects %></p>
+            </div>
+          <% } %>
+        </section>
+      <% } %>
+    </div>
   </div>
 
-  <aside class="v34-buyer-note">
-    <h2><%= t('detail.buyerVerification') %></h2>
-    <p>Wall Printer Exchange introduces buyers and sellers. Buyers should verify machine condition, ownership, payment terms, shipping, customs, and all transaction details directly with the seller before purchase.</p>
-    <a href="<%= localPath('/verification-checklist') %>"><%= t('buyer.cta.button') %> →</a>
+  <aside class="lg:col-span-5">
+    <div class="lg:sticky lg:top-28 bg-white rounded-[2rem] p-6 md:p-8 shadow-soft border border-gray-100">
+      <div class="flex items-center justify-between gap-4 mb-6">
+        <span class="px-3 py-1 text-xs font-black uppercase tracking-wider rounded-full <%= machine.status === 'available' ? 'bg-green-100 text-green-700' : machine.status === 'sold' ? 'bg-gray-100 text-gray-700' : 'bg-orange-100 text-orange-700' %>"><%= statusLabel(machine.status) %></span>
+        <span class="text-sm font-semibold text-gray-500 truncate"><%= locationText %></span>
+      </div>
+      <h1 class="text-3xl md:text-4xl font-black text-gray-950 mb-6 leading-tight tracking-tight"><%= machine.title %></h1>
+      <div class="mb-7 p-6 bg-gray-50 rounded-3xl border border-gray-100 text-center">
+        <span class="text-sm text-gray-500 font-bold mb-1 block"><%= t('detail.askingPrice') %></span>
+        <strong class="text-4xl font-black text-brand-600"><%= priceText %></strong>
+        <% if (machine.price_negotiable && machine.status !== 'sold') { %><span class="mt-2 inline-flex text-xs font-black text-green-700 bg-green-100 px-3 py-1 rounded-full">Negotiable</span><% } %>
+      </div>
+      <% if (!isPreview) { %>
+        <div class="space-y-3">
+          <% if (machine.status !== 'sold') { %>
+            <a href="<%= localPath('/machine/' + machine.slug + '/request-contact') %>" class="flex items-center justify-center w-full py-4 bg-brand-600 text-white rounded-2xl font-black text-lg hover:bg-brand-700 hover:shadow-lg hover:shadow-brand-500/30 transition active:scale-[0.98]"><%= t('detail.requestSellerContact') %></a>
+          <% } else { %>
+            <button type="button" data-open-modal="buying-request" class="flex items-center justify-center w-full py-4 bg-gray-900 text-white rounded-2xl font-black text-lg hover:bg-gray-800 transition active:scale-[0.98]"><%= t('detail.requestSimilar') %></button>
+          <% } %>
+          <button type="button" data-open-modal="buying-request" class="flex items-center justify-center w-full py-4 bg-white border-2 border-gray-200 text-gray-700 rounded-2xl font-black hover:bg-gray-50 hover:border-gray-300 transition active:scale-[0.98]"><%= t('detail.submitBuyingRequest') %></button>
+        </div>
+      <% } %>
+      <div class="mt-8 pt-6 border-t border-gray-100">
+        <h3 class="text-sm font-black text-gray-950 mb-2"><%= t('detail.buyerVerification') %></h3>
+        <p class="text-xs text-gray-500 leading-6 mb-3">Wall Printer Exchange introduces buyers and sellers. Buyers should verify machine condition, ownership, payment terms, shipping, customs, and all transaction details directly with the seller before purchase.</p>
+        <a href="<%= localPath('/verification-checklist') %>" class="text-sm font-black text-brand-600 hover:text-brand-700"><%= t('buyer.cta.button') %> →</a>
+      </div>
+    </div>
   </aside>
 </section>
 
-<nav class="v34-bottom-nav" aria-label="More machines">
-  <a href="<%= localPath('/') %>">← <%= t('detail.back') %></a>
-  <% if (next) { %><a href="<%= localPath('/machine/' + next.slug) %>"><%= t('detail.next') %> →</a><% } %>
-</nav>
 <%- include('../partials/foot') %>

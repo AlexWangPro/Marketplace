@@ -1,20 +1,20 @@
 <%- include('../partials/head') %>
-<section class="admin-top"><div><p class="eyebrow">Admin</p><h1>Admin Logs</h1></div><a class="btn secondary" href="/admin">Dashboard</a></section>
-<nav class="admin-nav"><a href="/admin">Dashboard</a><a href="/admin/machines">Machines</a><a href="/admin/requests">Buyer Requests</a><a href="/admin/logs">Logs</a></nav>
-<section class="content-card">
-<table class="admin-table">
-  <thead><tr><th>Date</th><th>Admin</th><th>Action</th><th>Entity</th><th>Details</th></tr></thead>
-  <tbody>
-    <% logs.forEach(log => { %>
-      <tr>
-        <td><%= formatDate(log.created_at) %></td>
-        <td><%= log.admin_email || 'System' %></td>
-        <td><%= log.action %></td>
-        <td><%= log.entity_type || '—' %> #<%= log.entity_id || '—' %></td>
-        <td><code><%= JSON.stringify(log.details || {}) %></code></td>
-      </tr>
-    <% }) %>
-  </tbody>
-</table>
+<% const activeAdmin = 'logs'; %>
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
+  <div class="rounded-[2rem] bg-gray-950 text-white p-7 md:p-10 mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+    <div><p class="text-brand-300 font-black tracking-[.2em] uppercase text-xs mb-3">Admin</p><h1 class="text-4xl md:text-5xl font-black tracking-tight mb-3">Admin Logs</h1></div>
+    <a class="px-5 py-3 rounded-full bg-white text-gray-950 font-black hover:bg-gray-100 transition" href="/admin">Dashboard</a>
+  </div>
+  <nav class="flex flex-wrap gap-2 mb-8"><a class="px-4 py-2 rounded-full text-sm font-black bg-white border border-gray-200 text-gray-700 hover:bg-gray-50" href="/admin">Dashboard</a><a class="px-4 py-2 rounded-full text-sm font-black bg-white border border-gray-200 text-gray-700 hover:bg-gray-50" href="/admin/machines">Machines</a><a class="px-4 py-2 rounded-full text-sm font-black bg-white border border-gray-200 text-gray-700 hover:bg-gray-50" href="/admin/requests">Buyer Requests</a><a class="px-4 py-2 rounded-full text-sm font-black bg-brand-600 text-white" href="/admin/logs">Logs</a></nav>
+  <section class="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto"><table class="w-full text-sm">
+      <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider text-xs"><tr><th class="text-left p-4">Date</th><th class="text-left p-4">Admin</th><th class="text-left p-4">Action</th><th class="text-left p-4">Entity</th><th class="text-left p-4">Details</th></tr></thead>
+      <tbody class="divide-y divide-gray-100">
+        <% logs.forEach(log => { %>
+          <tr><td class="p-4"><%= formatDate(log.created_at) %></td><td class="p-4"><%= log.admin_email || 'System' %></td><td class="p-4"><%= log.action %></td><td class="p-4"><%= log.entity_type || '—' %> #<%= log.entity_id || '—' %></td><td class="p-4"><code class="text-xs bg-gray-100 rounded-xl px-2 py-1 block max-w-xl overflow-x-auto"><%= JSON.stringify(log.details || {}) %></code></td></tr>
+        <% }) %>
+      </tbody>
+    </table></div>
+  </section>
 </section>
 <%- include('../partials/foot') %>

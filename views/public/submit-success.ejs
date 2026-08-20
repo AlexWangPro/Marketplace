@@ -1,10 +1,20 @@
 <%- include('../partials/head') %>
-<section class="launch-state-card success-state-v37 mobile-page-hero">
-  <p class="eyebrow"><%= t('success.received') %></p>
-  <% if (type === 'machine') { %><h1><%= t('success.machine.h1') %></h1><p><%= t('success.machine.text') %></p>
-  <% } else if (type === 'contact') { %><h1><%= t('success.contact.h1') %></h1><p><%= t('success.contact.text') %></p>
-  <% } else { %><h1><%= t('success.buying.h1') %></h1><p><%= t('success.buying.text') %></p><% } %>
-  <div class="next-steps-v37"><article><strong>1</strong><span><%= t('success.step1') %></span></article><article><strong>2</strong><span><%= t('success.step2') %></span></article><article><strong>3</strong><span><%= t('success.step3') %></span></article></div>
-  <div class="hero-actions centered"><a class="btn primary" href="<%= localPath('/') %>"><%= t('success.back') %></a><a class="btn secondary" href="<%= localPath('/verification-checklist') %>"><%= t('footer.verification') %></a></div>
+<section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
+  <div class="bg-white rounded-[2rem] border border-gray-100 shadow-soft p-8 md:p-12">
+    <div class="w-16 h-16 rounded-full bg-green-100 text-green-700 flex items-center justify-center mx-auto mb-6 font-black">✓</div>
+    <p class="text-brand-600 font-black tracking-[.2em] uppercase text-xs mb-4"><%= t('success.received') %></p>
+    <% if (type === 'machine') { %><h1 class="text-4xl md:text-5xl font-black text-gray-950 mb-4"><%= t('success.machine.h1') %></h1><p class="text-gray-600 leading-8"><%= t('success.machine.text') %></p>
+    <% } else if (type === 'contact') { %><h1 class="text-4xl md:text-5xl font-black text-gray-950 mb-4"><%= t('success.contact.h1') %></h1><p class="text-gray-600 leading-8"><%= t('success.contact.text') %></p>
+    <% } else { %><h1 class="text-4xl md:text-5xl font-black text-gray-950 mb-4"><%= t('success.buying.h1') %></h1><p class="text-gray-600 leading-8"><%= t('success.buying.text') %></p><% } %>
+    <div class="grid md:grid-cols-3 gap-4 my-8 text-left">
+      <article class="bg-gray-50 rounded-3xl p-5"><strong class="text-brand-600 font-black">1</strong><span class="block mt-2 text-sm text-gray-600 leading-6"><%= t('success.step1') %></span></article>
+      <article class="bg-gray-50 rounded-3xl p-5"><strong class="text-brand-600 font-black">2</strong><span class="block mt-2 text-sm text-gray-600 leading-6"><%= t('success.step2') %></span></article>
+      <article class="bg-gray-50 rounded-3xl p-5"><strong class="text-brand-600 font-black">3</strong><span class="block mt-2 text-sm text-gray-600 leading-6"><%= t('success.step3') %></span></article>
+    </div>
+    <div class="flex flex-col sm:flex-row justify-center gap-3">
+      <a class="px-6 py-3 rounded-full bg-brand-600 text-white font-black hover:bg-brand-700 transition" href="<%= localPath('/') %>"><%= t('success.back') %></a>
+      <a class="px-6 py-3 rounded-full bg-white border border-gray-200 text-gray-700 font-black hover:bg-gray-50 transition" href="<%= localPath('/verification-checklist') %>"><%= t('footer.verification') %></a>
+    </div>
+  </div>
 </section>
 <%- include('../partials/foot') %>

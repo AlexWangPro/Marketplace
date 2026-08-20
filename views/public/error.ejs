@@ -1,7 +1,14 @@
 <%- include('../partials/head') %>
 <% const safePageT = typeof t !== 'undefined' ? t : (key) => key; const safePageLocalPath = typeof localPath !== 'undefined' ? localPath : (pathname) => pathname || '/'; %>
-<section class="launch-state-card error-state-v37 mobile-page-hero">
-  <p class="eyebrow"><%= title || 'Error' %></p><h1><%= safePageT('error.h1') %></h1><p><%= message || safePageT('error.text') %></p>
-  <div class="hero-actions centered"><a class="btn primary" href="<%= safePageLocalPath('/') %>"><%= safePageT('error.back') %></a><button class="btn secondary" type="button" onclick="window.history.back()"><%= safePageT('error.goBack') %></button></div>
+<section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
+  <div class="bg-white rounded-[2rem] border border-gray-100 shadow-soft p-8 md:p-12">
+    <p class="text-red-600 font-black tracking-[.2em] uppercase text-xs mb-4"><%= title || 'Error' %></p>
+    <h1 class="text-4xl md:text-5xl font-black text-gray-950 mb-4"><%= safePageT('error.h1') %></h1>
+    <p class="text-gray-600 leading-8 mb-8"><%= message || safePageT('error.text') %></p>
+    <div class="flex flex-col sm:flex-row justify-center gap-3">
+      <a class="px-6 py-3 rounded-full bg-brand-600 text-white font-black hover:bg-brand-700 transition" href="<%= safePageLocalPath('/') %>"><%= safePageT('error.back') %></a>
+      <button class="px-6 py-3 rounded-full bg-white border border-gray-200 text-gray-700 font-black hover:bg-gray-50 transition" type="button" onclick="window.history.back()"><%= safePageT('error.goBack') %></button>
+    </div>
+  </div>
 </section>
 <%- include('../partials/foot') %>

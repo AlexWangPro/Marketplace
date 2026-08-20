@@ -1,57 +1,54 @@
 <%- include('../partials/head') %>
-<% const currentStatus = filters.status || ''; %>
-<section class="admin-shell v34-admin-shell">
-  <div class="admin-hero-clean v34-admin-hero">
-    <div>
-      <p class="eyebrow">Admin</p>
-      <h1>Buyer Requests</h1>
-      <p>Review buyer intent, release contacts, and match suitable machines.</p>
-    </div>
-    <a class="btn secondary" href="/admin">Dashboard</a>
+<% const activeAdmin = 'requests'; const currentStatus = filters.status || ''; %>
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
+  <div class="rounded-[2rem] bg-gray-950 text-white p-7 md:p-10 mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+    <div><p class="text-brand-300 font-black tracking-[.2em] uppercase text-xs mb-3">Admin</p><h1 class="text-4xl md:text-5xl font-black tracking-tight mb-3">Buyer Requests</h1><p class="text-gray-300">Review buyer intent, release contacts, and match suitable machines.</p></div>
+    <a class="px-5 py-3 rounded-full bg-white text-gray-950 font-black hover:bg-gray-100 transition" href="/admin">Dashboard</a>
   </div>
-  <nav class="admin-nav clean-admin-nav"><a href="/admin">Dashboard</a><a href="/admin/machines">Machines</a><a href="/admin/requests" class="active">Buyer Requests</a></nav>
+  
+  <nav class="flex flex-wrap gap-2 mb-8">
+    <a class="px-4 py-2 rounded-full text-sm font-black <%= activeAdmin === 'dashboard' ? 'bg-brand-600 text-white' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50' %>" href="/admin">Dashboard</a>
+    <a class="px-4 py-2 rounded-full text-sm font-black <%= activeAdmin === 'machines' ? 'bg-brand-600 text-white' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50' %>" href="/admin/machines">Machines</a>
+    <a class="px-4 py-2 rounded-full text-sm font-black <%= activeAdmin === 'requests' ? 'bg-brand-600 text-white' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50' %>" href="/admin/requests">Buyer Requests</a>
+  </nav>
 
-  <section class="v34-admin-toolbar">
-    <div class="v34-status-tabs" aria-label="Buyer request filters">
-      <a class="<%= !currentStatus && !filters.type ? 'active' : '' %>" href="/admin/requests">All</a>
-      <a class="<%= currentStatus === 'new' ? 'active' : '' %>" href="/admin/requests?status=new">New</a>
-      <a class="<%= filters.type === 'contact' ? 'active' : '' %>" href="/admin/requests?type=contact">Contact requests</a>
-      <a class="<%= filters.type === 'buying' ? 'active' : '' %>" href="/admin/requests?type=buying">Buying requests</a>
-      <a class="<%= currentStatus === 'matched' ? 'active' : '' %>" href="/admin/requests?status=matched">Matched</a>
+
+  <section class="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-5 mb-6">
+    <div class="flex flex-wrap gap-2 mb-5" aria-label="Buyer request filters">
+      <a class="px-4 py-2 rounded-full text-sm font-black <%= !currentStatus && !filters.type ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' %>" href="/admin/requests">All</a>
+      <a class="px-4 py-2 rounded-full text-sm font-black <%= currentStatus === 'new' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' %>" href="/admin/requests?status=new">New</a>
+      <a class="px-4 py-2 rounded-full text-sm font-black <%= filters.type === 'contact' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' %>" href="/admin/requests?type=contact">Contact requests</a>
+      <a class="px-4 py-2 rounded-full text-sm font-black <%= filters.type === 'buying' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' %>" href="/admin/requests?type=buying">Buying requests</a>
+      <a class="px-4 py-2 rounded-full text-sm font-black <%= currentStatus === 'matched' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' %>" href="/admin/requests?status=matched">Matched</a>
     </div>
-    <form class="v34-admin-search" method="get" action="/admin/requests">
-      <input type="search" name="q" placeholder="Search buyer, email, country, machine..." value="<%= filters.q || '' %>">
-      <select name="status"><option value="">Any status</option><% requestStatuses.forEach(s => { %><option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= statusLabel(s) %></option><% }) %></select>
-      <select name="type"><option value="">Any type</option><option value="contact" <%= filters.type === 'contact' ? 'selected' : '' %>>Contact</option><option value="buying" <%= filters.type === 'buying' ? 'selected' : '' %>>Buying</option></select>
-      <button class="btn primary" type="submit">Search</button>
-      <a class="btn secondary" href="/admin/requests">Reset</a>
+    <form class="grid md:grid-cols-12 gap-3" method="get" action="/admin/requests">
+      <input class="wpe-input md:col-span-4" type="search" name="q" placeholder="Search buyer, email, country, machine..." value="<%= filters.q || '' %>">
+      <select class="wpe-input md:col-span-3" name="status"><option value="">Any status</option><% requestStatuses.forEach(s => { %><option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= statusLabel(s) %></option><% }) %></select>
+      <select class="wpe-input md:col-span-3" name="type"><option value="">Any type</option><option value="contact" <%= filters.type === 'contact' ? 'selected' : '' %>>Contact</option><option value="buying" <%= filters.type === 'buying' ? 'selected' : '' %>>Buying</option></select>
+      <button class="md:col-span-1 rounded-2xl bg-brand-600 text-white font-black hover:bg-brand-700 transition" type="submit">Go</button>
+      <a class="md:col-span-1 rounded-2xl bg-gray-100 text-gray-700 font-black hover:bg-gray-200 transition flex items-center justify-center" href="/admin/requests">Reset</a>
     </form>
   </section>
 
-  <section class="content-card clean-admin-card v34-table-card">
+  <section class="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
     <% if (!requests.length) { %>
-      <div class="v34-empty-admin"><h2>No requests found.</h2><p>Try another filter or clear the search.</p></div>
+      <div class="p-10 text-center"><h2 class="text-2xl font-black">No requests found.</h2><p class="text-gray-500 mt-2">Try another filter or clear the search.</p></div>
     <% } else { %>
-      <table class="admin-table rich clean-table v34-admin-table">
-        <thead><tr><th>Buyer</th><th>Request</th><th>Machine / Target</th><th>Status</th><th>Received</th><th>Actions</th></tr></thead>
-        <tbody>
+      <div class="overflow-x-auto"><table class="w-full text-sm">
+        <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider text-xs"><tr><th class="text-left p-4">Buyer</th><th class="text-left p-4">Request</th><th class="text-left p-4">Machine / Target</th><th class="text-left p-4">Status</th><th class="text-left p-4">Received</th><th class="text-left p-4">Actions</th></tr></thead>
+        <tbody class="divide-y divide-gray-100">
           <% requests.forEach(r => { %>
-            <tr>
-              <td class="v34-buyer-cell"><strong><%= r.buyer_name %></strong><small><%= r.buyer_email %></small><small><%= r.buyer_country || '' %></small></td>
-              <td><span class="v34-type-pill <%= r.request_type %>"><%= r.request_type === 'contact' ? 'Seller contact' : 'Buying request' %></span></td>
-              <td><strong><%= r.machine_title || r.target_region || 'Any suitable machine' %></strong><br><small><%= [r.machine_region, r.machine_country].filter(Boolean).join(' · ') || [r.budget, r.preferred_brand].filter(Boolean).join(' · ') || 'Requirement details inside' %></small></td>
-              <td><span class="status-badge <%= r.status %>"><%= statusLabel(r.status) %></span></td>
-              <td><%= formatDate(r.created_at) %></td>
-              <td class="v34-action-cell compact">
-                <a class="btn tiny primary" href="/admin/requests/<%= r.id %>">Review</a>
-                <form method="post" action="/admin/requests/<%= r.id %>/delete" data-confirm-delete="Delete this buyer request permanently?">
-                  <button class="btn tiny danger soft-danger" type="submit">Delete</button>
-                </form>
-              </td>
+            <tr class="align-top">
+              <td class="p-4"><strong class="block text-gray-950"><%= r.buyer_name %></strong><small class="block text-gray-500"><%= r.buyer_email %></small><small class="block text-gray-400"><%= r.buyer_country || '' %></small></td>
+              <td class="p-4"><span class="inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-black text-gray-700"><%= r.request_type === 'contact' ? 'Seller contact' : 'Buying request' %></span></td>
+              <td class="p-4 min-w-[260px]"><strong class="block text-gray-950"><%= r.machine_title || r.target_region || 'Any suitable machine' %></strong><small class="text-gray-500"><%= [r.machine_region, r.machine_country].filter(Boolean).join(' · ') || [r.budget, r.preferred_brand].filter(Boolean).join(' · ') || 'Requirement details inside' %></small></td>
+              <td class="p-4"><span class="status-badge <%= r.status %>"><%= statusLabel(r.status) %></span></td>
+              <td class="p-4"><%= formatDate(r.created_at) %></td>
+              <td class="p-4"><div class="flex flex-wrap gap-2"><a class="wpe-admin-btn" href="/admin/requests/<%= r.id %>">Review</a><form method="post" action="/admin/requests/<%= r.id %>/delete" data-confirm-delete="Delete this buyer request permanently?"><button class="wpe-admin-btn danger" type="submit">Delete</button></form></div></td>
             </tr>
           <% }) %>
         </tbody>
-      </table>
+      </table></div>
     <% } %>
   </section>
 </section>

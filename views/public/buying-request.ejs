@@ -1,44 +1,49 @@
 <%- include('../partials/head') %>
 <% const selectedMachineIds = Array.isArray(form.selected_machine_ids) ? form.selected_machine_ids.map(String) : (form.selected_machine_ids ? [String(form.selected_machine_ids)] : []); %>
-<section class="page-hero narrow apple-page-hero">
-  <p class="eyebrow">Buyer Request</p>
-  <h1>Tell us what used wall printer you need.</h1>
-  <p>Share your buying requirement and optionally select up to <%= buyerMachineSelectionLimit %> machines you are interested in.</p>
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
+  <div class="max-w-3xl">
+    <p class="text-brand-600 font-black tracking-[.2em] uppercase text-xs mb-4">Buyer Request</p>
+    <h1 class="text-4xl md:text-6xl font-black tracking-tight text-gray-950 mb-6">Tell us what used wall printer you need.</h1>
+    <p class="text-lg text-gray-600 leading-8">Share your buying requirement and optionally select up to <%= buyerMachineSelectionLimit %> machines you are interested in.</p>
+  </div>
 </section>
-<% if (errors && errors.length) { %><div class="form-errors"><% errors.forEach(e => { %><p><%= e %></p><% }) %></div><% } %>
-<form class="form-shell" method="post" action="<%= localPath('/buying-request') %>">
-  <section class="form-card">
-    <h2>Buyer contact</h2>
-    <div class="form-grid two">
-      <label>Your name *<input name="buyer_name" value="<%= form.buyer_name || '' %>" required></label>
-      <label>Company<input name="buyer_company" value="<%= form.buyer_company || '' %>"></label>
-      <label>Email *<input type="email" name="buyer_email" value="<%= form.buyer_email || '' %>" required></label>
-      <label>Phone *<input name="buyer_phone" value="<%= form.buyer_phone || '' %>" required></label>
-      <label>WhatsApp<input name="buyer_whatsapp" value="<%= form.buyer_whatsapp || '' %>"></label>
-      <label>Your country *<input name="buyer_country" value="<%= form.buyer_country || '' %>" required></label>
+
+<% if (errors && errors.length) { %>
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
+    <div class="bg-red-50 border border-red-200 text-red-700 rounded-3xl p-5 text-sm font-semibold space-y-1"><% errors.forEach(e => { %><p><%= e %></p><% }) %></div>
+  </div>
+<% } %>
+
+<form class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 space-y-6" method="post" action="<%= localPath('/buying-request') %>">
+  <section class="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 md:p-8">
+    <h2 class="text-2xl font-black text-gray-950 mb-5">Buyer contact</h2>
+    <div class="grid md:grid-cols-2 gap-4">
+      <label class="wpe-field">Your name *<input name="buyer_name" value="<%= form.buyer_name || '' %>" required></label>
+      <label class="wpe-field">Company<input name="buyer_company" value="<%= form.buyer_company || '' %>"></label>
+      <label class="wpe-field">Email *<input type="email" name="buyer_email" value="<%= form.buyer_email || '' %>" required></label>
+      <label class="wpe-field">Phone *<input name="buyer_phone" value="<%= form.buyer_phone || '' %>" required></label>
+      <label class="wpe-field">WhatsApp<input name="buyer_whatsapp" value="<%= form.buyer_whatsapp || '' %>"></label>
+      <label class="wpe-field">Your country *<input name="buyer_country" value="<%= form.buyer_country || '' %>" required></label>
     </div>
   </section>
 
   <% if (machineOptions && machineOptions.length) { %>
-    <section class="form-card buyer-machine-select-card">
-      <div class="form-section-head">
-        <div>
-          <h2>Interested machines</h2>
-          <p>Select up to <%= buyerMachineSelectionLimit %> machines. This helps admin understand your preference faster.</p>
-        </div>
-        <span class="select-limit-pill">Max <%= buyerMachineSelectionLimit %></span>
+    <section class="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 md:p-8">
+      <div class="flex items-start justify-between gap-4 mb-5">
+        <div><h2 class="text-2xl font-black text-gray-950">Interested machines</h2><p class="text-sm text-gray-500 mt-1">Select up to <%= buyerMachineSelectionLimit %> machines. This helps admin understand your preference faster.</p></div>
+        <span class="shrink-0 bg-brand-50 text-brand-600 px-3 py-1 rounded-full text-xs font-black">Max <%= buyerMachineSelectionLimit %></span>
       </div>
-      <div class="buyer-machine-select-grid" data-selection-limit="<%= buyerMachineSelectionLimit %>" data-selection-message="You can select up to <%= buyerMachineSelectionLimit %> machines only.">
+      <div class="grid md:grid-cols-2 gap-4" data-selection-limit="<%= buyerMachineSelectionLimit %>" data-selection-message="You can select up to <%= buyerMachineSelectionLimit %> machines only.">
         <% machineOptions.forEach(m => { %>
-          <label class="buyer-machine-option">
-            <input type="checkbox" name="selected_machine_ids" value="<%= m.id %>" <%= selectedMachineIds.includes(String(m.id)) ? 'checked' : '' %> data-selection-checkbox>
-            <span class="option-media">
-              <% if (m.primary_image_id) { %><img src="/images/<%= m.primary_image_id %>" alt="<%= m.title %>"><% } else { %><span>No image</span><% } %>
+          <label class="relative flex gap-4 p-4 rounded-3xl border border-gray-100 bg-gray-50 hover:bg-white hover:shadow-md transition cursor-pointer">
+            <input class="mt-2 accent-brand-600" type="checkbox" name="selected_machine_ids" value="<%= m.id %>" <%= selectedMachineIds.includes(String(m.id)) ? 'checked' : '' %> data-selection-checkbox>
+            <span class="w-20 h-24 rounded-2xl bg-white overflow-hidden flex items-center justify-center border border-gray-100 shrink-0">
+              <% if (m.primary_image_id) { %><img src="/images/<%= m.primary_image_id %>" alt="<%= m.title %>" class="w-full h-full object-contain p-1"><% } else { %><span class="text-xs text-gray-400">No image</span><% } %>
             </span>
-            <span class="option-copy">
-              <strong><%= m.title %></strong>
-              <small><%= [m.region, m.country, m.city].filter(Boolean).join(' · ') || 'Location not specified' %></small>
-              <em><%= money(m.asking_price, m.currency) %> · <%= statusLabel(m.status) %></em>
+            <span class="min-w-0">
+              <strong class="block text-sm font-black text-gray-950 leading-snug"><%= m.title %></strong>
+              <small class="block text-xs text-gray-500 mt-1"><%= [m.region, m.country, m.city].filter(Boolean).join(' · ') || 'Location not specified' %></small>
+              <em class="block text-xs not-italic text-brand-600 font-bold mt-2"><%= money(m.asking_price, m.currency) %> · <%= statusLabel(m.status) %></em>
             </span>
           </label>
         <% }) %>
@@ -46,22 +51,23 @@
     </section>
   <% } %>
 
-  <section class="form-card">
-    <h2>Machine requirement</h2>
-    <div class="form-grid two">
-      <label>Target region<select name="target_region"><option value="">Any region</option><% regions.forEach(r => { %><option value="<%= r %>" <%= form.target_region === r ? 'selected' : '' %>><%= r %></option><% }) %></select></label>
-      <label>Budget range<input name="budget" value="<%= form.budget || '' %>"></label>
-      <label>Preferred brand<input name="preferred_brand" value="<%= form.preferred_brand || '' %>"></label>
-      <label>Preferred printheads<input name="preferred_printheads" value="<%= form.preferred_printheads || '' %>"></label>
-      <label>Purchase timeline *<select name="timeline" required><option value="">Select timeline</option><% purchaseTimelineOptions.forEach(item => { %><option value="<%= item %>" <%= form.timeline === item ? 'selected' : '' %>><%= item %></option><% }) %></select></label>
-      <label>Inspection plan<select name="inspection_plan"><option value="">Select option</option><% inspectionPlans.forEach(plan => { %><option value="<%= plan %>" <%= form.inspection_plan === plan ? 'selected' : '' %>><%= plan %></option><% }) %></select></label>
+  <section class="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 md:p-8">
+    <h2 class="text-2xl font-black text-gray-950 mb-5">Machine requirement</h2>
+    <div class="grid md:grid-cols-2 gap-4">
+      <label class="wpe-field">Target region<select name="target_region"><option value="">Any region</option><% regions.forEach(r => { %><option value="<%= r %>" <%= form.target_region === r ? 'selected' : '' %>><%= r %></option><% }) %></select></label>
+      <label class="wpe-field">Budget<input name="budget" value="<%= form.budget || '' %>" placeholder="e.g. USD 12,000–20,000"></label>
+      <label class="wpe-field">Preferred brand<input name="preferred_brand" value="<%= form.preferred_brand || '' %>"></label>
+      <label class="wpe-field">Preferred printheads<input name="preferred_printheads" value="<%= form.preferred_printheads || '' %>"></label>
+      <label class="wpe-field">Purchase timeline *<select name="timeline" required><option value="">Select timeline</option><% purchaseTimelineOptions.forEach(item => { %><option value="<%= item %>" <%= form.timeline === item ? 'selected' : '' %>><%= item %></option><% }) %></select></label>
+      <label class="wpe-field">Inspection plan<select name="inspection_plan"><option value="">Select option</option><% inspectionPlans.forEach(plan => { %><option value="<%= plan %>" <%= form.inspection_plan === plan ? 'selected' : '' %>><%= plan %></option><% }) %></select></label>
     </div>
-    <label>Message<textarea name="message" rows="4"><%= form.message || '' %></textarea></label>
+    <label class="wpe-field mt-4">Message<textarea name="message" rows="5"><%= form.message || '' %></textarea></label>
+    <label class="flex gap-3 items-start text-sm text-gray-600 mt-5"><input class="mt-1 accent-brand-600" type="checkbox" name="verification_ack" required <%= form.verification_ack ? 'checked' : '' %>> I understand that buyers are responsible for verifying the machine, seller, payment terms, and logistics before purchase.</label>
   </section>
-  <section class="declaration-box compact">
-    <p>I understand that Wall Printer Exchange does not inspect, guarantee, sell, warrant, collect payment, ship, install, or provide after-sales service for any listed machine. I am responsible for verifying the machine, seller, ownership, payment terms, shipping, customs, and all transaction details before purchase.</p>
-    <label class="check-row"><input type="checkbox" name="verification_ack" <%= form.verification_ack ? 'checked' : '' %> required> I understand and accept buyer verification responsibility.</label>
-  </section>
-  <button class="btn primary large" type="submit">Submit buying request</button>
+
+  <div class="flex flex-col sm:flex-row justify-end gap-3">
+    <a class="px-6 py-3 rounded-full border border-gray-200 bg-white text-gray-700 font-black text-center hover:bg-gray-50 transition" href="<%= localPath('/') %>">Cancel</a>
+    <button class="px-8 py-3 rounded-full bg-brand-600 text-white font-black hover:bg-brand-700 shadow-lg shadow-brand-600/20 transition" type="submit">Submit buying request</button>
+  </div>
 </form>
 <%- include('../partials/foot') %>

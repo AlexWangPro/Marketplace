@@ -236,6 +236,8 @@
       if (!src) return;
       mainImage.src = src;
       mainImage.alt = alt;
+      const bgImage = document.querySelector('[data-gallery-bg]');
+      if (bgImage) bgImage.src = src;
       mainButton.setAttribute('data-lightbox-src', src);
       mainButton.setAttribute('data-lightbox-alt', alt);
       thumbs.forEach((item) => item.classList.remove('active'));
@@ -293,5 +295,16 @@
         }
       });
     });
+  });
+})();
+
+
+(function () {
+  const toggle = document.querySelector('[data-mobile-menu-toggle]');
+  const menu = document.querySelector('[data-mobile-menu]');
+  if (!toggle || !menu) return;
+  toggle.addEventListener('click', () => {
+    const open = menu.classList.toggle('hidden') === false;
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
   });
 })();

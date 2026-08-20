@@ -1,15 +1,16 @@
-# Wall Printer Exchange v3.8.9
+# Wall Printer Exchange v3.9.0
 
 Railway + PostgreSQL + Resend deployment package.
 
-## v3.8.9 updates
+## v3.9.0 updates
 
-- Optimizes homepage listing photos for portrait smartphone uploads.
-- Adds a blurred background layer behind each machine photo so vertical images look intentional instead of tiny inside a landscape frame.
-- Keeps the main machine photo fully visible with `object-fit: contain`; no aggressive cropping.
-- Changes homepage card photo frames to a more portrait-friendly ratio, especially on mobile.
-- Keeps v3.8.8 admin submission email notifications.
-- Keeps all prior admin, buyer request, multilingual, and anti-spam features.
+- Full Gemini-style UI redesign across public pages and admin pages.
+- Rebuilt global header, footer, language switcher, mobile navigation, homepage, listing cards, machine detail page, forms, admin dashboard, machine management, buyer requests, request detail, login, and state pages.
+- Adds Tailwind CDN for rapid modern UI styling while retaining existing backend logic and database schema.
+- Keeps v3.8.9 portrait-friendly machine photo handling.
+- Keeps v3.8.8 admin submission notifications.
+- Keeps v3.8.7 buyer/seller email delivery tracking.
+- Keeps buyer phone requirement, 3-machine buyer selection, anti-spam listing submission checks, stable admin login, and multilingual auto-detection.
 
 ## Railway variables
 

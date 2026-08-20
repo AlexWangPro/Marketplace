@@ -6,22 +6,27 @@
   const safeFooterAdmin = typeof admin !== 'undefined' ? admin : null;
   const safeCanIncludeFloating = typeof t !== 'undefined' && typeof regions !== 'undefined' && typeof inspectionPlans !== 'undefined' && typeof sellerContactMethods !== 'undefined' && typeof workingStatusOptions !== 'undefined' && typeof currencyOptions !== 'undefined';
 %>
-<footer class="site-footer clean-footer apple-footer site-footer-v37 mobile-clean-footer">
-  <div>
-    <strong>Wall Printer Exchange</strong>
-    <p><%= safeFooterT('footer.text') %></p>
-  </div>
-  <div class="footer-links footer-quiet-links">
-    <a href="<%= safeFooterLocalPath('/about') %>"><%= safeFooterT('nav.about') %></a>
-    <a href="<%= safeFooterLocalPath('/buyer-guide') %>"><%= safeFooterT('nav.buyerGuide') %></a>
-    <a href="<%= safeFooterLocalPath('/seller-guide') %>"><%= safeFooterT('nav.sellerGuide') %></a>
-    <a href="<%= safeFooterLocalPath('/verification-checklist') %>"><%= safeFooterT('footer.verification') %></a>
-    <% if (!safeFooterAdmin) { %><a href="/admin/login"><%= safeFooterT('footer.adminLogin') %></a><% } %>
+<footer class="bg-gray-950 text-white mt-20">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 grid gap-10 md:grid-cols-[1.2fr_1fr]">
+    <div>
+      <div class="flex items-center gap-3 mb-4">
+        <span class="w-10 h-10 rounded-2xl bg-brand-600 text-white flex items-center justify-center font-black">W</span>
+        <strong class="text-lg">Wall Printer Exchange</strong>
+      </div>
+      <p class="max-w-xl text-sm leading-7 text-gray-400"><%= safeFooterT('footer.text') %></p>
+    </div>
+    <nav class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm" aria-label="Footer navigation">
+      <a class="text-gray-300 hover:text-white transition" href="<%= safeFooterLocalPath('/about') %>"><%= safeFooterT('nav.about') %></a>
+      <a class="text-gray-300 hover:text-white transition" href="<%= safeFooterLocalPath('/buyer-guide') %>"><%= safeFooterT('nav.buyerGuide') %></a>
+      <a class="text-gray-300 hover:text-white transition" href="<%= safeFooterLocalPath('/seller-guide') %>"><%= safeFooterT('nav.sellerGuide') %></a>
+      <a class="text-gray-300 hover:text-white transition" href="<%= safeFooterLocalPath('/verification-checklist') %>"><%= safeFooterT('footer.verification') %></a>
+      <% if (!safeFooterAdmin) { %><a class="text-gray-300 hover:text-white transition" href="/admin/login"><%= safeFooterT('footer.adminLogin') %></a><% } %>
+    </nav>
   </div>
 </footer>
 <% if (!safeFooterCurrentPath.startsWith('/admin') && safeCanIncludeFloating) { %>
   <%- include('../public/floating-modals') %>
 <% } %>
-<script src="/app.js?v=3.8.9" defer></script>
+<script src="/app.js?v=3.9.0" defer></script>
 </body>
 </html>

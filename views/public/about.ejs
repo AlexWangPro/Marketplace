@@ -1,13 +1,17 @@
 <%- include('../partials/head') %>
-<section class="guide-hero-v35 mobile-page-hero">
-  <p class="eyebrow"><%= t('about.eyebrow') %></p>
-  <h1><%= t('about.h1') %></h1>
-  <p><%= t('about.text') %></p>
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-20">
+  <div class="max-w-3xl">
+    <p class="text-brand-600 font-black tracking-[.2em] uppercase text-xs mb-4"><%= t('about.eyebrow') %></p>
+    <h1 class="text-4xl md:text-6xl font-black tracking-tight text-gray-950 mb-6"><%= t('about.h1') %></h1>
+    <p class="text-lg text-gray-600 leading-8"><%= t('about.text') %></p>
+  </div>
 </section>
-<section class="guide-grid-v35 mobile-guide-grid">
-  <article><span><%= t('about.card1.span') %></span><h2><%= t('about.card1.h2') %></h2><p><%= t('about.card1.text') %></p></article>
-  <article><span><%= t('about.card2.span') %></span><h2><%= t('about.card2.h2') %></h2><p><%= t('about.card2.text') %></p></article>
-  <article><span><%= t('about.card3.span') %></span><h2><%= t('about.card3.h2') %></h2><p><%= t('about.card3.text') %></p></article>
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 grid md:grid-cols-3 gap-6">
+  <article class="bg-white p-7 rounded-[2rem] border border-gray-100 shadow-sm"><span class="text-sm font-black text-brand-600"><%= t('about.card1.span') %></span><h2 class="text-2xl font-black mt-3 mb-3"><%= t('about.card1.h2') %></h2><p class="text-gray-600 leading-7"><%= t('about.card1.text') %></p></article>
+  <article class="bg-white p-7 rounded-[2rem] border border-gray-100 shadow-sm"><span class="text-sm font-black text-brand-600"><%= t('about.card2.span') %></span><h2 class="text-2xl font-black mt-3 mb-3"><%= t('about.card2.h2') %></h2><p class="text-gray-600 leading-7"><%= t('about.card2.text') %></p></article>
+  <article class="bg-white p-7 rounded-[2rem] border border-gray-100 shadow-sm"><span class="text-sm font-black text-brand-600"><%= t('about.card3.span') %></span><h2 class="text-2xl font-black mt-3 mb-3"><%= t('about.card3.h2') %></h2><p class="text-gray-600 leading-7"><%= t('about.card3.text') %></p></article>
 </section>
-<section class="guide-note-v35"><h2><%= t('about.note.h2') %></h2><p><%= t('about.note.text') %></p></section>
+<section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+  <div class="bg-gray-950 text-white rounded-[2rem] p-8 md:p-10"><h2 class="text-3xl font-black mb-4"><%= t('about.note.h2') %></h2><p class="text-gray-300 leading-8"><%= t('about.note.text') %></p></div>
+</section>
 <%- include('../partials/foot') %>

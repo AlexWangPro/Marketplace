@@ -1,116 +1,141 @@
 <%- include('../partials/head') %>
-<section class="catalog-hero apple-catalog-hero mobile-first-hero">
-  <div class="catalog-hero-copy apple-hero-copy">
-    <p class="eyebrow">Wall Printer Exchange</p>
-    <h1><%= t('home.hero.title') %></h1>
-    <p class="hero-text"><%= t('home.hero.text') %></p>
+
+<section class="relative overflow-hidden bg-gray-950">
+  <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,.45),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,.22),transparent_34%)]"></div>
+  <div class="absolute inset-0 opacity-20" style="background-image: linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px); background-size: 44px 44px;"></div>
+  <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-24">
+    <div class="max-w-3xl">
+      <p class="text-brand-100 font-bold tracking-[.24em] uppercase text-xs md:text-sm mb-5">Wall Printer Exchange</p>
+      <h1 class="text-4xl sm:text-5xl md:text-7xl font-black text-white leading-[.96] tracking-tight mb-6"><%= t('home.hero.title') %></h1>
+      <p class="text-base md:text-xl text-gray-300 leading-8 max-w-2xl"><%= t('home.hero.text') %></p>
+      <div class="mt-8 flex flex-col sm:flex-row gap-3">
+        <a href="#machines" class="inline-flex items-center justify-center rounded-full bg-brand-600 text-white px-6 py-3 font-bold shadow-lg shadow-brand-600/25 hover:bg-brand-700 transition"><%= t('nav.machines') %></a>
+        <button type="button" data-open-modal="buying-request" class="inline-flex items-center justify-center rounded-full bg-white/10 text-white border border-white/20 px-6 py-3 font-bold hover:bg-white/15 transition"><%= t('home.submitBuyingRequest') %></button>
+      </div>
+    </div>
   </div>
 </section>
 
-<section class="search-drawer-shell mobile-machine-entry" aria-label="Search machines">
-  <div class="search-drawer-head">
-    <div>
-      <p class="eyebrow"><%= t('home.catalog') %></p>
-      <h2><%= t('home.availableMachines') %></h2>
-    </div>
-    <button class="search-toggle-btn" type="button" data-search-toggle aria-expanded="<%= (filters.q || filters.region || filters.status) ? 'true' : 'false' %>" aria-controls="machineSearchDrawer">
-      <span><%= t('home.searchFilters') %></span>
-      <small><%= [filters.q ? t('home.keyword') : null, filters.region || null, filters.status ? statusLabel(filters.status) : null].filter(Boolean).join(' · ') || t('home.open') %></small>
-    </button>
-  </div>
-
-  <div id="machineSearchDrawer" class="search-drawer <%= (filters.q || filters.region || filters.status) ? 'open' : '' %>">
-    <form method="get" action="<%= localPath('/') %>" class="search-drawer-form">
-      <div class="search-input-row">
-        <label class="visually-hidden" for="machineSearch"><%= t('home.search') %></label>
-        <input id="machineSearch" type="search" name="q" placeholder="<%= t('home.searchPlaceholder') %>" value="<%= filters.q || '' %>" autocomplete="off">
-        <button class="btn primary" type="submit"><%= t('home.search') %></button>
+<section class="relative z-20 -mt-8 md:-mt-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-10" aria-label="Search machines">
+  <div class="bg-white rounded-[2rem] shadow-soft p-4 md:p-7 border border-gray-100">
+    <div class="flex items-center justify-between gap-4 border-b border-gray-100 pb-4 mb-5">
+      <div>
+        <p class="text-xs font-black tracking-[.18em] uppercase text-brand-600"><%= t('home.catalog') %></p>
+        <h2 class="text-2xl md:text-3xl font-black tracking-tight text-gray-950"><%= t('home.availableMachines') %></h2>
       </div>
-      <div class="search-filter-row">
-        <label><%= t('home.region') %>
-          <select name="region">
-            <option value=""><%= t('home.allRegions') %></option>
-            <% regions.forEach(r => { %>
-              <option value="<%= r %>" <%= filters.region === r ? 'selected' : '' %>><%= r %></option>
-            <% }) %>
-          </select>
-        </label>
-        <label><%= t('home.status') %>
-          <select name="status">
-            <option value=""><%= t('home.allStatuses') %></option>
-            <option value="available" <%= filters.status === 'available' ? 'selected' : '' %>><%= t('status.available') %></option>
-            <option value="reserved" <%= filters.status === 'reserved' ? 'selected' : '' %>><%= t('status.reserved') %></option>
-            <option value="sold" <%= filters.status === 'sold' ? 'selected' : '' %>><%= t('status.sold') %></option>
-          </select>
-        </label>
-        <div class="search-actions">
-          <a class="btn secondary" href="<%= localPath('/') %>"><%= t('home.reset') %></a>
-          <button class="btn primary" type="submit"><%= t('home.apply') %></button>
-        </div>
+      <p class="hidden md:block text-sm text-gray-500"><%= [filters.q ? t('home.keyword') : null, filters.region || null, filters.status ? statusLabel(filters.status) : null].filter(Boolean).join(' · ') || t('home.open') %></p>
+    </div>
+
+    <form method="get" action="<%= localPath('/') %>" class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+      <label class="md:col-span-5 block">
+        <span class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-2"><%= t('home.search') %></span>
+        <input id="machineSearch" type="search" name="q" placeholder="<%= t('home.searchPlaceholder') %>" value="<%= filters.q || '' %>" autocomplete="off" class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none">
+      </label>
+      <label class="md:col-span-2 block">
+        <span class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-2"><%= t('home.region') %></span>
+        <select name="region" class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none">
+          <option value=""><%= t('home.allRegions') %></option>
+          <% regions.forEach(r => { %>
+            <option value="<%= r %>" <%= filters.region === r ? 'selected' : '' %>><%= r %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label class="md:col-span-2 block">
+        <span class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-2"><%= t('home.status') %></span>
+        <select name="status" class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none">
+          <option value=""><%= t('home.allStatuses') %></option>
+          <option value="available" <%= filters.status === 'available' ? 'selected' : '' %>><%= t('status.available') %></option>
+          <option value="reserved" <%= filters.status === 'reserved' ? 'selected' : '' %>><%= t('status.reserved') %></option>
+          <option value="sold" <%= filters.status === 'sold' ? 'selected' : '' %>><%= t('status.sold') %></option>
+        </select>
+      </label>
+      <div class="md:col-span-3 grid grid-cols-2 gap-2">
+        <a href="<%= localPath('/') %>" class="inline-flex items-center justify-center rounded-2xl bg-gray-100 text-gray-700 px-4 py-3.5 text-sm font-bold hover:bg-gray-200 transition"><%= t('home.reset') %></a>
+        <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-brand-600 text-white px-4 py-3.5 text-sm font-bold hover:bg-brand-700 transition shadow-lg shadow-brand-600/20"><%= t('home.apply') %></button>
       </div>
     </form>
   </div>
 </section>
 
-<% if (!machines.length) { %>
-  <section class="launch-state-card compact-empty-state-v37 mobile-empty-state">
-    <p class="eyebrow"><%= t('home.noResultsLabel') %></p>
-    <h1><%= t('home.noResults') %></h1>
-    <p><%= t('home.noResultsText') %></p>
-    <div class="hero-actions centered">
-      <a class="btn primary" href="<%= localPath('/') %>"><%= t('home.clearFilters') %></a>
-      <button class="btn secondary" type="button" data-open-modal="buying-request"><%= t('home.submitBuyingRequest') %></button>
+<section id="machines" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+  <% if (!machines.length) { %>
+    <div class="bg-white rounded-[2rem] border border-dashed border-gray-300 p-10 md:p-14 text-center max-w-2xl mx-auto shadow-sm">
+      <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-5 text-gray-400">
+        <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+      </div>
+      <p class="text-sm text-brand-600 font-bold mb-2"><%= t('home.noResultsLabel') %></p>
+      <h2 class="text-3xl font-black text-gray-950 mb-3"><%= t('home.noResults') %></h2>
+      <p class="text-gray-500 mb-8"><%= t('home.noResultsText') %></p>
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <a href="<%= localPath('/') %>" class="px-6 py-3 bg-gray-900 text-white rounded-full font-bold hover:bg-gray-800 transition"><%= t('home.clearFilters') %></a>
+        <button type="button" data-open-modal="buying-request" class="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-full font-bold hover:bg-gray-50 transition"><%= t('home.submitBuyingRequest') %></button>
+      </div>
     </div>
-  </section>
-<% } else { %>
-  <section class="v30-machine-grid refined-machine-grid mobile-card-grid">
-    <% machines.forEach(machine => { %>
-      <% const locationText = [machine.region, machine.country, machine.city].filter(Boolean).join(' · ') || t('home.locationTbc'); %>
-      <% const headText = [machine.printhead_type, machine.printhead_count ? machine.printhead_count + ' heads' : null].filter(Boolean).join(' · '); %>
-      <article class="v30-machine-card refined-machine-card mobile-machine-card <%= machine.status === 'sold' ? 'is-sold' : '' %>">
-        <a href="<%= localPath('/machine/' + machine.slug) %>" class="v30-card-image refined-card-image" aria-label="<%= t('home.viewMachine') %> <%= machine.title %>">
-          <% if (machine.primary_image_id) { %>
-            <img class="card-photo-bg" src="/images/<%= machine.primary_image_id %>" alt="" aria-hidden="true" loading="lazy">
-            <img class="card-photo-main" src="/images/<%= machine.primary_image_id %>" alt="<%= machine.title %>" loading="lazy">
-          <% } else { %>
-            <div class="placeholder-image"><%= t('home.wallPrinter') %></div>
-          <% } %>
-          <span class="status-badge <%= machine.status %>"><%= t('status.' + machine.status) %></span>
-        </a>
-        <div class="v30-card-body refined-card-body">
-          <div class="card-kicker">
-            <span class="card-location"><%= locationText %></span>
-            <% if (machine.production_year) { %><span class="card-year"><%= machine.production_year %></span><% } %>
-          </div>
-          <h3><a href="<%= localPath('/machine/' + machine.slug) %>"><%= machine.title %></a></h3>
-          <div class="v30-card-price refined-card-price"><%= machine.status === 'sold' ? t('status.sold') : money(machine.asking_price, machine.currency) %></div>
-          <div class="refined-spec-list">
-            <% if (machine.brand || machine.model) { %><span><%= [machine.brand, machine.model].filter(Boolean).join(' · ') %></span><% } %>
-            <% if (headText) { %><span><%= headText %></span><% } %>
-            <% if (machine.working_status) { %><span><%= machine.working_status %></span><% } %>
-          </div>
-          <a class="v30-card-link refined-card-link" href="<%= localPath('/machine/' + machine.slug) %>"><%= t('home.viewMachine') %></a>
-        </div>
-      </article>
-    <% }) %>
-  </section>
-<% } %>
+  <% } else { %>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+      <% machines.forEach(machine => { %>
+        <% const locationText = [machine.region, machine.country, machine.city].filter(Boolean).join(' · ') || t('home.locationTbc'); %>
+        <% const headText = [machine.printhead_type, machine.printhead_count ? machine.printhead_count + ' heads' : null].filter(Boolean).join(' · '); %>
+        <article class="group bg-white rounded-[1.75rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-300 border border-gray-100 flex flex-col <%= machine.status === 'sold' ? 'opacity-75 grayscale-[20%]' : '' %>">
+          <a href="<%= localPath('/machine/' + machine.slug) %>" class="relative aspect-[4/5] sm:aspect-square overflow-hidden bg-gray-100 block" aria-label="<%= t('home.viewMachine') %> <%= machine.title %>">
+            <% if (machine.primary_image_id) { %>
+              <img src="/images/<%= machine.primary_image_id %>" alt="" loading="lazy" class="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-30">
+              <img src="/images/<%= machine.primary_image_id %>" alt="<%= machine.title %>" loading="lazy" class="relative z-10 w-full h-full object-contain p-4 group-hover:scale-[1.03] transition-transform duration-500 ease-out">
+            <% } else { %>
+              <div class="w-full h-full flex items-center justify-center text-gray-400 bg-gray-100 font-bold"><%= t('home.wallPrinter') %></div>
+            <% } %>
+            <div class="absolute top-4 left-4 z-20">
+              <span class="px-3 py-1 text-xs font-black uppercase tracking-wider rounded-full backdrop-blur-md shadow-sm <%= machine.status === 'available' ? 'bg-green-500/90 text-white' : machine.status === 'sold' ? 'bg-gray-900/90 text-white' : 'bg-orange-500/90 text-white' %>"><%= t('status.' + machine.status) %></span>
+            </div>
+          </a>
 
-<section class="trust-strip-v35 mobile-trust-after-list" aria-label="<%= t('home.trust.label') %>">
-  <article>
-    <span>01</span>
-    <strong><%= t('home.trust1.title') %></strong>
-    <p><%= t('home.trust1.text') %></p>
-  </article>
-  <article>
-    <span>02</span>
-    <strong><%= t('home.trust2.title') %></strong>
-    <p><%= t('home.trust2.text') %></p>
-  </article>
-  <article>
-    <span>03</span>
-    <strong><%= t('home.trust3.title') %></strong>
-    <p><%= t('home.trust3.text') %></p>
-  </article>
+          <div class="p-5 md:p-6 flex flex-col flex-grow">
+            <div class="flex items-center justify-between gap-3 text-xs text-gray-500 mb-3">
+              <span class="truncate"><%= locationText %></span>
+              <% if (machine.production_year) { %><span class="shrink-0 bg-gray-100 px-2 py-1 rounded-lg text-gray-600 font-bold"><%= machine.production_year %></span><% } %>
+            </div>
+            <h3 class="text-lg md:text-xl font-black text-gray-950 mb-3 leading-tight line-clamp-2 group-hover:text-brand-600 transition-colors">
+              <a href="<%= localPath('/machine/' + machine.slug) %>"><%= machine.title %></a>
+            </h3>
+            <div class="flex flex-wrap gap-2 text-xs text-gray-600 mb-5">
+              <% if (machine.brand || machine.model) { %><span class="bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-full font-semibold"><%= [machine.brand, machine.model].filter(Boolean).join(' ') %></span><% } %>
+              <% if (headText) { %><span class="bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-full"><%= headText %></span><% } %>
+              <% if (machine.working_status) { %><span class="bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-full"><%= machine.working_status %></span><% } %>
+            </div>
+            <div class="mt-auto flex items-end justify-between border-t border-gray-100 pt-5">
+              <div>
+                <p class="text-xs uppercase tracking-wider text-gray-400 font-bold"><%= t('detail.askingPrice') %></p>
+                <strong class="text-2xl font-black text-gray-950"><%= machine.status === 'sold' ? t('status.sold') : money(machine.asking_price, machine.currency) %></strong>
+              </div>
+              <span class="w-11 h-11 flex items-center justify-center rounded-full bg-brand-50 text-brand-600 group-hover:bg-brand-600 group-hover:text-white transition-colors">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+              </span>
+            </div>
+          </div>
+        </article>
+      <% }) %>
+    </div>
+  <% } %>
 </section>
+
+<section class="bg-gray-950 py-16" aria-label="<%= t('home.trust.label') %>">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-3 gap-8 md:divide-x divide-gray-800 text-white">
+    <article class="md:px-8">
+      <span class="text-5xl font-black text-brand-500/30 mb-4 block">01</span>
+      <strong class="text-xl font-black mb-2 block"><%= t('home.trust1.title') %></strong>
+      <p class="text-gray-400 text-sm leading-7"><%= t('home.trust1.text') %></p>
+    </article>
+    <article class="md:px-8">
+      <span class="text-5xl font-black text-brand-500/30 mb-4 block">02</span>
+      <strong class="text-xl font-black mb-2 block"><%= t('home.trust2.title') %></strong>
+      <p class="text-gray-400 text-sm leading-7"><%= t('home.trust2.text') %></p>
+    </article>
+    <article class="md:px-8">
+      <span class="text-5xl font-black text-brand-500/30 mb-4 block">03</span>
+      <strong class="text-xl font-black mb-2 block"><%= t('home.trust3.title') %></strong>
+      <p class="text-gray-400 text-sm leading-7"><%= t('home.trust3.text') %></p>
+    </article>
+  </div>
+</section>
+
 <%- include('../partials/foot') %>
