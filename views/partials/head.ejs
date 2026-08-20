@@ -41,18 +41,7 @@
   <meta name="twitter:card" content="<%= typeof ogImage !== 'undefined' && ogImage ? 'summary_large_image' : 'summary' %>">
   <meta name="twitter:title" content="<%= pageTitle %>">
   <meta name="twitter:description" content="<%= pageDescription %>">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: { brand: { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 900: '#1e3a8a' } },
-          boxShadow: { soft: '0 22px 70px rgba(15,23,42,.10)' }
-        }
-      }
-    }
-  </script>
-  <link rel="stylesheet" href="/styles.css?v=3.9.0">
+  <link rel="stylesheet" href="/styles.css?v=3.9.2">
 </head>
 <body class="min-h-screen bg-gray-50 text-gray-900 antialiased font-sans flex flex-col <%= safeCurrentLanguage && safeCurrentLanguage.dir === 'rtl' ? 'rtl' : '' %>">
 <header class="fixed top-0 left-0 right-0 z-50 bg-white/88 backdrop-blur-xl border-b border-gray-100 shadow-sm" id="site-header">

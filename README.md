@@ -1,16 +1,16 @@
-# Wall Printer Exchange v3.9.0
+# Wall Printer Exchange v3.9.2
 
 Railway + PostgreSQL + Resend deployment package.
 
-## v3.9.0 updates
+## v3.9.2 updates
 
-- Full Gemini-style UI redesign across public pages and admin pages.
-- Rebuilt global header, footer, language switcher, mobile navigation, homepage, listing cards, machine detail page, forms, admin dashboard, machine management, buyer requests, request detail, login, and state pages.
-- Adds Tailwind CDN for rapid modern UI styling while retaining existing backend logic and database schema.
-- Keeps v3.8.9 portrait-friendly machine photo handling.
-- Keeps v3.8.8 admin submission notifications.
-- Keeps v3.8.7 buyer/seller email delivery tracking.
-- Keeps buyer phone requirement, 3-machine buyer selection, anti-spam listing submission checks, stable admin login, and multilingual auto-detection.
+- Removes the Tailwind CDN from `views/partials/head.ejs`.
+- Builds production CSS locally into `public/styles.css`.
+- Adds `src/tailwind-local.css`, `src/app.css`, and `src/production-overrides.css`.
+- Adds `scripts/build-css.js`.
+- Updates `npm run build` to run the CSS build before checking `server.js`.
+- Keeps the v3.9 Gemini-style redesign and v3.9.1 large form redesign.
+- Keeps admin notification email delivery to `dxonjet@gmail.com` through `ADMIN_NOTIFICATION_EMAIL`.
 
 ## Railway variables
 
@@ -27,3 +27,17 @@ Set these on the Web Service, not the Postgres service:
 - ADMIN_NOTIFICATION_EMAIL=dxonjet@gmail.com
 
 After changing variables, redeploy without cache.
+
+## Build
+
+```bash
+npm run build
+```
+
+This generates `public/styles.css` locally and then runs `node --check server.js`.
+
+## Start
+
+```bash
+npm start
+```

@@ -4,7 +4,7 @@
 </div>
 
 <div class="modal-overlay" data-modal="list-machine" aria-hidden="true">
-  <div class="modal-panel wide" role="dialog" aria-modal="true" aria-labelledby="listMachineTitle">
+  <div class="modal-panel wide wpe-large-modal" role="dialog" aria-modal="true" aria-labelledby="listMachineTitle">
     <button class="modal-close" type="button" data-close-modal aria-label="Close">×</button>
     <div class="modal-header">
       <p class="eyebrow"><%= t('modal.seller.eyebrow') %></p>
@@ -12,7 +12,7 @@
       <p><%= t('modal.seller.text') %></p>
     </div>
 
-    <form method="post" action="<%= localPath('/submit-machine') %>" enctype="multipart/form-data" data-seller-modal-form>
+    <form class="wpe-modal-large-form" method="post" action="<%= localPath('/submit-machine') %>" enctype="multipart/form-data" data-seller-modal-form>
       <div class="hp-field" aria-hidden="true"><label>Website<input name="website" tabindex="-1" autocomplete="off"></label></div>
       <section class="modal-step active" data-step="terms">
         <div class="terms-scroll">
@@ -123,14 +123,14 @@
 </div>
 
 <div class="modal-overlay" data-modal="buying-request" aria-hidden="true">
-  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="buyingRequestTitle">
+  <div class="modal-panel wpe-large-modal wpe-buyer-modal" role="dialog" aria-modal="true" aria-labelledby="buyingRequestTitle">
     <button class="modal-close" type="button" data-close-modal aria-label="Close">×</button>
     <div class="modal-header">
       <p class="eyebrow"><%= t('modal.buyer.eyebrow') %></p>
       <h2 id="buyingRequestTitle"><%= t('modal.buyer.title') %></h2>
       <p><%= t('modal.buyer.text') %></p>
     </div>
-    <form method="post" action="<%= localPath('/buying-request') %>">
+    <form class="wpe-modal-large-form" method="post" action="<%= localPath('/buying-request') %>">
       <section class="form-card compact-card">
         <h3>Buyer contact</h3>
         <div class="form-grid two">

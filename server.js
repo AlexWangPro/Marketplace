@@ -1675,7 +1675,7 @@ app.get('/images/:id', async (req, res, next) => {
 });
 
 app.get('/healthz', (req, res) => {
-  res.json({ ok: true, service: 'wall-printer-exchange', version: '3.9.0' });
+  res.json({ ok: true, service: 'wall-printer-exchange', version: '3.9.2' });
 });
 
 app.get('/robots.txt', (req, res) => {
